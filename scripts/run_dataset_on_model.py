@@ -1,14 +1,16 @@
 
 import argparse
+import json
 import lightning as L
 
 from llmcal.models import LanguageModelClassifier
-from llmcal.data import load_dataset, LoaderWithTemplateCollator
+from llmcal.data import load_dataset, LoaderWithTemplateCollator, SubstitutionTemplate
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', type=str, required=True)
     parser.add_argument('--dataset_name', type=str, required=True)
+    parser.add_argument('--template', type=str, required=True)
     parser.add_argument('--output_dir', type=str, required=True)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--seed', type=int, default=0)
@@ -35,9 +37,12 @@ def main():
     with fabric.init_module():
         model = LanguageModelClassifier.from_model_name(args.model_name)
 
+    with open(args.template, "r") as f:
+        template_file = json.load(f)
+
     # Load dataset
     dataset = load_dataset(args.dataset_name, split="validation")
-    template = None
+    template = SubstitutionTemplate(**template_file)
     dataloader = LoaderWithTemplateCollator(
         dataset=dataset,
         template=template,
@@ -46,7 +51,9 @@ def main():
         shuffle=False,
         random_state=args.seed
     )
-        
+
+    batch = next(iter(dataloader))
+    print(batch)
 
 
 if __name__ == '__main__':

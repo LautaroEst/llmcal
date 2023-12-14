@@ -12,6 +12,7 @@ SEED=84283
 python ${SCRIPTS_DIR}/run_dataset_on_model.py \
     --model_name ${model_name} \
     --dataset_name "glue/sst2" \
+    --template templates/sst2.json \
     --output_dir ${RESULTS_DIR} \
-    --batch_size 32 \
+    --batch_size 2 \
     --seed ${SEED}

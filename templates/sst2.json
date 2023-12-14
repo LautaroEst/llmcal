@@ -1,0 +1,4 @@
+{
+    "prompt": "Review: {sentence}\n\nSentiment:",
+    "prefix_sample_separator": " "
+}

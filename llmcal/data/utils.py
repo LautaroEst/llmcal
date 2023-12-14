@@ -1,8 +1,6 @@
 
-from datasets import load_dataset as load_hf_dataset
-
+from .datasets import dataset2class
 
 def load_dataset(dataset_name, split):
-    if dataset_name == "glue/sst2":
-        dataset = load_hf_dataset("glue", "sst2", split=split)
-    return dataset
+    cls = dataset2class[dataset_name]
+    return cls(split=split)
