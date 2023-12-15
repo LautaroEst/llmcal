@@ -1,0 +1,9 @@
+[
+    {
+        "id": "0_shot",
+        "prompt": "Review: {sentence}\nSentiment:",
+        "prompt_label_separator": " ",
+        "features": ["sentence"],
+        "labels": {"0": "Negative", "1": "Positive"}
+    }
+]

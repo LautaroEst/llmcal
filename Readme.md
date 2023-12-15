@@ -8,3 +8,9 @@ conda activate llmcal
 pip install -r requirements.txt
 pip install -e .
 ```
+
+## Run scripts
+    
+```bash
+bash scripts/run_glue.sh
+```

@@ -106,7 +106,7 @@ class PromptEncoder(nn.Module):
         else:
             raise ValueError(f"Architecture type of {self.base_model.name_or_path} model not supported.")
 
-    def _decoder_only_forward(self, batch_encoded_prompts):
+    def _decoder_only_forward(self, batch_encoded_prompts, output_embeddings=False):
         position_ids = self.create_position_ids(batch_encoded_prompts["attention_mask"])
         prompt_output = self.base_model(
             input_ids=batch_encoded_prompts["input_ids"],
@@ -114,17 +114,18 @@ class PromptEncoder(nn.Module):
             position_ids=position_ids,
             use_cache=True, 
             output_attentions=False, 
-            output_hidden_states=False
+            output_hidden_states=output_embeddings
         )
         encoder_output = {
             "input_ids": batch_encoded_prompts["input_ids"],
             "attention_mask": batch_encoded_prompts["attention_mask"],
             "past_key_values": prompt_output.past_key_values,
+            "embeddings": prompt_output.hidden_states[-1][:,-1,:] if output_embeddings else None,
             "logits": prompt_output.logits
         }
         return encoder_output
     
-    def _encoder_decoder_forward(self, batch_encoded_prompts):
+    def _encoder_decoder_forward(self, batch_encoded_prompts, output_embeddings=False):
         fake_encoded_decoder_input = self.tokenizer([""] * batch_encoded_prompts["input_ids"].shape[0], padding=True, return_tensors="pt")
         out = self.base_model(
             input_ids=batch_encoded_prompts["input_ids"],
@@ -137,13 +138,14 @@ class PromptEncoder(nn.Module):
             "attention_mask": batch_encoded_prompts["attention_mask"],
             "encoder_last_hidden_state": out.encoder_last_hidden_state,
             "encoder_hidden_states": out.encoder_hidden_states,
+            "embeddings": out.encoder_hidden_states.mean(dim=1) if output_embeddings else None,
             "encoder_attentions": out.encoder_attentions
         }
         return encoder_output
 
 
-    def forward(self, batch_encoded_prompts):
-        encoder_output = self._forward(batch_encoded_prompts)
+    def forward(self, batch_encoded_prompts, output_embeddings=False):
+        encoder_output = self._forward(batch_encoded_prompts, output_embeddings=output_embeddings)
         return encoder_output
 
     @staticmethod
@@ -162,8 +164,8 @@ class LanguageModelClassifier(nn.Module):
         self.labels_decoder = LabelsDecoder(base_model, tokenizer)
         self.tokenizer = tokenizer
 
-    def forward(self, batch_encoded_prompts, encoded_labels):
-        encoder_output = self.prompt_encoder(batch_encoded_prompts)
+    def forward(self, batch_encoded_prompts, encoded_labels, output_embeddings=False):
+        encoder_output = self.prompt_encoder(batch_encoded_prompts, output_embeddings=output_embeddings)
         labels_logits = self.labels_decoder(encoder_output, encoded_labels)
         return encoder_output, labels_logits
     

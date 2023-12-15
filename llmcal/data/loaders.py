@@ -19,7 +19,7 @@ class ClassificationTemplateCollator:
         if num_of_prompt_tokens_without_query + self.MAX_QUERY_TOKENS > tokenizer.max_len_single_sentence:
             raise ValueError("The template is too long for the tokenizer.")
         
-        max_len_label = max([self.tokenizer.tokenize(l) for l in template.labels], key=len)
+        max_len_label = max([len(self.tokenizer.tokenize(l)) for l in template.labels.values()])
         self.max_tokens_per_feature = (
             tokenizer.max_len_single_sentence - num_of_prompt_tokens_without_query - max_len_label - 5
         ) // len(template.features)
@@ -58,6 +58,8 @@ class LoaderWithTemplateCollator(DataLoader):
         if shuffle:
             generator = torch.Generator().manual_seed(random_state)
             sampler = RandomSampler(dataset, replacement=False, num_samples=None, generator=generator)
+        else:
+            sampler = None
         super().__init__(
             dataset=dataset,
             batch_size=batch_size,
