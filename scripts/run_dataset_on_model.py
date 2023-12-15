@@ -22,6 +22,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', type=str, required=True)
     parser.add_argument('--dataset_name', type=str, required=True)
+    parser.add_argument('--templates_path', type=str, required=True)
     parser.add_argument('--splits', type=str, required=True)
     parser.add_argument('--num_samples', type=str, default=None)
     parser.add_argument('--output_dir', type=str, required=True)
@@ -52,7 +53,7 @@ def main():
         model = LanguageModelClassifier.from_model_name(args.model_name)
 
     # Prepare templates
-    with open(f"templates/{args.dataset_name}.json", "r") as f:
+    with open(os.path.join(args.templates_path,f"{args.dataset_name}.json"), "r") as f:
         templates = json.load(f)
     
     for template_args in templates:

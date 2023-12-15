@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "generate_train_shots.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/generate_train_shots.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--dataset_name", "glue/sst2",
+                "--num_shots", "15",
+                "--seed", "84283",
+            ]
+        },
+        {
             "name": "run_dataset_on_model.py",
             "type": "python",
             "request": "launch",
