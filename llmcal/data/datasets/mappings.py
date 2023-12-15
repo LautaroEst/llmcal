@@ -9,6 +9,12 @@ from .glue import (
     GLUEstsb,
     GLUEwnli
 )
+from .tony_zhao import (
+    TonyZhaoTREC,
+    TonyZhaoSST2,
+    TonyZhaoAGNEWS,
+    TonyZhaoDBPEDIA
+)
 
 
 dataset2class = {
@@ -20,5 +26,10 @@ dataset2class = {
     "glue/rte": GLUErte,
     "glue/sst2": GLUEsst2,
     "glue/stsb": GLUEstsb,
-    "glue/wnli": GLUEwnli
+    "glue/wnli": GLUEwnli,
+
+    "tony_zhao/trec": TonyZhaoTREC,
+    "tony_zhao/sst2": TonyZhaoSST2,
+    "tony_zhao/agnews": TonyZhaoAGNEWS,
+    "tony_zhao/dbpedia": TonyZhaoDBPEDIA,
 }

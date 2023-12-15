@@ -186,16 +186,16 @@ class LanguageModelClassifier(nn.Module):
     def from_model_name(cls, model_name):
 
         # Load pretrained tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         # Load pretrained model
         if model_name in SUPPORTED_MODELS["decoder_only"]:
-            base_model = AutoModelForCausalLM.from_pretrained(model_name, local_files_only=True)
+            base_model = AutoModelForCausalLM.from_pretrained(model_name)
             base_model.config.pad_token_id = base_model.config.eos_token_id
             tokenizer.padding_side = "left"
             tokenizer.pad_token = tokenizer.eos_token
         elif model_name in SUPPORTED_MODELS["encoder_decoder"]:
-            base_model = AutoModelForSeq2SeqLM.from_pretrained(model_name, local_files_only=True)
+            base_model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
         else:
             raise ValueError(f"Model {model_name} not supported.")
         

@@ -12,8 +12,13 @@ from llmcal.data import load_dataset, LoaderWithTemplateCollator, Template
 
 fabric_args = {
     "accelerator": "cpu",
+    "devices": 1,
     "precision": 32,
 }
+
+# Initialize fabric
+fabric = L.Fabric(**fabric_args)
+fabric.launch()
 
 
 SCRIPT_NAME = os.path.splitext(os.path.basename(__file__))[0]
@@ -28,7 +33,7 @@ def parse_args():
     parser.add_argument('--output_dir', type=str, required=True)
     parser.add_argument('--save_embeddings', action="store_true")
     parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--random_state', type=int, default=0)
     args = parser.parse_args()
 
     args.splits = args.splits.split(",")
@@ -40,65 +45,73 @@ def parse_args():
     args.num_samples = num_samples
     return args
 
+
 def main():
 
     # Read command args
     args = parse_args()
 
-    # Initialize fabric
-    fabric = L.Fabric(**fabric_args)
+    # Prepare templates
+    with open(os.path.join(args.templates_path,f"{args.dataset_name}.json"), "r") as f:
+        templates = json.load(f)
+
+    # Set one seed per template
+    rs = np.random.RandomState(args.random_state)
+    seeds = rs.randint(0, 10000, size=len(templates))
 
     # Load model
     with fabric.init_module():
         model = LanguageModelClassifier.from_model_name(args.model_name)
 
-    # Prepare templates
-    with open(os.path.join(args.templates_path,f"{args.dataset_name}.json"), "r") as f:
-        templates = json.load(f)
+    # Run model on dataset for each template
+    for seed, template_args in zip(seeds, templates):
+        run_model_on_dataset(model, template_args, args, random_state=seed)
     
-    for template_args in templates:
-        template_id = template_args.pop("id")
-        template = Template(**template_args)
+
+def run_model_on_dataset(model, template_args, args, random_state=0):
+    
+    template_id = template_args.pop("id")
+    template = Template(**template_args)
+
+    # Run model on dataset
+    for split, num_samples in zip(args.splits, args.num_samples):
+
+        results_dir = os.path.join(
+            args.output_dir, 
+            SCRIPT_NAME, 
+            args.model_name, 
+            args.dataset_name, 
+            template_id,
+        )
+        if os.path.exists(os.path.join(results_dir, f"{split}.ids.npy")):
+            continue
+        
+        # Prepare dataloaders
+        dataset = load_dataset(args.dataset_name, split=split, subsample=num_samples, random_state=random_state, sort_by_length=True)
+        dataloader = LoaderWithTemplateCollator(
+            dataset=dataset,
+            template=template,
+            tokenizer=model.tokenizer,
+            batch_size=args.batch_size,
+            shuffle=False,
+            random_state=random_state
+        )
+        dataloader = fabric.setup_dataloaders(dataloader, use_distributed_sampler=True, move_to_device=True)
+        dataloader = tqdm(dataloader, desc=f"{split} split", leave=False)
 
         # Run model on dataset
-        for split, num_samples in zip(args.splits, args.num_samples):
+        results = predict(model, dataloader, save_embeddings=args.save_embeddings)
 
-            results_dir = os.path.join(
-                args.output_dir, 
-                SCRIPT_NAME, 
-                args.model_name, 
-                args.dataset_name, 
-                template_id,
-                str(args.seed)
-            )
-            if os.path.exists(os.path.join(results_dir, f"{split}.ids.npy")):
-                continue
-            
-            # Prepare dataloaders
-            dataset = load_dataset(args.dataset_name, split=split, subsample=num_samples, random_state=args.seed, sort_by_length=True)
-            dataloader = LoaderWithTemplateCollator(
-                dataset=dataset,
-                template=template,
-                tokenizer=model.tokenizer,
-                batch_size=args.batch_size,
-                shuffle=False,
-                random_state=args.seed
-            )
-            dataloader = fabric.setup_dataloaders(dataloader, use_distributed_sampler=True, move_to_device=True)
-            dataloader = tqdm(dataloader, desc=f"{split} split", leave=False)
-
-            # Run model on dataset
-            results = run_predictions(model, dataloader, save_embeddings=args.save_embeddings)
-
-            # Save results
-            os.makedirs(results_dir, exist_ok=True)
-            for k, v in results.items():
-                np.save(os.path.join(results_dir, f"{split}.{k}.npy"), v)
-        with open(os.path.join("/".join(results_dir.split("/")[:-1]), f"template.json"), "w") as f:
-            json.dump(template_args, f)
+        # Save results
+        os.makedirs(results_dir, exist_ok=True)
+        for k, v in results.items():
+            np.save(os.path.join(results_dir, f"{split}.{k}.npy"), v)        
+    
+    with open(os.path.join("/".join(results_dir.split("/")[:-1]), f"template.json"), "w") as f:
+        json.dump(template_args, f)
 
 
-def run_predictions(model, dataloader, save_embeddings=False):
+def predict(model, dataloader, save_embeddings=False):
     model.eval()
     results = {"ids": [], "prompts": [], "logits": [], "labels": []}
     if save_embeddings:

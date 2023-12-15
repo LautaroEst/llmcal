@@ -26,14 +26,15 @@
             "justMyCode": true,
             "args": [
                 "--model_name", "gpt2",
-                "--dataset_name", "glue/sst2",
-                "--template", "${workspaceFolder}/templates/sst2.json",
-                "--splits", "train,validation,test",
-                "--num_samples", "100,10,20",
+                "--dataset_name", "tony_zhao/sst2",
+                "--templates_path", "${workspaceFolder}/results/templates",
+                "--splits", "test",
+                "--num_samples", "None",
                 "--output_dir", "${workspaceFolder}/results",
                 "--save_embeddings",
                 "--batch_size", "32",
-                "--seed", "84283",
+                "--num_seeds", "1",
+                "--random_state", "84283",
             ]
         }
     ]

@@ -39,7 +39,7 @@ class ClassificationTemplateCollator:
             labels.append(sample["label"])
         encoded_labels = {idx: {k: v.repeat(len(prompts),1) for k, v in self.tokenizer([
             self.template.construct_label(label)
-        ], return_tensors="pt", padding=True).items()} for idx, label in enumerate(self.labels)}
+        ], return_tensors="pt", padding=True).items()} for idx, label in self.labels.items()}
 
         return {
             "idx": ids,
@@ -55,6 +55,7 @@ class LoaderWithTemplateCollator(DataLoader):
         self.tokenizer = tokenizer
         self.template = template
         kwargs.pop("collate_fn", None)
+        kwargs.pop("sampler", None)
         if shuffle:
             generator = torch.Generator().manual_seed(random_state)
             sampler = RandomSampler(dataset, replacement=False, num_samples=None, generator=generator)

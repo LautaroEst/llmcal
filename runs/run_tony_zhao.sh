@@ -4,10 +4,9 @@
 SCRIPTS_DIR="./scripts"
 RESULTS_DIR="./results"
 
-MODEL="gpt2-xl"
+MODEL="gpt2"
 # MODEL="meta-llama/Llama-2-7b-hf"
-
-DATASETS=("glue/sst2" )
+DATASETS=("tony_zhao/sst2" )
 
 for DATASET in ${DATASETS[@]}; do
     echo ">>> Running ${MODEL} on ${DATASET}..."
@@ -15,10 +14,10 @@ for DATASET in ${DATASETS[@]}; do
         --model_name ${MODEL} \
         --dataset_name ${DATASET} \
         --templates_path ${RESULTS_DIR}/templates \
-        --splits "validation" \
-        --num_samples "None" \
+        --splits "train,test" \
+        --num_samples "600,None" \
         --output_dir ${RESULTS_DIR} \
         --save_embeddings \
         --batch_size 4 \
-        --random_state 3945
+        --random_state 9472
 done
