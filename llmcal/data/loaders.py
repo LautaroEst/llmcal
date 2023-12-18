@@ -27,6 +27,7 @@ class ClassificationTemplateCollator:
     def __call__(self, batch):
 
         ids, prompts, labels = [], [], []
+        fetures = {feature: [] for feature in self.template.features}
         for sample in batch:
             ids.append(sample["idx"])
             prompts.append(
@@ -37,16 +38,18 @@ class ClassificationTemplateCollator:
                 })
             )
             labels.append(sample["label"])
+            for feature in self.template.features:
+                fetures[feature].append(sample[feature])
         encoded_labels = {idx: {k: v.repeat(len(prompts),1) for k, v in self.tokenizer([
             self.template.construct_label(label)
         ], return_tensors="pt", padding=True).items()} for idx, label in self.labels.items()}
 
         return {
             "idx": ids,
-            "prompt": prompts,
             "encoded_prompt": self.tokenizer(prompts, return_tensors="pt", padding=True),
             "label": torch.tensor(labels),
-            "encoded_labels": encoded_labels
+            "encoded_labels": encoded_labels,
+            "features": {feature: fetures[feature] for feature in self.template.features}
         }
 
 class LoaderWithTemplateCollator(DataLoader):

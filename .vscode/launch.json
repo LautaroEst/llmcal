@@ -36,6 +36,37 @@
                 "--num_seeds", "1",
                 "--random_state", "84283",
             ]
+        },
+        {
+            "name": "calibrate_features.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/calibrate_features.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--train_features", "results/run_dataset_on_model/gpt2/tony_zhao/sst2/train/0_shot/logits.npy",
+                "--train_labels", "results/run_dataset_on_model/gpt2/tony_zhao/sst2/train/0_shot/labels.npy",
+                "--eval_features", "results/run_dataset_on_model/gpt2/tony_zhao/sst2/test/0_shot/logits.npy",
+                "--eval_labels", "results/run_dataset_on_model/gpt2/tony_zhao/sst2/test/0_shot/labels.npy",
+                "--subsample_train", "100",
+                "--subsample_eval", "None",
+                "--num_classes", "2",
+                "--method", "affine",
+                "--feature_map", "quadratic",
+                "--alpha", "matrix",
+                "--bias",
+                "--loss", "log-loss",
+                "--accelerator", "cpu",
+                "--num_devices", "1",
+                "--batch_size", "32",
+                "--num_epochs", "100",
+                "--lr", "0.001",
+                "--weight_decay", "0.0",
+                "--tolerance", "1e-4",
+                "--output_dir", "results/calibrate_features/gpt2/results-run_dataset_on_model-gpt2-tony_zhao-sst2-train--results-run_dataset_on_model-gpt2-tony_zhao-sst2-test--100",
+                "--random_state", "83629",
+            ]
         }
     ]
 }
