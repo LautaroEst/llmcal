@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from .base import BaseCalibrator
+from .base import BaseCalibrator, SGDCalibrator
 
 
 def square_mahalanobis_distance(X,mu,sigma):
@@ -15,7 +15,11 @@ def square_mahalanobis_distance(X,mu,sigma):
 class QDACalibrator(BaseCalibrator):
     
     def __init__(self, num_features, num_classes, random_state=None):
-        super().__init__(num_features=num_features, num_classes=num_classes)
+
+        generator = torch.Generator()
+        generator.manual_seed(random_state)
+        super().__init__(num_features=num_features, num_classes=num_classes, generator=generator)
+
         self.means = nn.ModuleList(
             [nn.Parameter(torch.zeros(num_features)) for _ in range(num_classes)]
         )
@@ -23,7 +27,6 @@ class QDACalibrator(BaseCalibrator):
             [nn.Parameter(torch.eye(num_features)) for _ in range(num_classes)]
         )
         self.priors = nn.Parameter(torch.zeros(num_classes))
-        self.random_state = random_state
 
     def forward(self, features):
         unnorm_posteriors = torch.stack([
@@ -44,13 +47,16 @@ class QDACalibrator(BaseCalibrator):
 class LDACalibrator(BaseCalibrator):
 
     def __init__(self, num_features, num_classes, random_state=None):
-        super().__init__(num_features=num_features, num_classes=num_classes)
+        
+        generator = torch.Generator()
+        generator.manual_seed(random_state)
+        super().__init__(num_features=num_features, num_classes=num_classes, generator=generator)
+        
         self.means = nn.ModuleList(
             [nn.Parameter(torch.zeros(num_features)) for _ in range(num_classes)]
         )
         self.covariance = nn.Parameter(torch.eye(num_features))
         self.priors = nn.Parameter(torch.zeros(num_classes))
-        self.random_state = random_state
     
     def forward(self, features):
         inv_covariance = self.inv_covariance
@@ -74,14 +80,17 @@ class LDACalibrator(BaseCalibrator):
         return self
 
 
-class DiscriminativeMahalanobisCalibrator(BaseCalibrator):
+class DiscriminativeMahalanobisCalibrator(SGDCalibrator):
     
     def __init__(self, num_features, num_classes, random_state=None):
-        super().__init__(num_features=num_features, num_classes=num_classes)
+        
+        generator = torch.Generator()
+        generator.manual_seed(random_state)
+        super().__init__(num_features=num_features, num_classes=num_classes, generator=generator)
+
         self.means = nn.ModuleList(
             [nn.Parameter(torch.zeros(num_features)) for _ in range(num_classes)]
         )
-        self.random_state = random_state
 
     def compute_covariance(self, class_features, class_mean):
         x_tilde = (class_features - class_mean)

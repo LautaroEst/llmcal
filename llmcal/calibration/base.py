@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, RandomSampler, DataLoader
-from torch.optim import Adam
+from torch.optim import Adam, LBFGS
 import lightning as L
 
 from logging import getLogger
@@ -20,7 +20,18 @@ class BaseCalibrator(nn.Module):
 
     def forward(self, features):
         raise NotImplementedError
+
+    def calibrate(self, features):
+        self.eval()
+        with torch.no_grad():
+            return self(features)
+
+    def fit(self, features, labels, **kwargs):
+        raise NotImplementedError
     
+
+class SGDCalibrator(BaseCalibrator):
+
     def fit(
         self, 
         features, 
@@ -80,8 +91,21 @@ class BaseCalibrator(nn.Module):
             self.logger.warning(f"WARNING: Calibration did not converge after {num_epochs} epochs")
         return self
 
-    def calibrate(self, features):
-        self.eval()
-        with torch.no_grad():
-            return self(features)
+
+class LBFGSBCalibrator(BaseCalibrator):
+
+    def fit(self, features, labels, **kwargs):
+
+        optimizer = LBFGS(
+            self.parameters(),
+            max_iter=40
+        )
+
+        def closure():
+            optimizer.zero_grad()
+            loss = self.loss(self(features), labels)
+            loss.backward()
+            return loss
     
+        for _ in range(100):
+            optimizer.step(closure)

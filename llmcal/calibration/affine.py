@@ -2,11 +2,11 @@
 import torch
 import torch.nn as nn
 
-from .base import BaseCalibrator
+from .base import LBFGSBCalibrator
 from .losses import LogLoss, BrierLoss
 
 
-class AffineCalibrator(BaseCalibrator):
+class AffineCalibrator(LBFGSBCalibrator):
 
     def __init__(self, num_features, num_classes, alpha="vector", bias=True, loss="log-loss", random_state=None):
         generator = torch.Generator(device="cpu")
