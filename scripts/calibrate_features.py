@@ -121,7 +121,7 @@ def main():
         calibrated_eval_posteriors
     )
     with open(os.path.join(args.output_dir, method_id, "args.json"), "w") as f:
-        json.dump(vars(args), f)
+        json.dump(vars(args), f, indent=4, separators=(',', ': '))
 
 
 def get_method_id(args):

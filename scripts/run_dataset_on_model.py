@@ -22,6 +22,7 @@ fabric = L.Fabric(**fabric_args)
 fabric.launch()
 
 
+
 SCRIPT_NAME = os.path.splitext(os.path.basename(__file__))[0]
 
 def parse_args():
@@ -58,6 +59,7 @@ def main():
     # Load model
     with fabric.init_module():
         model = LanguageModelClassifier.from_model_name(args.model_name)
+    # model = fabric.setup(model, move_to_device=True)
 
     # Run model on each dataset
     for template_args in templates:
@@ -106,7 +108,7 @@ def run_model_on_dataset(model, template_args, args, random_state=0):
             np.save(os.path.join(results_dir, f"{k}.npy"), v)        
     
         with open(os.path.join(results_dir, f"template.json"), "w") as f:
-            json.dump(template_args, f)
+            json.dump(template_args, f, indent=4, separators=(',', ': '))
 
 
 def predict(model, dataloader, save_embeddings=False):

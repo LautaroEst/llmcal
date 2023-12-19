@@ -7,18 +7,17 @@ RESULTS_DIR="./results"
 MODEL="gpt2-xl"
 # MODEL="meta-llama/Llama-2-7b-hf"
 
-DATASETS=("glue/sst2" )
+DATASETS=("glue/cola" "glue/sst2" "glue/mrpc" "glue/qqp" "glue/mnli" "glue/qnli" "glue/rte" "glue/wnli")
 
 for DATASET in ${DATASETS[@]}; do
     echo ">>> Running ${MODEL} on ${DATASET}..."
     python ${SCRIPTS_DIR}/run_dataset_on_model.py \
         --model_name ${MODEL} \
         --dataset_name ${DATASET} \
-        --templates_path ${RESULTS_DIR}/templates \
-        --splits "validation" \
-        --num_samples "None" \
+        --templates ${RESULTS_DIR}/templates/${DATASET}/00.json \
+        --splits "train,validation" \
+        --num_samples "1000,None" \
         --output_dir ${RESULTS_DIR} \
         --save_embeddings \
-        --batch_size 4 \
         --random_state 3945
 done

@@ -4,8 +4,9 @@
 SCRIPTS_DIR="./scripts"
 RESULTS_DIR="./results"
 
-MODEL="gpt2"
+# MODEL="gpt2"
 # MODEL="meta-llama/Llama-2-7b-hf"
+# MODEL="gpt2-xl"
 
 DATASET="tony_zhao/sst2"
 echo ">>> Running ${MODEL} on ${DATASET}..."

@@ -4,12 +4,13 @@
 SCRIPTS_DIR="./scripts"
 RESULTS_DIR="./results"
 
-MODEL="gpt2"
+MODEL="gpt2-xl"
 
 
 DATASET="tony_zhao/sst2"
-TRAIN_FILE=$RESULTS_DIR/run_dataset_on_model/$MODEL/$DATASET/train/0_shot
-EVAL_FILE=$RESULTS_DIR/run_dataset_on_model/$MODEL/$DATASET/test/0_shot
+TEMPLATE="0_shot"
+TRAIN_FILE=$RESULTS_DIR/run_dataset_on_model/$MODEL/$DATASET/train/$TEMPLATE
+EVAL_FILE=$RESULTS_DIR/run_dataset_on_model/$MODEL/$DATASET/test/$TEMPLATE
 
 for NUM_SAMPLES in 50 100 200 400 800 1000; do
     python $SCRIPTS_DIR/calibrate_features.py \
@@ -21,7 +22,7 @@ for NUM_SAMPLES in 50 100 200 400 800 1000; do
         --subsample_eval None \
         --num_classes 2 \
         --method "affine" \
-        --alpha "matrix" \
+        --alpha "vector" \
         --bias \
         --loss "log-loss" \
         --accelerator "cpu" \
@@ -31,6 +32,6 @@ for NUM_SAMPLES in 50 100 200 400 800 1000; do
         --lr 0.001 \
         --weight_decay 0.0 \
         --tolerance 1e-4 \
-        --output_dir $RESULTS_DIR/calibrate_features/$MODEL/${TRAIN_FILE//\//-}--${EVAL_FILE//\//-}--$NUM_SAMPLES \
+        --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
         --random_state 83629
 done
