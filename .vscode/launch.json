@@ -25,16 +25,14 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-                "--model_name", "gpt2",
-                "--dataset_name", "tony_zhao/sst2",
-                "--templates_path", "${workspaceFolder}/results/templates",
-                "--splits", "test",
-                "--num_samples", "None",
+                "--model_name", "gpt2-xl",
+                "--dataset_name", "glue/cola",
+                "--templates", "${workspaceFolder}/results/templates/glue/cola/00.json",
+                "--splits", "train,validation",
+                "--num_samples", "1010,None",
                 "--output_dir", "${workspaceFolder}/results",
                 "--save_embeddings",
-                "--batch_size", "32",
-                "--num_seeds", "1",
-                "--random_state", "84283",
+                "--random_state", "3945",
             ]
         },
         {

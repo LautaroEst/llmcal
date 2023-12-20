@@ -10,13 +10,12 @@ MODEL="gpt2-xl"
 DATASETS=("glue/cola" "glue/sst2" "glue/mrpc" "glue/qqp" "glue/mnli" "glue/qnli" "glue/rte" "glue/wnli")
 
 for DATASET in ${DATASETS[@]}; do
-    echo ">>> Running ${MODEL} on ${DATASET}..."
     python ${SCRIPTS_DIR}/run_dataset_on_model.py \
         --model_name ${MODEL} \
         --dataset_name ${DATASET} \
         --templates ${RESULTS_DIR}/templates/${DATASET}/00.json \
         --splits "train,validation" \
-        --num_samples "1000,None" \
+        --num_samples "4000,None" \
         --output_dir ${RESULTS_DIR} \
         --save_embeddings \
         --random_state 3945
