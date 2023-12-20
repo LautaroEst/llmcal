@@ -1,4 +1,5 @@
 
+from collections import OrderedDict
 import torch
 import torch.nn as nn
 
@@ -9,11 +10,16 @@ from .losses import LogLoss, BrierLoss
 class AffineCalibrator(LBFGSBCalibrator):
 
     def __init__(self, num_features, num_classes, alpha="vector", bias=True, loss="log-loss", random_state=None):
-        generator = torch.Generator(device="cpu")
-        if random_state is not None:
-            generator = generator.manual_seed(random_state)
-        super().__init__(num_features=num_features, num_classes=num_classes, generator=generator)
-            
+        self.arguments = OrderedDict([
+            ("num_features", num_features), 
+            ("num_classes", num_classes), 
+            ("alpha", alpha), 
+            ("bias", bias), 
+            ("loss", loss), 
+            ("random_state", random_state)
+        ])
+        super().__init__(**self.arguments)
+
         if alpha == "vector":
             if num_features != num_classes:
                 raise ValueError(f"Cannot perform vector scaling when num_features != num_classes")
@@ -30,7 +36,7 @@ class AffineCalibrator(LBFGSBCalibrator):
         elif alpha == "None":
             if num_features != num_classes:
                 raise ValueError(f"Alpha cannot be None when num_features != num_classes")
-            self.alpha = torch.eye(num_classes)
+            self._alpha = torch.eye(num_classes)
         else:
             raise ValueError(f"Invalid alpha: {alpha}")
         
@@ -47,7 +53,8 @@ class AffineCalibrator(LBFGSBCalibrator):
             raise ValueError(f"Invalid loss: {loss}")
 
     def forward(self, features):
-        return torch.log_softmax(features @ self._alpha.T + self.bias, dim=1)
+        logits = features @ self._alpha.T + self.bias
+        return logits
 
 
 

@@ -25,11 +25,11 @@ def parse_args():
     parser.add_argument('--eval_labels', type=str, required=True)
     parser.add_argument('--subsample_train', type=str, default=None)
     parser.add_argument('--subsample_eval', type=str, default=None)
+    parser.add_argument('--validation_samples', type=int, default=0)
     parser.add_argument('--num_classes', type=int, required=True)
     
     parser.add_argument('--method', type=str, required=True)
     parser.add_argument("--feature_map", type=str, default="None")
-    parser.add_argument("--use_pseudo_labels", action="store_true")
     # Args for affine
     parser.add_argument('--alpha', type=str, default="matrix")
     parser.add_argument('--bias', action="store_true")
@@ -39,14 +39,16 @@ def parse_args():
     # Args for mahalanobis
     pass
 
+    # Args for training calibrator
     parser.add_argument('--accelerator', type=str, default="cpu")
     parser.add_argument('--num_devices', type=int, default=1)
     parser.add_argument('--optimizer', type=str, default=None)
     parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--num_epochs', type=int, default=100)
+    parser.add_argument('--max_epochs', type=int, default=100)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--weight_decay', type=float, default=0)
     parser.add_argument('--tolerance', type=float, default=1e-4)
+    parser.add_argument('--max_ls', type=int, default=40)
 
     parser.add_argument('--output_dir', type=str, required=True)
     parser.add_argument('--random_state', type=int, default=0)
@@ -67,10 +69,22 @@ def main():
     rs = np.random.RandomState(args.random_state)
 
     # Load features and labels
-    train_features = np.load(args.train_features)
-    eval_features = np.load(args.eval_features)
+    train_features = np.load(args.train_features) # Train
     train_labels = train_features.argmax(axis=-1) if "logits.npy" in args.train_labels else np.load(args.train_labels)
+    
+    eval_features = np.load(args.eval_features) # Evaluation
     eval_labels = eval_features.argmax(axis=-1) if "logits.npy" in args.eval_labels else np.load(args.eval_labels)
+
+    # Create train - validation split
+    if args.validation_samples <= 0 or args.validation_samples > len(train_features) - args.subsample_train:
+        raise ValueError(f"Invalid number of validation samples: {args.validation_samples}. Must be in (0, {len(train_features) - args.subsample_train}].")
+    all_idx = np.arange(len(train_features))
+    validation_idx = rs.choice(all_idx, size=args.validation_samples, replace=False)
+    train_idx = np.setdiff1d(all_idx, validation_idx)
+    validation_features = train_features[validation_idx]
+    validation_labels = train_labels[validation_idx]
+    train_features = train_features[train_idx]
+    train_labels = train_labels[train_idx]
 
     # Subsample
     if args.subsample_train is not None:
@@ -82,35 +96,57 @@ def main():
         eval_features = eval_features[eval_idx]
         eval_labels = eval_labels[eval_idx]
     
-    # Calibrate
-    calibration_args = {
+    # Init calibrator args
+    init_calibrator_args = {
         "random_state": args.random_state
     }
     if args.method == "affine":
-        calibration_args["alpha"] = args.alpha
-        calibration_args["bias"] = args.bias
-        calibration_args["loss"] = args.loss
+        init_calibrator_args["alpha"] = args.alpha
+        init_calibrator_args["bias"] = args.bias
+        init_calibrator_args["loss"] = args.loss
     elif args.method == "prior_adaptation":
-        calibration_args["priors"] = args.priors
+        init_calibrator_args["priors"] = args.priors
+    elif args.method in ["qda", "lda", "mahalanobis"]:
+        pass
     else:
         raise ValueError(f"Calibration method {args.method} not supported.")
     
+    # Fit calibrator args
+    if args.method == "affine":
+        fit_calibrator_args = {
+            "max_ls": args.max_ls,
+            "max_epochs": args.max_epochs,
+            "tolerance": args.tolerance,
+        }
+    elif args.method == "prior_adaptation":
+        fit_calibrator_args = {}
+    elif args.method in ["qda", "lda"]:
+        fit_calibrator_args = {}
+    elif args.method == "mahalanobis":
+        fit_calibrator_args = {
+            "accelerator": args.accelerator,
+            "num_devices": args.num_devices,
+            "optimizer": args.optimizer,
+            "batch_size": args.batch_size,
+            "max_epochs": args.max_epochs,
+            "learning_rate": args.lr,
+            "weight_decay": args.weight_decay,
+            "tolerance": args.tolerance,
+        }
+    else:
+        raise ValueError(f"Calibration method {args.method} not supported.")
+
     calibrated_eval_posteriors = obtain_calibrated_posteriors(
         train_features, 
-        train_labels, 
+        train_labels,
+        validation_features,
+        validation_labels,
         eval_features, 
         args.num_classes, 
         args.method,
         feature_map=args.feature_map if args.feature_map != "None" else None,
-        accelerator=args.accelerator,
-        num_devices=args.num_devices,
-        optimizer=args.optimizer,
-        batch_size=args.batch_size,
-        num_epochs=args.num_epochs,
-        lr=args.lr,
-        weight_decay=args.weight_decay,
-        tolerance=args.tolerance,
-        **calibration_args
+        init_calibrator_args=init_calibrator_args,
+        fit_calibrator_args=fit_calibrator_args,
     )
 
     # Save calibrated posteriors
@@ -125,64 +161,76 @@ def main():
 
 
 def get_method_id(args):
+    if "logits.npy" in args.train_features:
+        method_id = "logits" 
+    elif "embeddings.npy" in args.train_features:
+        method_id = "embeddings"
+    else:
+        raise ValueError("Feature type not supported.")
+
+    if args.feature_map != "None":
+        method_id += f"_ft_map={args.feature_map}"
+
     if args.method == "affine":
-        method_id = f"affine_alpha={args.alpha}_bias={args.bias}_loss={args.loss}"
+        method_id += f"_affine_alpha={args.alpha}_bias={args.bias}_loss={args.loss}"
     elif args.method == "prior_adaptation":
-        method_id = f"prior_adaptation_priors={args.priors}"
+        method_id += f"_prior_adaptation_priors={args.priors}"
+    elif args.method == "qda":
+        method_id += f"_qda"
+    elif args.method == "lda":
+        method_id += f"_lda"
     elif args.method == "mahalanobis":
-        method_id = f"mahalanobis"
+        method_id += f"_mahalanobis"
+    else:
+        raise ValueError(f"Calibration method {args.method} not supported.")
     return method_id
 
 
 def obtain_calibrated_posteriors(
     train_features, 
-    train_labels, 
+    train_labels,
+    validation_features,
+    validation_labels,
     eval_features, 
     num_classes, 
     method, 
     feature_map=None,
-    accelerator="cpu",
-    num_devices=1,
-    optimizer=None,
-    batch_size=128,
-    num_epochs=100,
-    lr=1e-3,
-    weight_decay=0,
-    tolerance=1e-4,
-    **kwargs
+    init_calibrator_args={},
+    fit_calibrator_args={},
 ):
     
     train_features = apply_feature_map(torch.from_numpy(train_features), feature_map)
     train_labels = torch.from_numpy(train_labels)
+    validation_features = apply_feature_map(torch.from_numpy(validation_features), feature_map)
+    validation_labels = torch.from_numpy(validation_labels)
     eval_features = apply_feature_map(torch.from_numpy(eval_features), feature_map)
     num_features = train_features.shape[1]
 
     if method == "affine":
-        model = AffineCalibrator(num_features, num_classes, **kwargs)
+        model = AffineCalibrator(num_features, num_classes, **init_calibrator_args)
     elif method == "prior_adaptation":
-        model = PriorsAdaptator(num_classes, **kwargs)
+        model = PriorsAdaptator(num_classes, **init_calibrator_args)
     elif method == "qda":
-        model = QDACalibrator(num_features, num_classes, **kwargs)
+        model = QDACalibrator(num_features, num_classes, **init_calibrator_args)
     elif method == "lda":
-        model = LDACalibrator(num_features, num_classes, **kwargs)
+        model = LDACalibrator(num_features, num_classes, **init_calibrator_args)
     elif method == "mahalanobis":
-        model = DiscriminativeMahalanobisCalibrator(num_features, num_classes, **kwargs)
+        model = DiscriminativeMahalanobisCalibrator(num_features, num_classes, **init_calibrator_args)
     else:
         raise ValueError(f"Calibration method {method} not supported.")
     
-    print(f"Training {method} calibration model with {len(train_labels)} samples...")
+    print(f"Training calibration model...")
+    print(f"Model: {repr(model)}")
+    print(f"Number of samples: {len(train_labels)}")
     model.fit(
         train_features, 
         train_labels,
-        accelerator=accelerator,
-        num_devices=num_devices,
-        optimizer=optimizer,
-        batch_size=batch_size,
-        num_epochs=num_epochs,
-        learning_rate=lr,
-        weight_decay=weight_decay,
-        tolerance=tolerance
+        validation_features=validation_features,
+        validation_labels=validation_labels,
+        **fit_calibrator_args
     )
+    print("Done.")
+    print()
     calibrated_posteriors = model.calibrate(eval_features)
     calibrated_posteriors = calibrated_posteriors.numpy()
     return calibrated_posteriors
