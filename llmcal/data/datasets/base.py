@@ -10,7 +10,7 @@ class BaseDataset(Dataset):
     def __init__(self, dataset, subsample=None, random_state=0, sort_by_length=False):
         if subsample is not None:
             rs = np.random.RandomState(random_state)
-            rndm_idx = rs.choice(len(dataset), subsample, replace=False)
+            rndm_idx = rs.choice(len(dataset), min([subsample,len(dataset)]), replace=False)
             dataset = dataset.select(rndm_idx)
         
         if sort_by_length:

@@ -58,11 +58,11 @@ def main():
         templates = json.load(f)
 
     # Load model
-    print(f"Loading {args.model_name} model...")
+    print(f"Loading {args.model_name} model...", end=" ")
     with fabric.init_module():
         model = LanguageModelClassifier.from_model_name(args.model_name)
     # model = fabric.setup(model, move_to_device=True)
-    print("Model loaded successfully!\n")
+    print("Model loaded successfully!")
     model.eval()
 
     # Run model on each dataset
@@ -70,6 +70,7 @@ def main():
         run_model_on_dataset(model, template_args, args, random_state=args.random_state)
 
     print("Done!")
+    print()
     
 
 def run_model_on_dataset(model, template_args, args, random_state=0):
@@ -124,8 +125,6 @@ def run_model_on_dataset(model, template_args, args, random_state=0):
     
         with open(os.path.join(results_dir, f"template.json"), "w") as f:
             json.dump(template_args, f, indent=4, separators=(',', ': '))
-
-        print()
 
 
 def predict(model, dataloader, results_dir, save_embeddings=False):
