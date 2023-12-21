@@ -13,7 +13,7 @@ from llmcal.calibration import (
     QDACalibrator,
     LDACalibrator,
     DiscriminativeMahalanobisCalibrator,
-    apply_feature_map
+    init_feature_map
 )
 
 
@@ -43,7 +43,7 @@ def parse_args():
     parser.add_argument('--accelerator', type=str, default="cpu")
     parser.add_argument('--num_devices', type=int, default=1)
     parser.add_argument('--optimizer', type=str, default=None)
-    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--batch_size', type=str, default=None)
     parser.add_argument('--max_epochs', type=int, default=100)
     parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--weight_decay', type=float, default=0)
@@ -76,15 +76,19 @@ def main():
     eval_labels = eval_features.argmax(axis=-1) if "logits.npy" in args.eval_labels else np.load(args.eval_labels)
 
     # Create train - validation split
-    if args.validation_samples <= 0 or args.validation_samples > len(train_features) - args.subsample_train:
-        raise ValueError(f"Invalid number of validation samples: {args.validation_samples}. Must be in (0, {len(train_features) - args.subsample_train}].")
-    all_idx = np.arange(len(train_features))
-    validation_idx = rs.choice(all_idx, size=args.validation_samples, replace=False)
-    train_idx = np.setdiff1d(all_idx, validation_idx)
-    validation_features = train_features[validation_idx]
-    validation_labels = train_labels[validation_idx]
-    train_features = train_features[train_idx]
-    train_labels = train_labels[train_idx]
+    if args.validation_samples < 0 or args.validation_samples > len(train_features) - args.subsample_train:
+        raise ValueError(f"Invalid number of validation samples: {args.validation_samples}. Must be in [0, {len(train_features) - args.subsample_train}].")
+    elif args.validation_samples == 0:
+        validation_features = train_features.copy()
+        validation_labels = train_labels.copy()
+    else:
+        all_idx = np.arange(len(train_features))
+        validation_idx = rs.choice(all_idx, size=args.validation_samples, replace=False)
+        train_idx = np.setdiff1d(all_idx, validation_idx)
+        validation_features = train_features[validation_idx]
+        validation_labels = train_labels[validation_idx]
+        train_features = train_features[train_idx]
+        train_labels = train_labels[train_idx]
 
     # Subsample
     if args.subsample_train is not None:
@@ -114,6 +118,9 @@ def main():
     # Fit calibrator args
     if args.method == "affine":
         fit_calibrator_args = {
+            "accelerator": args.accelerator,
+            "num_devices": args.num_devices,
+            "batch_size": int(args.batch_size) if args.batch_size != "None" and args.batch_size is not None else None,
             "max_ls": args.max_ls,
             "max_epochs": args.max_epochs,
             "tolerance": args.tolerance,
@@ -127,7 +134,7 @@ def main():
             "accelerator": args.accelerator,
             "num_devices": args.num_devices,
             "optimizer": args.optimizer,
-            "batch_size": args.batch_size,
+            "batch_size": int(args.batch_size) if args.batch_size != "None" and args.batch_size is not None else None,
             "max_epochs": args.max_epochs,
             "learning_rate": args.lr,
             "weight_decay": args.weight_decay,
@@ -199,23 +206,29 @@ def obtain_calibrated_posteriors(
     fit_calibrator_args={},
 ):
     
-    train_features = apply_feature_map(torch.from_numpy(train_features), feature_map)
+    # train_features = apply_feature_map(torch.from_numpy(train_features), feature_map)
+    train_features = torch.from_numpy(train_features)
     train_labels = torch.from_numpy(train_labels)
-    validation_features = apply_feature_map(torch.from_numpy(validation_features), feature_map)
+    # validation_features = apply_feature_map(torch.from_numpy(validation_features), feature_map)
+    validation_features = torch.from_numpy(validation_features)
     validation_labels = torch.from_numpy(validation_labels)
-    eval_features = apply_feature_map(torch.from_numpy(eval_features), feature_map)
-    num_features = train_features.shape[1]
+    # eval_features = apply_feature_map(torch.from_numpy(eval_features), feature_map)
+    eval_features = torch.from_numpy(eval_features)
+    
+    # Feature map
+    feature_map = init_feature_map(train_features.shape[1], feature_map)
 
+    # Model
     if method == "affine":
-        model = AffineCalibrator(num_features, num_classes, **init_calibrator_args)
+        model = AffineCalibrator(feature_map.num_features, num_classes, **init_calibrator_args)
     elif method == "prior_adaptation":
-        model = PriorsAdaptator(num_classes, **init_calibrator_args)
+        model = PriorsAdaptator(feature_map.num_features, **init_calibrator_args)
     elif method == "qda":
-        model = QDACalibrator(num_features, num_classes, **init_calibrator_args)
+        model = QDACalibrator(feature_map.num_features, num_classes, **init_calibrator_args)
     elif method == "lda":
-        model = LDACalibrator(num_features, num_classes, **init_calibrator_args)
+        model = LDACalibrator(feature_map.num_features, num_classes, **init_calibrator_args)
     elif method == "mahalanobis":
-        model = DiscriminativeMahalanobisCalibrator(num_features, num_classes, **init_calibrator_args)
+        model = DiscriminativeMahalanobisCalibrator(feature_map.num_features, num_classes, **init_calibrator_args)
     else:
         raise ValueError(f"Calibration method {method} not supported.")
     
@@ -227,11 +240,12 @@ def obtain_calibrated_posteriors(
         train_labels,
         validation_features=validation_features,
         validation_labels=validation_labels,
+        feature_map=feature_map,
         **fit_calibrator_args
     )
     print("Done.")
     print()
-    calibrated_posteriors = model.calibrate(eval_features)
+    calibrated_posteriors = model.calibrate(eval_features, batch_size=fit_calibrator_args["batch_size"])
     calibrated_posteriors = calibrated_posteriors.numpy()
     return calibrated_posteriors
 

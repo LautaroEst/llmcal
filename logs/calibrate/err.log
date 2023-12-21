@@ -1,0 +1,597 @@
+  0%|          | 0/400 [00:00<?, ?it/s]                                         0%|          | 0/400 [00:00<?, ?it/s]                                         0%|          | 0/400 [00:00<?, ?it/s]                                         0%|          | 0/400 [00:00<?, ?it/s]                                         0%|          | 0/400 [00:00<?, ?it/s]                                       Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 244, in <module>
+    main()
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 143, in main
+    calibrated_eval_posteriors = obtain_calibrated_posteriors(
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 208, in obtain_calibrated_posteriors
+    validation_features = apply_feature_map(torch.from_numpy(validation_features), feature_map)
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/feature_maps.py", line 29, in apply_feature_map
+    return feature_map(logits)
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/feature_maps.py", line 18, in forward
+    quad_logits = torch.bmm(quad_logits, quad_logits.transpose(-1, -2)).reshape(logits.shape[0], -1)
+RuntimeError: [enforce fail at alloc_cpu.cpp:83] err == 0. DefaultCPUAllocator: can't allocate memory: you tried to allocate 40960000000 bytes. Error code 12 (Cannot allocate memory)
+  0%|          | 0/200 [00:00<?, ?it/s]  0%|          | 1/200 [00:37<2:03:55, 37.36s/it]  1%|          | 2/200 [01:10<1:55:18, 34.94s/it]  2%|▏         | 3/200 [01:44<1:53:32, 34.58s/it]  2%|▏         | 4/200 [02:21<1:55:53, 35.48s/it]  2%|▎         | 5/200 [02:58<1:56:32, 35.86s/it]  3%|▎         | 6/200 [03:30<1:51:59, 34.63s/it]  4%|▎         | 7/200 [04:06<1:52:41, 35.03s/it]  4%|▍         | 8/200 [04:42<1:52:58, 35.30s/it]  4%|▍         | 9/200 [05:18<1:53:13, 35.57s/it]  5%|▌         | 10/200 [05:53<1:52:06, 35.40s/it]  6%|▌         | 11/200 [06:27<1:50:37, 35.12s/it]  6%|▌         | 12/200 [07:01<1:49:08, 34.83s/it]  6%|▋         | 13/200 [07:37<1:49:20, 35.08s/it]  7%|▋         | 14/200 [08:10<1:47:04, 34.54s/it]  8%|▊         | 15/200 [08:44<1:45:55, 34.35s/it]  8%|▊         | 16/200 [09:16<1:42:29, 33.42s/it]  8%|▊         | 17/200 [09:48<1:40:50, 33.06s/it]  9%|▉         | 18/200 [10:18<1:38:02, 32.32s/it] 10%|▉         | 19/200 [10:49<1:36:17, 31.92s/it] 10%|█         | 20/200 [11:21<1:35:29, 31.83s/it] 10%|█         | 21/200 [11:53<1:35:12, 31.91s/it] 11%|█         | 22/200 [12:26<1:35:08, 32.07s/it] 12%|█▏        | 23/200 [13:00<1:36:43, 32.79s/it] 12%|█▏        | 24/200 [13:31<1:34:52, 32.34s/it] 12%|█▎        | 25/200 [14:03<1:34:07, 32.27s/it] 13%|█▎        | 26/200 [14:34<1:32:10, 31.79s/it] 14%|█▎        | 27/200 [15:05<1:30:48, 31.50s/it] 14%|█▍        | 28/200 [15:37<1:31:11, 31.81s/it] 14%|█▍        | 29/200 [16:09<1:29:59, 31.58s/it] 15%|█▌        | 30/200 [16:39<1:28:43, 31.32s/it] 16%|█▌        | 31/200 [17:11<1:28:24, 31.39s/it] 16%|█▌        | 32/200 [17:43<1:28:53, 31.74s/it] 16%|█▋        | 33/200 [18:14<1:27:28, 31.43s/it] 17%|█▋        | 34/200 [18:45<1:26:32, 31.28s/it] 18%|█▊        | 35/200 [19:17<1:26:56, 31.62s/it] 18%|█▊        | 36/200 [19:48<1:25:31, 31.29s/it] 18%|█▊        | 37/200 [20:18<1:24:24, 31.07s/it] 19%|█▉        | 38/200 [20:49<1:23:39, 30.99s/it] 20%|█▉        | 39/200 [21:22<1:24:46, 31.59s/it] 20%|██        | 40/200 [21:53<1:23:37, 31.36s/it] 20%|██        | 41/200 [22:25<1:23:35, 31.55s/it] 21%|██        | 42/200 [22:56<1:22:56, 31.50s/it] 22%|██▏       | 43/200 [23:28<1:22:07, 31.38s/it] 22%|██▏       | 44/200 [23:58<1:21:02, 31.17s/it] 22%|██▎       | 45/200 [24:32<1:22:32, 31.95s/it] 23%|██▎       | 46/200 [25:07<1:24:21, 32.87s/it] 24%|██▎       | 47/200 [25:38<1:22:11, 32.23s/it] 24%|██▍       | 48/200 [26:09<1:21:03, 32.00s/it] 24%|██▍       | 49/200 [26:39<1:19:14, 31.48s/it] 25%|██▌       | 50/200 [27:13<1:20:25, 32.17s/it] 26%|██▌       | 51/200 [27:45<1:19:26, 31.99s/it] 26%|██▌       | 52/200 [28:17<1:19:07, 32.08s/it] 26%|██▋       | 53/200 [28:48<1:17:57, 31.82s/it] 27%|██▋       | 54/200 [29:19<1:16:43, 31.53s/it] 28%|██▊       | 55/200 [29:50<1:15:31, 31.25s/it] 28%|██▊       | 56/200 [30:21<1:14:44, 31.14s/it] 28%|██▊       | 57/200 [30:51<1:14:00, 31.05s/it] 29%|██▉       | 58/200 [31:22<1:13:25, 31.02s/it] 30%|██▉       | 59/200 [31:53<1:12:54, 31.03s/it] 30%|███       | 60/200 [32:25<1:13:01, 31.29s/it] 30%|███       | 61/200 [32:57<1:12:26, 31.27s/it] 31%|███       | 62/200 [33:27<1:11:25, 31.06s/it] 32%|███▏      | 63/200 [33:58<1:10:30, 30.88s/it] 32%|███▏      | 64/200 [34:29<1:10:23, 31.05s/it] 32%|███▎      | 65/200 [35:01<1:10:44, 31.44s/it] 33%|███▎      | 66/200 [35:32<1:09:44, 31.22s/it] 34%|███▎      | 67/200 [36:05<1:10:10, 31.65s/it] 34%|███▍      | 68/200 [36:36<1:09:20, 31.52s/it] 34%|███▍      | 69/200 [37:06<1:08:03, 31.17s/it] 35%|███▌      | 70/200 [37:40<1:09:23, 32.03s/it] 36%|███▌      | 71/200 [38:16<1:10:52, 32.97s/it] 36%|███▌      | 72/200 [38:49<1:10:56, 33.25s/it] 36%|███▋      | 73/200 [39:25<1:11:58, 34.01s/it] 37%|███▋      | 74/200 [39:59<1:11:20, 33.97s/it] 38%|███▊      | 75/200 [40:40<1:14:54, 35.95s/it] 38%|███▊      | 76/200 [41:14<1:13:16, 35.45s/it] 38%|███▊      | 77/200 [42:01<1:19:39, 38.86s/it] 39%|███▉      | 78/200 [42:54<1:27:30, 43.04s/it] 40%|███▉      | 79/200 [43:31<1:23:17, 41.30s/it] 40%|████      | 80/200 [44:17<1:25:25, 42.71s/it] 40%|████      | 81/200 [44:51<1:19:33, 40.12s/it] 41%|████      | 82/200 [45:25<1:15:23, 38.33s/it] 42%|████▏     | 83/200 [45:59<1:12:25, 37.14s/it] 42%|████▏     | 84/200 [46:35<1:10:47, 36.62s/it] 42%|████▎     | 85/200 [47:09<1:08:46, 35.88s/it] 43%|████▎     | 86/200 [47:43<1:07:22, 35.46s/it] 44%|████▎     | 87/200 [48:17<1:05:49, 34.96s/it] 44%|████▍     | 88/200 [48:51<1:04:48, 34.72s/it] 44%|████▍     | 89/200 [49:29<1:05:42, 35.52s/it] 45%|████▌     | 90/200 [50:03<1:04:26, 35.15s/it] 46%|████▌     | 91/200 [50:38<1:03:43, 35.08s/it] 46%|████▌     | 92/200 [51:10<1:01:39, 34.25s/it] 46%|████▋     | 93/200 [51:44<1:00:57, 34.18s/it] 47%|████▋     | 94/200 [52:04<52:40, 29.82s/it]   48%|████▊     | 95/200 [52:25<47:22, 27.07s/it] 48%|████▊     | 96/200 [52:43<42:20, 24.43s/it] 48%|████▊     | 97/200 [53:01<38:45, 22.58s/it] 49%|████▉     | 98/200 [53:19<36:09, 21.27s/it] 50%|████▉     | 99/200 [53:39<35:06, 20.86s/it] 50%|█████     | 100/200 [53:59<34:07, 20.47s/it] 50%|█████     | 101/200 [54:19<33:21, 20.22s/it] 51%|█████     | 102/200 [54:38<32:44, 20.04s/it] 52%|█████▏    | 103/200 [54:58<32:09, 19.89s/it] 52%|█████▏    | 104/200 [55:16<31:04, 19.42s/it] 52%|█████▎    | 105/200 [55:34<30:14, 19.10s/it] 53%|█████▎    | 106/200 [55:54<30:08, 19.24s/it] 54%|█████▎    | 107/200 [56:14<30:06, 19.42s/it] 54%|█████▍    | 108/200 [56:33<29:54, 19.50s/it] 55%|█████▍    | 109/200 [56:53<29:35, 19.51s/it] 55%|█████▌    | 110/200 [57:13<29:18, 19.53s/it] 56%|█████▌    | 111/200 [57:32<28:54, 19.49s/it] 56%|█████▌    | 112/200 [57:52<28:45, 19.61s/it] 56%|█████▋    | 113/200 [58:19<31:42, 21.86s/it] 57%|█████▋    | 114/200 [58:50<35:19, 24.64s/it] 57%|█████▊    | 115/200 [59:17<35:56, 25.37s/it] 58%|█████▊    | 116/200 [59:45<36:36, 26.15s/it] 58%|█████▊    | 117/200 [1:00:08<34:56, 25.26s/it] 59%|█████▉    | 118/200 [1:00:28<32:26, 23.73s/it] 60%|█████▉    | 119/200 [1:00:49<30:54, 22.89s/it] 60%|██████    | 120/200 [1:01:11<30:02, 22.53s/it] 60%|██████    | 121/200 [1:01:30<28:10, 21.40s/it] 61%|██████    | 122/200 [1:01:49<26:47, 20.61s/it] 62%|██████▏   | 123/200 [1:02:08<26:03, 20.30s/it] 62%|██████▏   | 124/200 [1:02:29<25:50, 20.40s/it] 62%|██████▎   | 125/200 [1:02:48<25:12, 20.17s/it] 63%|██████▎   | 126/200 [1:03:08<24:41, 20.02s/it] 64%|██████▎   | 127/200 [1:03:28<24:15, 19.93s/it] 64%|██████▍   | 128/200 [1:03:46<23:20, 19.46s/it] 64%|██████▍   | 129/200 [1:04:05<22:38, 19.14s/it] 65%|██████▌   | 130/200 [1:04:23<22:07, 18.97s/it] 66%|██████▌   | 131/200 [1:04:43<22:01, 19.16s/it] 66%|██████▌   | 132/200 [1:05:01<21:26, 18.92s/it] 66%|██████▋   | 133/200 [1:05:19<20:55, 18.74s/it] 67%|██████▋   | 134/200 [1:05:39<20:55, 19.02s/it] 68%|██████▊   | 135/200 [1:05:59<20:49, 19.23s/it] 68%|██████▊   | 136/200 [1:06:19<20:40, 19.38s/it] 68%|██████▊   | 137/200 [1:06:38<20:29, 19.51s/it] 69%|██████▉   | 138/200 [1:06:58<20:12, 19.55s/it] 70%|██████▉   | 139/200 [1:07:16<19:29, 19.18s/it] 70%|███████   | 140/200 [1:07:34<18:52, 18.87s/it] 70%|███████   | 141/200 [1:07:51<17:59, 18.30s/it] 71%|███████   | 142/200 [1:08:08<17:19, 17.92s/it] 72%|███████▏  | 143/200 [1:08:25<16:45, 17.64s/it] 72%|███████▏  | 144/200 [1:08:43<16:17, 17.46s/it] 72%|███████▎  | 145/200 [1:08:59<15:50, 17.28s/it] 73%|███████▎  | 146/200 [1:09:16<15:29, 17.21s/it] 74%|███████▎  | 147/200 [1:09:33<15:08, 17.15s/it] 74%|███████▍  | 148/200 [1:09:50<14:48, 17.09s/it] 74%|███████▍  | 149/200 [1:10:07<14:27, 17.01s/it] 75%|███████▌  | 150/200 [1:10:24<14:08, 16.97s/it] 76%|███████▌  | 151/200 [1:10:41<13:51, 16.97s/it] 76%|███████▌  | 152/200 [1:10:58<13:35, 17.00s/it] 76%|███████▋  | 153/200 [1:11:15<13:17, 16.96s/it] 77%|███████▋  | 154/200 [1:11:32<13:00, 16.98s/it] 78%|███████▊  | 155/200 [1:11:49<12:43, 16.97s/it] 78%|███████▊  | 156/200 [1:12:06<12:25, 16.94s/it] 78%|███████▊  | 157/200 [1:12:23<12:08, 16.93s/it] 79%|███████▉  | 158/200 [1:12:41<12:03, 17.22s/it] 80%|███████▉  | 159/200 [1:12:58<11:42, 17.15s/it] 80%|████████  | 160/200 [1:13:15<11:24, 17.12s/it] 80%|████████  | 161/200 [1:13:32<11:04, 17.04s/it] 81%|████████  | 162/200 [1:13:49<10:47, 17.03s/it] 82%|████████▏ | 163/200 [1:14:05<10:29, 17.01s/it] 82%|████████▏ | 164/200 [1:14:24<10:25, 17.39s/it] 82%|████████▎ | 165/200 [1:14:41<10:04, 17.28s/it] 83%|████████▎ | 166/200 [1:14:58<09:42, 17.14s/it] 84%|████████▎ | 167/200 [1:15:15<09:23, 17.09s/it] 84%|████████▍ | 168/200 [1:15:32<09:05, 17.06s/it] 84%|████████▍ | 169/200 [1:15:49<08:48, 17.06s/it] 85%|████████▌ | 170/200 [1:16:09<08:57, 17.92s/it] 86%|████████▌ | 171/200 [1:16:30<09:07, 18.88s/it] 86%|████████▌ | 172/200 [1:16:48<08:44, 18.74s/it] 86%|████████▋ | 173/200 [1:17:07<08:23, 18.65s/it] 87%|████████▋ | 174/200 [1:17:26<08:13, 18.98s/it] 88%|████████▊ | 175/200 [1:17:49<08:20, 20.01s/it] 88%|████████▊ | 176/200 [1:18:12<08:22, 20.96s/it] 88%|████████▊ | 177/200 [1:18:29<07:39, 19.96s/it] 89%|████████▉ | 178/200 [1:18:49<07:17, 19.90s/it] 90%|████████▉ | 179/200 [1:19:09<06:56, 19.83s/it] 90%|█████████ | 180/200 [1:19:29<06:37, 19.87s/it] 90%|█████████ | 181/200 [1:19:49<06:16, 19.82s/it] 91%|█████████ | 182/200 [1:20:08<05:56, 19.79s/it] 92%|█████████▏| 183/200 [1:20:25<05:19, 18.79s/it] 92%|█████████▏| 184/200 [1:20:41<04:50, 18.15s/it] 92%|█████████▎| 185/200 [1:20:58<04:25, 17.69s/it] 93%|█████████▎| 186/200 [1:21:15<04:03, 17.40s/it] 94%|█████████▎| 187/200 [1:21:31<03:43, 17.19s/it] 94%|█████████▍| 188/200 [1:21:48<03:23, 16.99s/it] 94%|█████████▍| 189/200 [1:22:05<03:05, 16.87s/it] 95%|█████████▌| 190/200 [1:22:21<02:47, 16.77s/it] 96%|█████████▌| 191/200 [1:22:38<02:30, 16.76s/it] 96%|█████████▌| 192/200 [1:22:55<02:15, 16.97s/it] 96%|█████████▋| 193/200 [1:23:12<01:58, 16.86s/it] 97%|█████████▋| 194/200 [1:23:29<01:40, 16.79s/it] 98%|█████████▊| 195/200 [1:23:45<01:23, 16.77s/it] 98%|█████████▊| 196/200 [1:24:02<01:06, 16.74s/it] 98%|█████████▊| 197/200 [1:24:19<00:50, 16.70s/it] 99%|█████████▉| 198/200 [1:24:35<00:33, 16.67s/it]100%|█████████▉| 199/200 [1:24:53<00:16, 16.94s/it]100%|██████████| 200/200 [1:25:11<00:00, 17.47s/it]                                                   WARNING: Calibration did not converge after 200 epochs
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 10, in <module>
+    from .base import apply_feature_map
+ImportError: cannot import name 'apply_feature_map' from partially initialized module 'llmcal.calibration.base' (most likely due to a circular import) (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)

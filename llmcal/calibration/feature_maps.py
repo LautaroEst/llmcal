@@ -4,14 +4,27 @@ import torch.nn as nn
 
 class BaseFeatureMap(nn.Module):
 
-    def __init__(self):
+    def __init__(self, num_features):
         super().__init__()
+        self.num_features = num_features
 
     def forward(self, logits):
         raise NotImplementedError
 
 
+class IdentityFeatureMap(BaseFeatureMap):
+    
+        def __init__(self, num_features):
+            super().__init__(num_features)
+    
+        def forward(self, logits):
+            return logits
+
+
 class QuadraticFeatureMap(BaseFeatureMap):
+
+    def __init__(self, num_features):
+        super().__init__(num_features * (num_features + 1))
 
     def forward(self, logits):
         quad_logits = logits.unsqueeze(-1)
@@ -19,11 +32,11 @@ class QuadraticFeatureMap(BaseFeatureMap):
         return torch.cat([quad_logits, logits], dim=-1)
 
 
-def apply_feature_map(logits, feature_map):
+def init_feature_map(num_features, feature_map):
     if feature_map is None:
-        feature_map = lambda x: x
+        feature_map = IdentityFeatureMap(num_features)
     elif feature_map == "quadratic":
-        feature_map = QuadraticFeatureMap()
+        feature_map = QuadraticFeatureMap(num_features)
     else:
         raise ValueError(f"Invalid feature map: {feature_map}")
-    return feature_map(logits)
+    return feature_map

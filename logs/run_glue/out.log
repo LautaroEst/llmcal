@@ -1,0 +1,154 @@
+======================================
+>>> Loading gpt2-xl model...
+Model loaded successfully!
+
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/cola
+	* Split: train
+	* Num samples: 4000
+	* Template: 0_shot
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/cola
+	* Split: validation
+	* Num samples: None
+	* Template: 0_shot
+
+Done!
+======================================
+
+
+
+======================================
+>>> Loading gpt2-xl model...
+Model loaded successfully!
+
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/sst2
+	* Split: train
+	* Num samples: 4000
+	* Template: 0_shot
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/sst2
+	* Split: validation
+	* Num samples: None
+	* Template: 0_shot
+
+Done!
+======================================
+
+
+
+======================================
+>>> Loading gpt2-xl model...
+Model loaded successfully!
+
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/mrpc
+	* Split: train
+	* Num samples: 4000
+	* Template: 0_shot
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/mrpc
+	* Split: validation
+	* Num samples: None
+	* Template: 0_shot
+
+Done!
+======================================
+
+
+
+======================================
+>>> Loading gpt2-xl model...
+Model loaded successfully!
+
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/mnli
+	* Split: train
+	* Num samples: 4000
+	* Template: 0_shot
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/mnli
+	* Split: validation
+	* Num samples: None
+	* Template: 0_shot
+
+Done!
+======================================
+
+
+
+======================================
+>>> Loading gpt2-xl model...
+Model loaded successfully!
+
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/qnli
+	* Split: train
+	* Num samples: 4000
+	* Template: 0_shot
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/qnli
+	* Split: validation
+	* Num samples: None
+	* Template: 0_shot
+
+Done!
+======================================
+
+
+
+======================================
+>>> Loading gpt2-xl model...
+Model loaded successfully!
+
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/rte
+	* Split: train
+	* Num samples: 4000
+	* Template: 0_shot
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/rte
+	* Split: validation
+	* Num samples: None
+	* Template: 0_shot
+
+Done!
+======================================
+
+
+
+======================================
+>>> Loading gpt2-xl model...
+Model loaded successfully!
+
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/wnli
+	* Split: train
+	* Num samples: 4000
+	* Template: 0_shot
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/wnli
+	* Split: validation
+	* Num samples: None
+	* Template: 0_shot
+
+Done!
+======================================
+
+
+

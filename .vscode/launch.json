@@ -65,6 +65,37 @@
                 "--output_dir", "results/calibrate_features/gpt2/results-run_dataset_on_model-gpt2-tony_zhao-sst2-train--results-run_dataset_on_model-gpt2-tony_zhao-sst2-test--100",
                 "--random_state", "83629",
             ]
+        },
+        {
+            "name": "calibrate_embeddings_featuremap",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/calibrate_features.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--train_features", "results/run_dataset_on_model/gpt2-xl/glue/sst2/train/0_shot/embeddings.npy",
+                "--train_labels", "results/run_dataset_on_model/gpt2-xl/glue/sst2/train/0_shot/labels.npy",
+                "--eval_features", "results/run_dataset_on_model/gpt2-xl/glue/sst2/validation/0_shot/embeddings.npy",
+                "--eval_labels", "results/run_dataset_on_model/gpt2-xl/glue/sst2/validation/0_shot/labels.npy",
+                "--subsample_train", "50",
+                "--subsample_eval", "None",
+                "--validation_samples", "0",
+                "--num_classes", "2",
+                "--method", "affine",
+                "--feature_map", "quadratic",
+                "--alpha", "matrix",
+                "--bias",
+                "--loss", "log-loss",
+                "--batch_size", "64",
+                "--accelerator", "cpu",
+                "--num_devices", "1",
+                "--max_epochs", "200",
+                "--max_ls", "40",
+                "--tolerance", "0.001",
+                "--output_dir", "results/calibrate_features/gpt2-xl/glue/sst2/0_shot--50",
+                "--random_state", "21788"
+            ]
         }
     ]
 }

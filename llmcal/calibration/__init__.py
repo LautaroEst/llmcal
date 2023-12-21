@@ -5,4 +5,4 @@ from .mahalanobis import (
     LDACalibrator,
     DiscriminativeMahalanobisCalibrator
 )
-from .feature_maps import apply_feature_map
+from .feature_maps import init_feature_map

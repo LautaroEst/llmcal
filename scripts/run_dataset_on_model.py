@@ -58,18 +58,20 @@ def main():
         templates = json.load(f)
 
     # Load model
-    print(f"Loading {args.model_name} model...", end=" ")
+    print( "======================================")
+    print(f">>> Loading {args.model_name} model...")
     with fabric.init_module():
         model = LanguageModelClassifier.from_model_name(args.model_name)
     # model = fabric.setup(model, move_to_device=True)
-    print("Model loaded successfully!")
+    print("Model loaded successfully!\n")
     model.eval()
 
     # Run model on each dataset
     for template_args in templates:
         run_model_on_dataset(model, template_args, args, random_state=args.random_state)
 
-    print("Done!")
+    print("\nDone!")
+    print( "======================================\n\n")
     print()
     
 
@@ -82,12 +84,12 @@ def run_model_on_dataset(model, template_args, args, random_state=0):
     # Run model on dataset
     for split, num_samples in zip(args.splits, args.num_samples):
 
-        print(f"Running model on dataset...")
-        print(f"Model: {args.model_name}")
-        print(f"Dataset: {args.dataset_name}")
-        print(f"Split: {split}")
-        print(f"Num samples: {num_samples}")
-        print(f"Template: {template_id}")
+        print(f">>> Running model on dataset...")
+        print(f"\t* Model: {args.model_name}")
+        print(f"\t* Dataset: {args.dataset_name}")
+        print(f"\t* Split: {split}")
+        print(f"\t* Num samples: {num_samples}")
+        print(f"\t* Template: {template_id}")
 
         results_dir = os.path.join(
             args.output_dir, 

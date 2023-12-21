@@ -4,10 +4,10 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, RandomSampler, DataLoader
 from torch.optim import Adam, LBFGS
 import lightning as L
-
 from logging import getLogger
-
 from tqdm import tqdm
+
+from .feature_maps import init_feature_map
 
 class BaseCalibrator(nn.Module):
 
@@ -20,16 +20,25 @@ class BaseCalibrator(nn.Module):
         self.num_classes = kwargs["num_classes"]
         self.generator = generator
         self.logger = getLogger(__name__)
+        self.feature_mape = None
 
     def forward(self, features):
         raise NotImplementedError
 
-    def calibrate(self, features):
+    def calibrate(self, features, batch_size=None):
+        if batch_size is None:
+            batch_size = features.shape[0]
         self.eval()
         with torch.no_grad():
-            return torch.log_softmax(self(features), dim=1)
+            logits = []
+            for batch in range(0, len(features), batch_size):
+                batch_features = features[batch:batch+batch_size]
+                batch_logits = self(self.feature_map(batch_features))
+                logits.append(batch_logits)
+            logits = torch.cat(logits, dim=0)
+        return torch.log_softmax(logits, dim=1)
 
-    def fit(self, train_features, train_labels, validation_features, validation_labels, **kwargs):
+    def fit(self, train_features, train_labels, validation_features, validation_labels, feature_map, **kwargs):
         raise NotImplementedError
 
     def __repr__(self):
@@ -42,17 +51,27 @@ class SGDCalibrator(BaseCalibrator):
         self, 
         train_features, 
         train_labels,
-        validation_features,
-        validation_labels,
+        validation_features=None,
+        validation_labels=None,
+        feature_map=None,
         accelerator="cpu",
         num_devices=1,
         optimizer=None,
-        batch_size=32,
+        batch_size=None,
         max_epochs=100,
         learning_rate=0.01,
         weight_decay=0,
         tolerance=1e-4,
     ):
+
+        if (validation_features is None and validation_labels is not None) or (validation_features is not None and validation_labels is None):
+            raise ValueError("Validation features and labels must be both None or both not None")
+        elif validation_features is None or validation_labels is None:
+            validation_features = train_features
+            validation_labels = train_labels
+
+        self.feature_map = feature_map
+
         fabric = L.Fabric(accelerator=accelerator, devices=num_devices)
         fabric.launch()
         if optimizer is None or optimizer == "Adam":
@@ -71,7 +90,7 @@ class SGDCalibrator(BaseCalibrator):
             model.train()
             for batch_features, batch_labels in train_dataloader:
                 optimizer.zero_grad()
-                train_loss = self.loss(model(batch_features), batch_labels)
+                train_loss = self.loss(model(feature_map(batch_features)), batch_labels)
                 fabric.backward(train_loss)
                 optimizer.step()
 
@@ -80,7 +99,7 @@ class SGDCalibrator(BaseCalibrator):
             validation_loss = 0
             with torch.no_grad():
                 for batch_features, batch_labels in validation_dataloader:
-                    validation_loss += self.loss(model(batch_features), batch_labels).item()
+                    validation_loss += self.loss(model(feature_map(batch_features)), batch_labels).item()
             validation_loss /= len(validation_dataloader)
             if abs(validation_loss - last_epoch_val_loss) < tolerance:
                 break
@@ -90,7 +109,7 @@ class SGDCalibrator(BaseCalibrator):
             self.logger.warning(f"WARNING: Calibration did not converge after {max_epochs} epochs")
         return self
 
-    def _prepare_dataloader(self, features, labels, fabric, batch_size=32):
+    def _prepare_dataloader(self, features, labels, fabric, batch_size=None):
         dataset = TensorDataset(features, labels)
         sampler = RandomSampler(
             dataset,
@@ -98,6 +117,9 @@ class SGDCalibrator(BaseCalibrator):
             num_samples=features.shape[0],
             generator=self.generator
         )
+
+        if batch_size is None:
+            batch_size = features.shape[0]
         dataloader = fabric.setup_dataloaders(
             DataLoader(
                 dataset,
@@ -117,22 +139,64 @@ class LBFGSBCalibrator(BaseCalibrator):
         self, 
         train_features, 
         train_labels, 
-        validation_features,
-        validation_labels,
+        validation_features=None,
+        validation_labels=None,
+        feature_map=None,
+        accelerator="cpu",
+        num_devices=1,
+        batch_size=None,
         max_ls=40,
         max_epochs=100,
         tolerance=1e-4
     ):
+        
+        if (validation_features is None and validation_labels is not None) or (validation_features is not None and validation_labels is None):
+            raise ValueError("Validation features and labels must be both None or both not None")
+        elif validation_features is None or validation_labels is None:
+            validation_features = train_features
+            validation_labels = train_labels
+
+        fabric = L.Fabric(accelerator=accelerator, devices=num_devices)
+        fabric.launch()
 
         optimizer = LBFGS(
             self.parameters(),
             max_iter=max_ls
         )
+        model, optimizer = fabric.setup(self, optimizer)
+
+        if batch_size is None:
+            batch_size = train_features.shape[0]
+        
+        self.feature_map = feature_map
+
+        train_dataloader, validation_dataloader = fabric.setup_dataloaders(
+            DataLoader(
+                TensorDataset(train_features, train_labels),
+                batch_size=batch_size,
+                shuffle=False
+            ),
+            DataLoader(
+                TensorDataset(validation_features, validation_labels),
+                batch_size=batch_size,
+                shuffle=False
+            ),
+            use_distributed_sampler=True,
+            move_to_device=True
+        )
 
         def closure():
             optimizer.zero_grad()
-            loss = self.loss(self(train_features), train_labels)
-            loss.backward()
+            logits = []
+            labels = []
+            for batch_features, batch_labels in train_dataloader:
+                batch_logits = model(feature_map(batch_features))
+                logits.append(batch_logits)
+                labels.append(batch_labels)
+            logits = torch.cat(logits, dim=0)
+            labels = torch.cat(labels, dim=0)
+            loss = self.loss(logits, labels)
+            fabric.backward(loss)
             return loss
     
         last_epoch_val_loss = float("inf")
@@ -144,11 +208,20 @@ class LBFGSBCalibrator(BaseCalibrator):
             # Validation
             self.eval()
             with torch.no_grad():
-                validation_loss = self.loss(self(validation_features), validation_labels)
+                logits = []
+                labels = []
+                for batch_features, batch_labels in validation_dataloader:
+                    batch_logits = model(feature_map(batch_features))
+                    logits.append(batch_logits)
+                    labels.append(batch_labels)
+                logits = torch.cat(logits, dim=0)
+                labels = torch.cat(labels, dim=0)
+                validation_loss = self.loss(logits, validation_labels).item()
             if abs(validation_loss - last_epoch_val_loss) < tolerance:
                 break
             last_epoch_val_loss = validation_loss
         
         if epoch == max_epochs - 1:
             self.logger.warning(f"WARNING: Calibration did not converge after {max_epochs} epochs")
+        return self
 
