@@ -47,10 +47,11 @@ class QDACalibrator(BaseCalibrator, MahalanobisMixin):
         ], dim=0).T
         return logits
 
-    def fit(self, features, labels, **kwargs):
-        num_samples = features.shape[0]
+    def fit(self, train_features, train_labels, validation_features=None, validation_labels=None, feature_map=None, **kwargs):
+        self.feature_map = feature_map
+        num_samples = train_features.shape[0]
         for class_idx in range(self.num_classes):
-            class_features = features[labels == class_idx]
+            class_features = train_features[train_labels == class_idx]
             self.means[class_idx].data = torch.mean(class_features, dim=0)
             self.covariances[class_idx].data = torch.cov(class_features.T)
             self.priors.data[class_idx] = torch.tensor(class_features.shape[0] / num_samples)
@@ -88,11 +89,12 @@ class LDACalibrator(BaseCalibrator, MahalanobisMixin):
         s, P = torch.linalg.eigh(self.covariance)
         return P * (1 / s) @ P.T
 
-    def fit(self, features, labels, **kwargs):
-        num_samples = features.shape[0]
+    def fit(self, train_features, train_labels, validation_features=None, validation_labels=None, feature_map=None, **kwargs):
+        self.feature_map = feature_map
+        num_samples = train_features.shape[0]
         class_covariances = []
         for class_idx in range(self.num_classes):
-            class_features = features[labels == class_idx]
+            class_features = train_features[train_labels == class_idx]
             self.means.data[class_idx] = torch.mean(class_features, dim=0)
             class_covariances.append(torch.cov(class_features.T) * (class_features.shape[0] - 1))
             self.priors.data[class_idx] = torch.tensor(class_features.shape[0] / num_samples)

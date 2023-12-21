@@ -51,19 +51,19 @@ class AffineCalibrator(LBFGSBCalibrator):
         else:
             raise ValueError(f"Invalid loss: {loss}")
         
-    @property
-    def _alpha(self):
+    def _get_alpha(self, device):
         if self._alpha_shape == "vector":
             return torch.diag(self.alpha)
         elif self._alpha_shape == "scalar":
-            return torch.eye(self.num_classes) * self.alpha
+            return torch.eye(self.num_classes, device=device) * self.alpha
         elif self._alpha_shape == "matrix":
             return self.alpha
         elif self._alpha_shape == "None":
-            return torch.eye(self.num_classes)
+            return torch.eye(self.num_classes, device=device)
 
     def forward(self, features):
-        logits = features @ self._alpha.T + self.bias
+        alpha = self._get_alpha(features.device)
+        logits = features @ alpha.T + self.bias
         return logits
 
 

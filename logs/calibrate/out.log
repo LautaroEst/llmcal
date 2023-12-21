@@ -24,7 +24,8 @@ Number of samples: 50
 Done.
 
 Training calibration model...
+Model: AffineCalibrator(num_features=1600, num_classes=2, alpha=matrix, bias=True, loss=log-loss, random_state=21788)
+Number of samples: 50
+Training calibration model...
 Model: DiscriminativeMahalanobisCalibrator(num_features=1600, num_classes=2, random_state=21788)
 Number of samples: 50
-Done.
-

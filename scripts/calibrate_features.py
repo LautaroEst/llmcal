@@ -116,30 +116,25 @@ def main():
         raise ValueError(f"Calibration method {args.method} not supported.")
     
     # Fit calibrator args
+    fit_calibrator_args = {
+        "accelerator": args.accelerator,
+        "num_devices": args.num_devices,
+        "batch_size": int(args.batch_size) if args.batch_size != "None" and args.batch_size is not None else None
+    }
     if args.method == "affine":
-        fit_calibrator_args = {
-            "accelerator": args.accelerator,
-            "num_devices": args.num_devices,
-            "batch_size": int(args.batch_size) if args.batch_size != "None" and args.batch_size is not None else None,
-            "max_ls": args.max_ls,
-            "max_epochs": args.max_epochs,
-            "tolerance": args.tolerance,
-        }
+        fit_calibrator_args["max_ls"] = args.max_ls
+        fit_calibrator_args["max_epochs"] = args.max_epochs
+        fit_calibrator_args["tolerance"] = args.tolerance
     elif args.method == "prior_adaptation":
-        fit_calibrator_args = {}
+        pass
     elif args.method in ["qda", "lda"]:
-        fit_calibrator_args = {}
+        pass
     elif args.method == "mahalanobis":
-        fit_calibrator_args = {
-            "accelerator": args.accelerator,
-            "num_devices": args.num_devices,
-            "optimizer": args.optimizer,
-            "batch_size": int(args.batch_size) if args.batch_size != "None" and args.batch_size is not None else None,
-            "max_epochs": args.max_epochs,
-            "learning_rate": args.lr,
-            "weight_decay": args.weight_decay,
-            "tolerance": args.tolerance,
-        }
+        fit_calibrator_args["optimizer"] = args.optimizer
+        fit_calibrator_args["max_epochs"] = args.max_epochs
+        fit_calibrator_args["learning_rate"] = args.lr
+        fit_calibrator_args["weight_decay"] = args.weight_decay
+        fit_calibrator_args["tolerance"] = args.tolerance
     else:
         raise ValueError(f"Calibration method {args.method} not supported.")
 
@@ -245,8 +240,13 @@ def obtain_calibrated_posteriors(
     )
     print("Done.")
     print()
-    calibrated_posteriors = model.calibrate(eval_features, batch_size=fit_calibrator_args["batch_size"])
-    calibrated_posteriors = calibrated_posteriors.numpy()
+    calibrated_posteriors = model.calibrate(
+        eval_features, 
+        batch_size=fit_calibrator_args["batch_size"], 
+        accelerator=fit_calibrator_args["accelerator"], 
+        num_devices=fit_calibrator_args["num_devices"]
+    )
+    calibrated_posteriors = calibrated_posteriors.cpu().numpy()
     return calibrated_posteriors
 
 

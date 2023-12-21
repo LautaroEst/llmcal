@@ -20,20 +20,37 @@ class BaseCalibrator(nn.Module):
         self.num_classes = kwargs["num_classes"]
         self.generator = generator
         self.logger = getLogger(__name__)
-        self.feature_mape = None
+        self.feature_map = None
 
     def forward(self, features):
         raise NotImplementedError
 
-    def calibrate(self, features, batch_size=None):
+    def calibrate(self, features, batch_size=None, accelerator="cpu", num_devices=1):
         if batch_size is None:
             batch_size = features.shape[0]
-        self.eval()
+
+        fabric = L.Fabric(accelerator=accelerator, devices=num_devices)
+        fabric.launch()
+
+        fake_labels = torch.zeros(features.shape[0], dtype=torch.long)
+        dataset = TensorDataset(features, fake_labels)
+        dataloader = fabric.setup_dataloaders(
+            DataLoader(
+                dataset,
+                batch_size=batch_size,
+                shuffle=False,
+            ),
+            use_distributed_sampler=True,
+            move_to_device=True
+        )
+        model = fabric.setup(self)
+        ft_map = fabric.setup(self.feature_map)
+
+        model.eval()
         with torch.no_grad():
             logits = []
-            for batch in range(0, len(features), batch_size):
-                batch_features = features[batch:batch+batch_size]
-                batch_logits = self(self.feature_map(batch_features))
+            for batch, _ in dataloader:
+                batch_logits = model(ft_map(batch))
                 logits.append(batch_logits)
             logits = torch.cat(logits, dim=0)
         return torch.log_softmax(logits, dim=1)
@@ -79,6 +96,7 @@ class SGDCalibrator(BaseCalibrator):
         else:
             raise ValueError(f"Invalid optimizer: {optimizer}")
         model, optimizer = fabric.setup(self, optimizer)
+        ft_map = fabric.setup(feature_map)
 
         train_dataloader = self._prepare_dataloader(train_features, train_labels, fabric, batch_size=batch_size)
         validation_dataloader = self._prepare_dataloader(validation_features, validation_labels, fabric, batch_size=batch_size)
@@ -90,7 +108,7 @@ class SGDCalibrator(BaseCalibrator):
             model.train()
             for batch_features, batch_labels in train_dataloader:
                 optimizer.zero_grad()
-                train_loss = self.loss(model(feature_map(batch_features)), batch_labels)
+                train_loss = self.loss(model(ft_map(batch_features)), batch_labels)
                 fabric.backward(train_loss)
                 optimizer.step()
 
@@ -99,7 +117,7 @@ class SGDCalibrator(BaseCalibrator):
             validation_loss = 0
             with torch.no_grad():
                 for batch_features, batch_labels in validation_dataloader:
-                    validation_loss += self.loss(model(feature_map(batch_features)), batch_labels).item()
+                    validation_loss += self.loss(model(ft_map(batch_features)), batch_labels).item()
             validation_loss /= len(validation_dataloader)
             if abs(validation_loss - last_epoch_val_loss) < tolerance:
                 break
@@ -164,6 +182,7 @@ class LBFGSBCalibrator(BaseCalibrator):
             max_iter=max_ls
         )
         model, optimizer = fabric.setup(self, optimizer)
+        ft_map = fabric.setup(feature_map)
 
         if batch_size is None:
             batch_size = train_features.shape[0]
@@ -190,7 +209,7 @@ class LBFGSBCalibrator(BaseCalibrator):
             logits = []
             labels = []
             for batch_features, batch_labels in train_dataloader:
-                batch_logits = model(feature_map(batch_features))
+                batch_logits = model(ft_map(batch_features))
                 logits.append(batch_logits)
                 labels.append(batch_labels)
             logits = torch.cat(logits, dim=0)
@@ -211,12 +230,12 @@ class LBFGSBCalibrator(BaseCalibrator):
                 logits = []
                 labels = []
                 for batch_features, batch_labels in validation_dataloader:
-                    batch_logits = model(feature_map(batch_features))
+                    batch_logits = model(ft_map(batch_features))
                     logits.append(batch_logits)
                     labels.append(batch_labels)
                 logits = torch.cat(logits, dim=0)
                 labels = torch.cat(labels, dim=0)
-                validation_loss = self.loss(logits, validation_labels).item()
+                validation_loss = self.loss(logits, labels).item()
             if abs(validation_loss - last_epoch_val_loss) < tolerance:
                 break
             last_epoch_val_loss = validation_loss
