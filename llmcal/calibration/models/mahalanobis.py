@@ -1,12 +1,12 @@
 
-from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from .base import BaseCalibrator, SGDCalibrator
-
+from ..base import BaseCalibrator
+from ..optimization_mixins import SGDMixin
+from ..feature_maps import init_feature_map
 
 class MahalanobisMixin:
 
@@ -20,13 +20,7 @@ class QDACalibrator(BaseCalibrator, MahalanobisMixin):
     
     def __init__(self, num_features, num_classes, random_state=None):
 
-        self.arguments = OrderedDict([
-            ("num_features", num_features), 
-            ("num_classes", num_classes), 
-            ("random_state", random_state)
-        ])
-        super().__init__(**self.arguments)
-
+        super().__init__(num_features=num_features, num_classes=num_classes, random_state=random_state)
         self.means = nn.ParameterList(
             [nn.Parameter(torch.zeros(num_features)) for _ in range(num_classes)]
         )
@@ -61,13 +55,7 @@ class LDACalibrator(BaseCalibrator, MahalanobisMixin):
 
     def __init__(self, num_features, num_classes, random_state=None):
         
-        self.arguments = OrderedDict([
-            ("num_features", num_features), 
-            ("num_classes", num_classes), 
-            ("random_state", random_state)
-        ])
-        super().__init__(**self.arguments)
-        
+        super().__init__(num_features=num_features, num_classes=num_classes, random_state=random_state)
         self.means = nn.Parameter(torch.zeros(num_classes,num_features))
         self.means.requires_grad_(False)
 
@@ -102,17 +90,11 @@ class LDACalibrator(BaseCalibrator, MahalanobisMixin):
         return self
 
 
-class DiscriminativeMahalanobisCalibrator(SGDCalibrator, MahalanobisMixin):
+class DiscriminativeMahalanobisCalibrator(BaseCalibrator, SGDMixin, MahalanobisMixin):
     
     def __init__(self, num_features, num_classes, random_state=None):
         
-        self.arguments = OrderedDict([
-            ("num_features", num_features), 
-            ("num_classes", num_classes), 
-            ("random_state", random_state)
-        ])
-        super().__init__(**self.arguments)
-
+        super().__init__(num_features=num_features, num_classes=num_classes, random_state=random_state)
         self.means = nn.ParameterList(
             [nn.Parameter(torch.randn(num_features,generator=self.generator)) for _ in range(num_classes)]
         )
@@ -140,9 +122,55 @@ class DiscriminativeMahalanobisCalibrator(SGDCalibrator, MahalanobisMixin):
         return logits
     
         
+class DiscriminativeMahalanobisCalibratorWithFeatureMap(BaseCalibrator, SGDMixin, MahalanobisMixin):
+
+    def __init__(
+        self, 
+        feature_map: str,
+        **kwargs
+    ):
+        super().__init__(num_features=kwargs["num_features"], num_classes=kwargs["num_classes"], random_state=kwargs["random_state"])
+        self.feature_map = init_feature_map(kwargs["num_features"], feature_map)
+        self.calibrator = DiscriminativeMahalanobisCalibrator(**kwargs)
+
+    def forward(self, features):
+        logits = self.calibrator(self.feature_map(features))
+        return logits
+
+    def loss(self, logits, labels):
+        loss = self.calibrator.loss(logits, labels)
+        return loss
 
 
-            
+class QDACalibratorWithFeatureMap(BaseCalibrator, MahalanobisMixin):
+    
+        def __init__(
+            self, 
+            feature_map: str,
+            **kwargs
+        ):
+            super().__init__(num_features=kwargs["num_features"], num_classes=kwargs["num_classes"], random_state=kwargs["random_state"])
+            self.feature_map = init_feature_map(kwargs["num_features"], feature_map)
+            self.calibrator = QDACalibrator(**kwargs)
+    
+        def forward(self, features):
+            logits = self.calibrator(self.feature_map(features))
+            return logits
 
+
+class LDACalibratorWithFeatureMap(BaseCalibrator, MahalanobisMixin):
+    
+        def __init__(
+            self, 
+            feature_map: str,
+            **kwargs
+        ):
+            super().__init__(num_features=kwargs["num_features"], num_classes=kwargs["num_classes"], random_state=kwargs["random_state"])
+            self.feature_map = init_feature_map(kwargs["num_features"], feature_map)
+            self.calibrator = LDACalibrator(**kwargs)
+    
+        def forward(self, features):
+            logits = self.calibrator(self.feature_map(features))
+            return logits
     
         

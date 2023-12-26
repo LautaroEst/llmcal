@@ -14,11 +14,11 @@ class BaseFeatureMap(nn.Module):
 
 class IdentityFeatureMap(BaseFeatureMap):
     
-        def __init__(self, num_features):
-            super().__init__(num_features)
-    
-        def forward(self, logits):
-            return logits
+    def __init__(self, num_features):
+        super().__init__(num_features)
+
+    def forward(self, logits):
+        return logits
 
 
 class QuadraticFeatureMap(BaseFeatureMap):
@@ -33,7 +33,7 @@ class QuadraticFeatureMap(BaseFeatureMap):
 
 
 def init_feature_map(num_features, feature_map):
-    if feature_map is None:
+    if feature_map is None or feature_map == "identity":
         feature_map = IdentityFeatureMap(num_features)
     elif feature_map == "quadratic":
         feature_map = QuadraticFeatureMap(num_features)

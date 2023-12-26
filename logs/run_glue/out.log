@@ -70,6 +70,22 @@ Model loaded successfully!
 
 >>> Running model on dataset...
 	* Model: gpt2-xl
+	* Dataset: glue/qqp
+	* Split: train
+	* Num samples: 4000
+	* Template: 0_shot
+>>> Running model on dataset...
+	* Model: gpt2-xl
+	* Dataset: glue/qqp
+	* Split: validation
+	* Num samples: None
+	* Template: 0_shot
+======================================
+>>> Loading gpt2-xl model...
+Model loaded successfully!
+
+>>> Running model on dataset...
+	* Model: gpt2-xl
 	* Dataset: glue/mnli
 	* Split: train
 	* Num samples: 4000
@@ -152,3 +168,6 @@ Done!
 
 
 
+=============
+End of script
+=============

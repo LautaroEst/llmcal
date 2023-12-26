@@ -1,27 +1,132 @@
-  0%|          | 0/400 [00:00<?, ?it/s]  0%|          | 1/400 [00:02<16:16,  2.45s/it]                                                 0%|          | 0/400 [00:00<?, ?it/s]  0%|          | 1/400 [00:01<09:41,  1.46s/it]                                                 0%|          | 0/400 [00:00<?, ?it/s]  0%|          | 1/400 [00:01<10:30,  1.58s/it]                                                 0%|          | 0/400 [00:00<?, ?it/s]  0%|          | 1/400 [00:01<10:19,  1.55s/it]                                                 0%|          | 0/400 [00:00<?, ?it/s]  0%|          | 1/400 [00:01<12:04,  1.82s/it]                                                 0%|          | 0/200 [00:00<?, ?it/s]                                       Traceback (most recent call last):
-  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 247, in <module>
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+ImportError: cannot import name 'LBFGSBCalibrator' from 'llmcal.calibration.base' (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+ImportError: cannot import name 'LBFGSBCalibrator' from 'llmcal.calibration.base' (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+ImportError: cannot import name 'LBFGSBCalibrator' from 'llmcal.calibration.base' (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+ImportError: cannot import name 'LBFGSBCalibrator' from 'llmcal.calibration.base' (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+ImportError: cannot import name 'LBFGSBCalibrator' from 'llmcal.calibration.base' (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+ImportError: cannot import name 'LBFGSBCalibrator' from 'llmcal.calibration.base' (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+ImportError: cannot import name 'LBFGSBCalibrator' from 'llmcal.calibration.base' (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+ImportError: cannot import name 'LBFGSBCalibrator' from 'llmcal.calibration.base' (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 10, in <module>
+    from llmcal.calibration import (
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/__init__.py", line 1, in <module>
+    from .affine import AffineCalibrator
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 6, in <module>
+    from .base import LBFGSBCalibrator
+ImportError: cannot import name 'LBFGSBCalibrator' from 'llmcal.calibration.base' (/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py)
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 255, in <module>
     main()
   File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 142, in main
     calibrated_eval_posteriors = obtain_calibrated_posteriors(
-  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 231, in obtain_calibrated_posteriors
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 234, in obtain_calibrated_posteriors
     model.fit(
-  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 170, in fit
-    optimizer.step(closure)
-  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.10/site-packages/torch/optim/optimizer.py", line 373, in wrapper
-    out = func(*args, **kwargs)
-  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
-    return func(*args, **kwargs)
-  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.10/site-packages/torch/optim/lbfgs.py", line 312, in step
-    orig_loss = closure()
-  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.10/site-packages/torch/utils/_contextlib.py", line 115, in decorate_context
-    return func(*args, **kwargs)
-  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 159, in closure
-    batch_logits = self(apply_feature_map(batch_features, feature_map))
-  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/affine.py", line 66, in forward
-    logits = features @ self._alpha.T + self.bias
-RuntimeError: mat1 and mat2 shapes cannot be multiplied (50x2561600 and 1600x2)
-  0%|          | 0/200 [00:00<?, ?it/s]  0%|          | 1/200 [00:02<09:48,  2.96s/it]  1%|          | 2/200 [00:05<09:03,  2.75s/it]  2%|▏         | 3/200 [00:08<08:47,  2.68s/it]  2%|▏         | 4/200 [00:10<08:37,  2.64s/it]  2%|▎         | 5/200 [00:13<08:30,  2.62s/it]  3%|▎         | 6/200 [00:15<08:25,  2.61s/it]  4%|▎         | 7/200 [00:18<08:21,  2.60s/it]  4%|▍         | 8/200 [00:21<08:18,  2.60s/it]  4%|▍         | 9/200 [00:23<08:14,  2.59s/it]  5%|▌         | 10/200 [00:26<08:11,  2.59s/it]  6%|▌         | 11/200 [00:28<08:08,  2.58s/it]  6%|▌         | 12/200 [00:31<08:05,  2.58s/it]  6%|▋         | 13/200 [00:33<08:03,  2.58s/it]  7%|▋         | 14/200 [00:36<08:00,  2.58s/it]  8%|▊         | 15/200 [00:39<07:57,  2.58s/it]  8%|▊         | 16/200 [00:41<07:56,  2.59s/it]  8%|▊         | 17/200 [00:44<07:53,  2.59s/it]  9%|▉         | 18/200 [00:46<07:53,  2.60s/it] 10%|▉         | 19/200 [00:49<07:49,  2.60s/it] 10%|█         | 20/200 [00:52<07:46,  2.59s/it] 10%|█         | 21/200 [00:54<07:44,  2.59s/it] 11%|█         | 22/200 [00:57<07:41,  2.59s/it] 12%|█▏        | 23/200 [00:59<07:38,  2.59s/it] 12%|█▏        | 24/200 [01:02<07:35,  2.59s/it] 12%|█▎        | 25/200 [01:05<07:33,  2.59s/it] 13%|█▎        | 26/200 [01:07<07:31,  2.59s/it] 14%|█▎        | 27/200 [01:10<07:28,  2.59s/it] 14%|█▍        | 28/200 [01:12<07:25,  2.59s/it] 14%|█▍        | 29/200 [01:15<07:23,  2.59s/it] 15%|█▌        | 30/200 [01:18<07:20,  2.59s/it] 16%|█▌        | 31/200 [01:20<07:18,  2.60s/it] 16%|█▌        | 32/200 [01:23<07:17,  2.61s/it] 16%|█▋        | 33/200 [01:25<07:15,  2.61s/it]
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 59, in fit
+    raise NotImplementedError
+NotImplementedError
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 255, in <module>
+    main()
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 142, in main
+    calibrated_eval_posteriors = obtain_calibrated_posteriors(
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 234, in obtain_calibrated_posteriors
+    model.fit(
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 59, in fit
+    raise NotImplementedError
+NotImplementedError
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 255, in <module>
+    main()
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 142, in main
+    calibrated_eval_posteriors = obtain_calibrated_posteriors(
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 234, in obtain_calibrated_posteriors
+    model.fit(
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 59, in fit
+    raise NotImplementedError
+NotImplementedError
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 255, in <module>
+    main()
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 142, in main
+    calibrated_eval_posteriors = obtain_calibrated_posteriors(
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 234, in obtain_calibrated_posteriors
+    model.fit(
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 59, in fit
+    raise NotImplementedError
+NotImplementedError
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 255, in <module>
+    main()
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 142, in main
+    calibrated_eval_posteriors = obtain_calibrated_posteriors(
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 234, in obtain_calibrated_posteriors
+    model.fit(
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 59, in fit
+    raise NotImplementedError
+NotImplementedError
+Traceback (most recent call last):
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 255, in <module>
+    main()
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 142, in main
+    calibrated_eval_posteriors = obtain_calibrated_posteriors(
+  File "/teamspace/studios/this_studio/llmcal/./scripts/calibrate_features.py", line 234, in obtain_calibrated_posteriors
+    model.fit(
+  File "/teamspace/studios/this_studio/llmcal/llmcal/calibration/base.py", line 59, in fit
+    raise NotImplementedError
+NotImplementedError

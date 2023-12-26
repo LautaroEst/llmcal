@@ -1,31 +1,18 @@
 Training calibration model...
-Model: AffineCalibrator(num_features=1600, num_classes=2, alpha=matrix, bias=True, loss=log-loss, random_state=21788)
-Number of samples: 50
-Done.
-
-Training calibration model...
-Model: AffineCalibrator(num_features=2, num_classes=2, alpha=matrix, bias=True, loss=log-loss, random_state=21788)
-Number of samples: 50
-Done.
-
-Training calibration model...
-Model: AffineCalibrator(num_features=2, num_classes=2, alpha=vector, bias=True, loss=log-loss, random_state=21788)
-Number of samples: 50
-Done.
-
-Training calibration model...
-Model: AffineCalibrator(num_features=2, num_classes=2, alpha=scalar, bias=True, loss=log-loss, random_state=21788)
-Number of samples: 50
-Done.
-
-Training calibration model...
-Model: AffineCalibrator(num_features=2, num_classes=2, alpha=None, bias=True, loss=log-loss, random_state=21788)
-Number of samples: 50
-Done.
-
+Model: AffineCalibrator(num_features=1600, num_classes=2, alpha=matrix, bias=True, loss=log-loss, random_state=25738)
+Number of samples: 4000
 Training calibration model...
 Model: AffineCalibrator(num_features=1600, num_classes=2, alpha=matrix, bias=True, loss=log-loss, random_state=21788)
 Number of samples: 50
 Training calibration model...
-Model: DiscriminativeMahalanobisCalibrator(num_features=1600, num_classes=2, random_state=21788)
-Number of samples: 50
+Model: AffineCalibrator(num_features=1600, num_classes=2, alpha=matrix, bias=True, loss=log-loss, random_state=21938)
+Number of samples: 200
+Training calibration model...
+Model: AffineCalibrator(num_features=1600, num_classes=2, alpha=matrix, bias=True, loss=log-loss, random_state=22538)
+Number of samples: 800
+Training calibration model...
+Model: AffineCalibrator(num_features=1600, num_classes=2, alpha=matrix, bias=True, loss=log-loss, random_state=23738)
+Number of samples: 2000
+Training calibration model...
+Model: AffineCalibrator(num_features=1600, num_classes=2, alpha=matrix, bias=True, loss=log-loss, random_state=25738)
+Number of samples: 4000

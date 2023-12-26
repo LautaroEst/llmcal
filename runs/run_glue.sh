@@ -7,8 +7,7 @@ RESULTS_DIR="./results"
 MODEL="gpt2-xl"
 # MODEL="meta-llama/Llama-2-7b-hf"
 
-# DATASETS=("glue/cola" "glue/sst2" "glue/mrpc" "glue/qqp" "glue/mnli" "glue/qnli" "glue/rte" "glue/wnli")
-DATASETS=("glue/cola" "glue/sst2" "glue/mrpc" "glue/mnli" "glue/qnli" "glue/rte" "glue/wnli")
+DATASETS=("glue/cola" "glue/sst2" "glue/mrpc" "glue/qqp" "glue/mnli" "glue/qnli" "glue/rte" "glue/wnli")
 
 for DATASET in ${DATASETS[@]}; do
     python ${SCRIPTS_DIR}/run_dataset_on_model.py \
