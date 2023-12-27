@@ -4,19 +4,34 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from ..base import BaseCalibrator
-from ..optimization_mixins import SGDMixin
-from ..feature_maps import init_feature_map
-
-class MahalanobisMixin:
-
-    @staticmethod
-    def square_mahalanobis_distance(X, mu, sigma):
-        x_tilde = (X - mu)
-        return torch.sum(x_tilde * (x_tilde @ torch.linalg.inv(sigma)), dim=1)
+from .base import BaseCalibrator
+from ..optim import SGDMixin
 
 
-class QDACalibrator(BaseCalibrator, MahalanobisMixin):
+def square_mahalanobis_distance(X, mu, sigma):
+    """
+    Compute the square Mahalanobis distance between the matrix X of samples and a
+    multivariate distribution with mean mu and covariance matrix sigma.
+
+    Parameters
+    ----------
+    X : torch.Tensor(shape=(num_samples, num_features))
+        Matrix of samples.
+    mu : torch.Tensor(shape=(num_features,))
+        Mean of the multivariate distribution.
+    sigma : torch.Tensor(shape=(num_features, num_features))
+        Covariance matrix of the multivariate distribution.
+
+    Returns
+    -------
+    torch.Tensor(shape=(num_samples,))
+        Square Mahalanobis distance between the samples and the multivariate distribution.
+    """
+    x_tilde = (X - mu)
+    return torch.sum(x_tilde * (x_tilde @ torch.linalg.inv(sigma)), dim=1)
+
+
+class QDACalibrator(BaseCalibrator):
     
     def __init__(self, num_features, num_classes, random_state=None):
 
@@ -36,13 +51,12 @@ class QDACalibrator(BaseCalibrator, MahalanobisMixin):
 
     def forward(self, features):
         logits = torch.stack([
-            -(np.log((2 * np.pi)**self.num_classes) + torch.log(torch.linalg.det(cov))) / 2 - self.square_mahalanobis_distance(features,mu=mean,sigma=cov) + torch.log(prior) 
+            -(np.log((2 * np.pi)**self.num_classes) + torch.log(torch.linalg.det(cov))) / 2 - square_mahalanobis_distance(features,mu=mean,sigma=cov) + torch.log(prior) 
             for mean, cov, prior in zip(self.means, self.covariances, self.priors)
         ], dim=0).T
         return logits
 
-    def fit(self, train_features, train_labels, validation_features=None, validation_labels=None, feature_map=None, **kwargs):
-        self.feature_map = feature_map
+    def fit(self, train_features, train_labels):
         num_samples = train_features.shape[0]
         for class_idx in range(self.num_classes):
             class_features = train_features[train_labels == class_idx]
@@ -51,7 +65,7 @@ class QDACalibrator(BaseCalibrator, MahalanobisMixin):
             self.priors.data[class_idx] = torch.tensor(class_features.shape[0] / num_samples)
         return self
 
-class LDACalibrator(BaseCalibrator, MahalanobisMixin):
+class LDACalibrator(BaseCalibrator):
 
     def __init__(self, num_features, num_classes, random_state=None):
         
@@ -77,8 +91,7 @@ class LDACalibrator(BaseCalibrator, MahalanobisMixin):
         s, P = torch.linalg.eigh(self.covariance)
         return P * (1 / s) @ P.T
 
-    def fit(self, train_features, train_labels, validation_features=None, validation_labels=None, feature_map=None, **kwargs):
-        self.feature_map = feature_map
+    def fit(self, train_features, train_labels):
         num_samples = train_features.shape[0]
         class_covariances = []
         for class_idx in range(self.num_classes):
@@ -90,7 +103,7 @@ class LDACalibrator(BaseCalibrator, MahalanobisMixin):
         return self
 
 
-class DiscriminativeMahalanobisCalibrator(BaseCalibrator, SGDMixin, MahalanobisMixin):
+class MahalanobisCalibrator(BaseCalibrator, SGDMixin):
     
     def __init__(self, num_features, num_classes, random_state=None):
         
@@ -105,7 +118,7 @@ class DiscriminativeMahalanobisCalibrator(BaseCalibrator, SGDMixin, MahalanobisM
 
     def compute_distances_matrix(self, features):
         return torch.stack([
-            self.square_mahalanobis_distance(
+            square_mahalanobis_distance(
                 features, 
                 mu=self.means[class_idx], 
                 sigma=self.compute_covariance(features, self.means[class_idx])
@@ -122,55 +135,5 @@ class DiscriminativeMahalanobisCalibrator(BaseCalibrator, SGDMixin, MahalanobisM
         return logits
     
         
-class DiscriminativeMahalanobisCalibratorWithFeatureMap(BaseCalibrator, SGDMixin, MahalanobisMixin):
-
-    def __init__(
-        self, 
-        feature_map: str,
-        **kwargs
-    ):
-        super().__init__(num_features=kwargs["num_features"], num_classes=kwargs["num_classes"], random_state=kwargs["random_state"])
-        self.feature_map = init_feature_map(kwargs["num_features"], feature_map)
-        self.calibrator = DiscriminativeMahalanobisCalibrator(**kwargs)
-
-    def forward(self, features):
-        logits = self.calibrator(self.feature_map(features))
-        return logits
-
-    def loss(self, logits, labels):
-        loss = self.calibrator.loss(logits, labels)
-        return loss
-
-
-class QDACalibratorWithFeatureMap(BaseCalibrator, MahalanobisMixin):
-    
-        def __init__(
-            self, 
-            feature_map: str,
-            **kwargs
-        ):
-            super().__init__(num_features=kwargs["num_features"], num_classes=kwargs["num_classes"], random_state=kwargs["random_state"])
-            self.feature_map = init_feature_map(kwargs["num_features"], feature_map)
-            self.calibrator = QDACalibrator(**kwargs)
-    
-        def forward(self, features):
-            logits = self.calibrator(self.feature_map(features))
-            return logits
-
-
-class LDACalibratorWithFeatureMap(BaseCalibrator, MahalanobisMixin):
-    
-        def __init__(
-            self, 
-            feature_map: str,
-            **kwargs
-        ):
-            super().__init__(num_features=kwargs["num_features"], num_classes=kwargs["num_classes"], random_state=kwargs["random_state"])
-            self.feature_map = init_feature_map(kwargs["num_features"], feature_map)
-            self.calibrator = LDACalibrator(**kwargs)
-    
-        def forward(self, features):
-            logits = self.calibrator(self.feature_map(features))
-            return logits
     
         

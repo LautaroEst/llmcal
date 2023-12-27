@@ -1,5 +1,5 @@
 
-from ..base import BaseCalibrator
+from .base import BaseCalibrator
 
 class PriorsAdaptator(BaseCalibrator):
     pass

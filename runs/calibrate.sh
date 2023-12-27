@@ -59,7 +59,7 @@ for DATASET in "${!DATASETS[@]}"; do
             --loss "log-loss" \
             --batch_size "None" \
             --accelerator $DEVICE \
-            --num_devices 1 \
+            --devices 1 \
             --learning_rate 1 \
             --max_epochs 400 \
             --max_ls 40 \
@@ -85,7 +85,7 @@ for DATASET in "${!DATASETS[@]}"; do
                 --loss "log-loss" \
                 --batch_size "None" \
                 --accelerator $DEVICE \
-                --num_devices 1 \
+                --devices 1 \
                 --learning_rate 1 \
                 --max_epochs 400 \
                 --max_ls 40 \
@@ -111,7 +111,7 @@ for DATASET in "${!DATASETS[@]}"; do
             --loss "log-loss" \
             --batch_size 64 \
             --accelerator $DEVICE \
-            --num_devices 1 \
+            --devices 1 \
             --learning_rate 0.01 \
             --max_epochs 400 \
             --max_ls 40 \
@@ -136,7 +136,7 @@ for DATASET in "${!DATASETS[@]}"; do
             --loss "log-loss" \
             --batch_size "None" \
             --accelerator $DEVICE \
-            --num_devices 1 \
+            --devices 1 \
             --max_epochs 400 \
             --learning_rate 0.1 \
             --max_ls 40 \
@@ -157,13 +157,14 @@ for DATASET in "${!DATASETS[@]}"; do
         #     --method "mahalanobis" \
         #     --feature_map "identity" \
         #     --accelerator $DEVICE \
-        #     --num_devices 1 \
-        #     --optimizer "mini-batch-GD" \
+        #     --devices 1 \
+        #     --optimizer "SGD" \
         #     --batch_size 32 \
         #     --max_epochs 400 \
         #     --learning_rate 0.00001 \
         #     --weight_decay 0 \
         #     --tolerance 0.001 \
+        #     --patience 10 \
         #     --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
         #     --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
         
@@ -179,7 +180,7 @@ for DATASET in "${!DATASETS[@]}"; do
         #     --num_classes ${DATASETS[$DATASET]} \
         #     --method "mahalanobis" \
         #     --accelerator $DEVICE \
-        #     --num_devices 1 \
+        #     --devices 1 \
         #     --optimizer "Adam" \
         #     --batch_size 32 \
         #     --max_epochs 400 \

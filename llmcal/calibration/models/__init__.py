@@ -1,10 +1,15 @@
-from .affine import AffineCalibrator, AffineCalibratorWithFeatureMap
+from .affine import (
+    AffineCalibrator,
+)
 from .mahalanobis import (
     QDACalibrator,
     LDACalibrator,
-    DiscriminativeMahalanobisCalibrator,
-    QDACalibratorWithFeatureMap,
-    LDACalibratorWithFeatureMap,
-    DiscriminativeMahalanobisCalibratorWithFeatureMap,
+    MahalanobisCalibrator,
 )
 from .priors import PriorsAdaptator
+from .models_with_feature_maps import (
+    AffineCalibratorWithFeatureMap,
+    MahalanobisCalibratorWithFeatureMap,
+    QDACalibratorWithFeatureMap,
+    LDACalibratorWithFeatureMap,
+)

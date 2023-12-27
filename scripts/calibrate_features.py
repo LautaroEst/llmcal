@@ -35,13 +35,14 @@ def parse_args():
 
     # Args for training calibrator
     parser.add_argument('--accelerator', type=str, default="cpu")
-    parser.add_argument('--num_devices', type=int, default=1)
+    parser.add_argument('--devices', type=int, default=1)
     parser.add_argument('--optimizer', type=str, default=None)
     parser.add_argument('--batch_size', type=str, default=None)
     parser.add_argument('--max_epochs', type=int, default=100)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
     parser.add_argument('--weight_decay', type=float, default=0)
     parser.add_argument('--tolerance', type=float, default=1e-4)
+    parser.add_argument('--patience', type=int, default=10)
     parser.add_argument('--max_ls', type=int, default=40)
 
     parser.add_argument('--output_dir', type=str, required=True)
@@ -76,7 +77,7 @@ def main():
         train_labels = train_labels[train_idx]
 
     eval_features = np.load(args.eval_features) # Evaluation
-    eval_labels = eval_features.argmax(axis=-1) if "logits.npy" in args.eval_labels else np.load(args.eval_labels)
+    eval_labels = np.load(args.eval_labels)
     if args.subsample_eval is not None:
         eval_idx = rs.choice(np.arange(len(eval_features)), size=args.subsample_eval, replace=False)
         eval_features = eval_features[eval_idx]
@@ -116,11 +117,16 @@ def main():
     
     # Fit calibrator args
     fit_calibrator_args = {
+        "train_features": torch.from_numpy(train_features),
+        "train_labels": torch.from_numpy(train_labels),
+        "validation_features": torch.from_numpy(validation_features) if validation_features is not None else None,
+        "validation_labels": torch.from_numpy(validation_labels) if validation_labels is not None else None,
+        
+        "batch_size": int(args.batch_size) if args.batch_size != "None" and args.batch_size is not None else None,
         "accelerator": args.accelerator,
-        "num_devices": args.num_devices,
+        "devices": args.devices,
     }
     if args.method == "affine":
-        fit_calibrator_args["batch_size"] = int(args.batch_size) if args.batch_size != "None" and args.batch_size is not None else None
         fit_calibrator_args["learning_rate"] = args.learning_rate
         fit_calibrator_args["max_ls"] = args.max_ls
         fit_calibrator_args["max_epochs"] = args.max_epochs
@@ -130,23 +136,21 @@ def main():
     elif args.method in ["qda", "lda"]:
         pass
     elif args.method == "mahalanobis":
-        fit_calibrator_args["batch_size"] = int(args.batch_size) if args.batch_size != "None" and args.batch_size is not None else None
         fit_calibrator_args["model_checkpoint_dir"] = os.path.join(args.output_dir, method_id)
         fit_calibrator_args["optimizer"] = args.optimizer
         fit_calibrator_args["max_epochs"] = args.max_epochs
         fit_calibrator_args["learning_rate"] = args.learning_rate
         fit_calibrator_args["weight_decay"] = args.weight_decay
         fit_calibrator_args["tolerance"] = args.tolerance
+        fit_calibrator_args["patience"] = args.patience
     else:
         raise ValueError(f"Calibration method {args.method} not supported.")
 
-
+    # Create output dir
     os.makedirs(os.path.join(args.output_dir, method_id), exist_ok=True)
+
+    # Obtain calibrated posteriors
     calibrated_eval_posteriors, history = obtain_calibrated_posteriors(
-        train_features, 
-        train_labels,
-        validation_features,
-        validation_labels,
         eval_features, 
         args.num_classes, 
         args.method,
@@ -160,11 +164,12 @@ def main():
         os.path.join(args.output_dir, method_id, "calibrated_posteriors.npy"),
         calibrated_eval_posteriors
     )
+
+    # Save args and history
     with open(os.path.join(args.output_dir, method_id, "args.json"), "w") as f:
         json.dump(vars(args), f, indent=4, separators=(',', ': '))
-    if history is not None:
-        with open(os.path.join(args.output_dir, method_id, "history.json"), "w") as f:
-            json.dump(history, f, indent=4, separators=(',', ': '))
+    with open(os.path.join(args.output_dir, method_id, "history.json"), "w") as f:
+        json.dump(history, f, indent=4, separators=(',', ': '))
 
 
 def get_method_id(args):
@@ -194,10 +199,6 @@ def get_method_id(args):
 
 
 def obtain_calibrated_posteriors(
-    train_features, 
-    train_labels,
-    validation_features,
-    validation_labels,
     eval_features, 
     num_classes, 
     method, 
@@ -207,14 +208,10 @@ def obtain_calibrated_posteriors(
 ):
     
     # Convert to tensors
-    train_features = torch.from_numpy(train_features)
-    train_labels = torch.from_numpy(train_labels)
-    validation_features = torch.from_numpy(validation_features) if validation_features is not None else None
-    validation_labels = torch.from_numpy(validation_labels) if validation_labels is not None else None
     eval_features = torch.from_numpy(eval_features)
     
     # Model
-    num_features = train_features.shape[1]
+    train_samples, num_features = fit_calibrator_args['train_features'].shape
     if method == "affine":
         model = AffineCalibratorWithFeatureMap(feature_map, num_features=num_features, num_classes=num_classes, **init_calibrator_args)
     elif method == "prior_adaptation":
@@ -224,19 +221,14 @@ def obtain_calibrated_posteriors(
     elif method == "lda":
         model = LDACalibratorWithFeatureMap(feature_map, num_features=num_features, num_classes=num_classes, **init_calibrator_args)
     elif method == "mahalanobis":
-        model = DiscriminativeMahalanobisCalibratorWithFeatureMap(feature_map, num_features=num_features, num_classes=num_classes, **init_calibrator_args)
+        model = MahalanobisCalibratorWithFeatureMap(feature_map, num_features=num_features, num_classes=num_classes, **init_calibrator_args)
     else:
         raise ValueError(f"Calibration method {method} not supported.")
 
     # Fit calibrator    
     print(f"Training calibration model...")
     print(f"Model: {repr(model)}")
-    print(f"Number of samples: {len(train_labels)}")
-    fit_calibrator_args["train_features"] = train_features
-    fit_calibrator_args["train_labels"] = train_labels
-    if validation_features is not None:
-        fit_calibrator_args["validation_features"] = validation_features
-        fit_calibrator_args["validation_labels"] = validation_labels
+    print(f"Number of samples: {train_samples}")
     model.fit(**fit_calibrator_args)
     print("Done.")
     print()
@@ -246,12 +238,15 @@ def obtain_calibrated_posteriors(
         eval_features, 
         batch_size=fit_calibrator_args["batch_size"], 
         accelerator=fit_calibrator_args["accelerator"], 
-        num_devices=fit_calibrator_args["num_devices"]
+        devices=fit_calibrator_args["devices"]
     )
     calibrated_posteriors = calibrated_posteriors.cpu().numpy()
     
-    model_history = model.calibrator.loss_history if hasattr(model.calibrator, "loss_history") else None
-    return calibrated_posteriors, model_history
+    history = {
+        "train": model.train_loss_history if hasattr(model, "train_loss_history") else None,
+        "validation": model.val_loss_history if hasattr(model, "val_loss_history") else None,
+    }
+    return calibrated_posteriors, history
 
 
 if __name__ == "__main__":

@@ -3,14 +3,31 @@ from typing import Literal, Optional
 import torch
 import torch.nn as nn
 
-from ..base import BaseCalibrator
-from ..optimization_mixins import LBFGSBMixin
+from .base import BaseCalibrator
+from ..optim import LBFGSBMixin
 from ..losses import LogLoss, BrierLoss
-from ..feature_maps import init_feature_map
 
 
 class AffineCalibrator(BaseCalibrator, LBFGSBMixin):
+    """
+    Affine calibrator. It is a linear calibrator that performs an affine transformation
+    of the input feature vector.
 
+    Parameters
+    ----------
+    num_features : int
+        Number of input features of the calibrator.
+    num_classes : int
+        Number of output classes of the calibrator.
+    alpha : {"vector", "scalar", "matrix", "none"}, optional
+        Type of affine transformation, by default "vector"
+    bias : bool, optional
+        Whether to use a bias term, by default True
+    loss : {"log-loss", "brier"}, optional
+        Loss function to use, by default "log-loss"
+    random_state : int, optional
+        Random state generator, by default None
+    """
     def __init__(
         self, 
         num_features: int, 
@@ -72,23 +89,3 @@ class AffineCalibrator(BaseCalibrator, LBFGSBMixin):
         alpha = self._get_alpha(features.device)
         logits = features @ alpha.T + self.bias
         return logits
-
-
-
-        
-class AffineCalibratorWithFeatureMap(BaseCalibrator, LBFGSBMixin):
-
-    def __init__(
-        self, 
-        feature_map: str, 
-        **kwargs
-    ):
-        super().__init__(num_features=kwargs["num_features"], num_classes=kwargs["num_classes"], random_state=kwargs["random_state"])
-        self.feature_map = init_feature_map(kwargs["num_features"], feature_map)
-        self.calibrator = AffineCalibrator(**kwargs)
-
-    def forward(self, features):
-        return self.calibrator(self.feature_map(features))
-
-    def loss(self, logits, labels):
-        return self.calibrator.loss(logits, labels)
