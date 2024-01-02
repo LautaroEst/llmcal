@@ -6,10 +6,10 @@ RESULTS_DIR="./results"
 
 MODEL="gpt2-xl"
 declare -A DATASETS=(
-    ["glue/cola"]="2"
+    # ["glue/cola"]="2"
     # ["glue/sst2"]="2"
     # ["glue/mrpc"]="2"
-    # ["glue/mnli"]="3"
+    ["glue/mnli"]="3"
     # ["glue/qnli"]="2"
     # ["glue/rte"]="2"
     # ["glue/wnli"]="2"
@@ -25,8 +25,9 @@ declare -A TRAIN_SAMPLES=(
     ["glue/wnli"]="50 200 435"
 )
 BASE_SEED=21738
+VALIDATION_SAMPLES=200
 
-DEVICE="cpu"
+DEVICE="gpu"
 
 for DATASET in "${!DATASETS[@]}"; do
     TRAIN_FILE=$RESULTS_DIR/run_dataset_on_model/$MODEL/$DATASET/train/$TEMPLATE
@@ -50,7 +51,7 @@ for DATASET in "${!DATASETS[@]}"; do
             --eval_labels $EVAL_FILE/labels.npy \
             --subsample_train $NUM_SAMPLES \
             --subsample_eval None \
-            --validation_samples 0 \
+            --validation_samples $VALIDATION_SAMPLES \
             --num_classes ${DATASETS[$DATASET]} \
             --method "affine" \
             --feature_map "identity" \
@@ -60,10 +61,10 @@ for DATASET in "${!DATASETS[@]}"; do
             --batch_size "None" \
             --accelerator $DEVICE \
             --devices 1 \
-            --learning_rate 1 \
+            --learning_rate 0.01 \
             --max_epochs 400 \
             --max_ls 40 \
-            --tolerance 0.001 \
+            --tolerance 0.000001 \
             --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
             --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
 
@@ -76,7 +77,7 @@ for DATASET in "${!DATASETS[@]}"; do
                 --eval_labels $EVAL_FILE/labels.npy \
                 --subsample_train $NUM_SAMPLES \
                 --subsample_eval None \
-                --validation_samples 0 \
+                --validation_samples $VALIDATION_SAMPLES \
                 --num_classes ${DATASETS[$DATASET]} \
                 --method "affine" \
                 --feature_map "identity" \
@@ -86,10 +87,10 @@ for DATASET in "${!DATASETS[@]}"; do
                 --batch_size "None" \
                 --accelerator $DEVICE \
                 --devices 1 \
-                --learning_rate 1 \
+                --learning_rate 0.01 \
                 --max_epochs 400 \
                 --max_ls 40 \
-                --tolerance 0.001 \
+                --tolerance 0.000001 \
                 --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
                 --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
         done
@@ -102,7 +103,7 @@ for DATASET in "${!DATASETS[@]}"; do
             --eval_labels $EVAL_FILE/labels.npy \
             --subsample_train $NUM_SAMPLES \
             --subsample_eval None \
-            --validation_samples 0 \
+            --validation_samples $VALIDATION_SAMPLES \
             --num_classes ${DATASETS[$DATASET]} \
             --method "affine" \
             --feature_map "quadratic" \
@@ -115,7 +116,7 @@ for DATASET in "${!DATASETS[@]}"; do
             --learning_rate 0.01 \
             --max_epochs 400 \
             --max_ls 40 \
-            --tolerance 0.001 \
+            --tolerance 0.000001 \
             --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
             --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
         
@@ -127,7 +128,7 @@ for DATASET in "${!DATASETS[@]}"; do
             --eval_labels $EVAL_FILE/labels.npy \
             --subsample_train $NUM_SAMPLES \
             --subsample_eval None \
-            --validation_samples 0 \
+            --validation_samples $VALIDATION_SAMPLES \
             --num_classes ${DATASETS[$DATASET]} \
             --method "affine" \
             --feature_map "quadratic" \
@@ -138,112 +139,116 @@ for DATASET in "${!DATASETS[@]}"; do
             --accelerator $DEVICE \
             --devices 1 \
             --max_epochs 400 \
-            --learning_rate 0.1 \
+            --learning_rate 0.01 \
             --max_ls 40 \
-            --tolerance 0.001 \
+            --patience 10 \
             --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
             --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
 
-        # # Mahalanobis embeddings calibration
-        # python $SCRIPTS_DIR/calibrate_features.py \
-        #     --train_features $TRAIN_FILE/embeddings.npy \
-        #     --train_labels $TRAIN_FILE/labels.npy \
-        #     --eval_features $EVAL_FILE/embeddings.npy \
-        #     --eval_labels $EVAL_FILE/labels.npy \
-        #     --subsample_train $NUM_SAMPLES \
-        #     --subsample_eval None \
-        #     --validation_samples 200 \
-        #     --num_classes ${DATASETS[$DATASET]} \
-        #     --method "mahalanobis" \
-        #     --feature_map "identity" \
-        #     --accelerator $DEVICE \
-        #     --devices 1 \
-        #     --optimizer "SGD" \
-        #     --batch_size 32 \
-        #     --max_epochs 400 \
-        #     --learning_rate 0.00001 \
-        #     --weight_decay 0 \
-        #     --tolerance 0.001 \
-        #     --patience 10 \
-        #     --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
-        #     --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
-        
-        # # Mahalanobis logits calibration
-        # python $SCRIPTS_DIR/calibrate_features.py \
-        #     --train_features $TRAIN_FILE/logits.npy \
-        #     --train_labels $TRAIN_FILE/labels.npy \
-        #     --eval_features $EVAL_FILE/logits.npy \
-        #     --eval_labels $EVAL_FILE/labels.npy \
-        #     --subsample_train $NUM_SAMPLES \
-        #     --subsample_eval None \
-        #     --validation_samples 200 \
-        #     --num_classes ${DATASETS[$DATASET]} \
-        #     --method "mahalanobis" \
-        #     --accelerator $DEVICE \
-        #     --devices 1 \
-        #     --optimizer "Adam" \
-        #     --batch_size 32 \
-        #     --max_epochs 400 \
-        #     --learning_rate 0.0001 \
-        #     --weight_decay 0 \
-        #     --tolerance 0.001 \
-        #     --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
-        #     --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
+        # Mahalanobis embeddings calibration
+        python $SCRIPTS_DIR/calibrate_features.py \
+            --train_features $TRAIN_FILE/embeddings.npy \
+            --train_labels $TRAIN_FILE/labels.npy \
+            --eval_features $EVAL_FILE/embeddings.npy \
+            --eval_labels $EVAL_FILE/labels.npy \
+            --subsample_train $NUM_SAMPLES \
+            --subsample_eval None \
+            --validation_samples $VALIDATION_SAMPLES \
+            --num_classes ${DATASETS[$DATASET]} \
+            --method "mahalanobis" \
+            --feature_map "identity" \
+            --accelerator $DEVICE \
+            --devices 1 \
+            --optimizer "SGD" \
+            --batch_size 32 \
+            --max_epochs 400 \
+            --learning_rate 0.00001 \
+            --weight_decay 0 \
+            --patience 10 \
+            --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
+            --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
+            
+        # Mahalanobis logits calibration
+        python $SCRIPTS_DIR/calibrate_features.py \
+            --train_features $TRAIN_FILE/logits.npy \
+            --train_labels $TRAIN_FILE/labels.npy \
+            --eval_features $EVAL_FILE/logits.npy \
+            --eval_labels $EVAL_FILE/labels.npy \
+            --subsample_train $NUM_SAMPLES \
+            --subsample_eval None \
+            --validation_samples $VALIDATION_SAMPLES \
+            --num_classes ${DATASETS[$DATASET]} \
+            --method "mahalanobis" \
+            --feature_map "identity" \
+            --accelerator $DEVICE \
+            --devices 1 \
+            --optimizer "Adam" \
+            --batch_size 32 \
+            --max_epochs 400 \
+            --learning_rate 0.0001 \
+            --weight_decay 0 \
+            --patience 10 \
+            --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
+            --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
 
-        # # QDA logits calibration
-        # python $SCRIPTS_DIR/calibrate_features.py \
-        #     --train_features $TRAIN_FILE/logits.npy \
-        #     --train_labels $TRAIN_FILE/labels.npy \
-        #     --eval_features $EVAL_FILE/logits.npy \
-        #     --eval_labels $EVAL_FILE/labels.npy \
-        #     --subsample_train $NUM_SAMPLES \
-        #     --subsample_eval None \
-        #     --validation_samples 0 \
-        #     --num_classes ${DATASETS[$DATASET]} \
-        #     --method "qda" \
-        #     --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
-        #     --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
+        # QDA logits calibration
+        python $SCRIPTS_DIR/calibrate_features.py \
+            --train_features $TRAIN_FILE/logits.npy \
+            --train_labels $TRAIN_FILE/labels.npy \
+            --eval_features $EVAL_FILE/logits.npy \
+            --eval_labels $EVAL_FILE/labels.npy \
+            --subsample_train $NUM_SAMPLES \
+            --subsample_eval None \
+            --validation_samples 0 \
+            --num_classes ${DATASETS[$DATASET]} \
+            --method "qda" \
+            --feature_map "identity" \
+            --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
+            --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
         
-        # # LDA logits calibration
-        # python $SCRIPTS_DIR/calibrate_features.py \
-        #     --train_features $TRAIN_FILE/logits.npy \
-        #     --train_labels $TRAIN_FILE/labels.npy \
-        #     --eval_features $EVAL_FILE/logits.npy \
-        #     --eval_labels $EVAL_FILE/labels.npy \
-        #     --subsample_train $NUM_SAMPLES \
-        #     --subsample_eval None \
-        #     --validation_samples 0 \
-        #     --num_classes ${DATASETS[$DATASET]} \
-        #     --method "lda" \
-        #     --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
-        #     --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
+        # LDA logits calibration
+        python $SCRIPTS_DIR/calibrate_features.py \
+            --train_features $TRAIN_FILE/logits.npy \
+            --train_labels $TRAIN_FILE/labels.npy \
+            --eval_features $EVAL_FILE/logits.npy \
+            --eval_labels $EVAL_FILE/labels.npy \
+            --subsample_train $NUM_SAMPLES \
+            --subsample_eval None \
+            --validation_samples 0 \
+            --num_classes ${DATASETS[$DATASET]} \
+            --method "lda" \
+            --feature_map "identity" \
+            --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
+            --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
 
-        # # QDA embeddings calibration
-        # python $SCRIPTS_DIR/calibrate_features.py \
-        #     --train_features $TRAIN_FILE/embeddings.npy \
-        #     --train_labels $TRAIN_FILE/labels.npy \
-        #     --eval_features $EVAL_FILE/embeddings.npy \
-        #     --eval_labels $EVAL_FILE/labels.npy \
-        #     --subsample_train $NUM_SAMPLES \
-        #     --subsample_eval None \
-        #     --validation_samples 0 \
-        #     --num_classes ${DATASETS[$DATASET]} \
-        #     --method "qda" \
-        #     --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
-        #     --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
+        # QDA embeddings calibration
+        python $SCRIPTS_DIR/calibrate_features.py \
+            --train_features $TRAIN_FILE/embeddings.npy \
+            --train_labels $TRAIN_FILE/labels.npy \
+            --eval_features $EVAL_FILE/embeddings.npy \
+            --eval_labels $EVAL_FILE/labels.npy \
+            --subsample_train $NUM_SAMPLES \
+            --subsample_eval None \
+            --validation_samples 0 \
+            --num_classes ${DATASETS[$DATASET]} \
+            --method "qda" \
+            --feature_map "identity" \
+            --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
+            --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
         
-        # # LDA embeddings calibration
-        # python $SCRIPTS_DIR/calibrate_features.py \
-        #     --train_features $TRAIN_FILE/embeddings.npy \
-        #     --train_labels $TRAIN_FILE/labels.npy \
-        #     --eval_features $EVAL_FILE/embeddings.npy \
-        #     --eval_labels $EVAL_FILE/labels.npy \
-        #     --subsample_train $NUM_SAMPLES \
-        #     --subsample_eval None \
-        #     --validation_samples 0 \
-        #     --num_classes ${DATASETS[$DATASET]} \
-        #     --method "lda" \
-        #     --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
-        #     --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
+        # LDA embeddings calibration
+        python $SCRIPTS_DIR/calibrate_features.py \
+            --train_features $TRAIN_FILE/embeddings.npy \
+            --train_labels $TRAIN_FILE/labels.npy \
+            --eval_features $EVAL_FILE/embeddings.npy \
+            --eval_labels $EVAL_FILE/labels.npy \
+            --subsample_train $NUM_SAMPLES \
+            --subsample_eval None \
+            --validation_samples 0 \
+            --num_classes ${DATASETS[$DATASET]} \
+            --method "lda" \
+            --feature_map "identity" \
+            --output_dir $RESULTS_DIR/calibrate_features/$MODEL/$DATASET/$TEMPLATE--$NUM_SAMPLES \
+            --random_state $(expr $BASE_SEED + $NUM_SAMPLES)
     done
 done

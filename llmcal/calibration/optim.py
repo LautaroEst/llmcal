@@ -22,7 +22,6 @@ class SGDMixin:
         max_epochs: int = 100,
         learning_rate: float = 0.001,
         weight_decay: float = 0,
-        tolerance: float = 1e-4,
         patience: int = 10,
         model_checkpoint_dir: str = None,
         **kwargs
@@ -135,7 +134,7 @@ class SGDMixin:
                 loss = val_loss
 
             # Check for convergence
-            if abs(loss - best_epoch_loss) / max([abs(loss), best_epoch_loss, 1]) <= tolerance:
+            if loss > best_epoch_loss:
                 if p_counter == 0:
                     logger.info(f"Converged after {epoch} epochs")
                     break
@@ -194,6 +193,7 @@ class LBFGSBMixin:
         max_ls: int = 40,
         max_epochs: int = 100,
         tolerance: float = 1e-4,
+        model_checkpoint_dir: str = None,
         **kwargs
     ):
         """
@@ -230,6 +230,14 @@ class LBFGSBMixin:
         
         logger = getLogger(__name__)
 
+        # Check the inputs
+        if (validation_features is None and validation_labels is not None) or (validation_features is not None and validation_labels is None):
+            raise ValueError("Validation features and labels must be both None or both not None")
+        elif validation_features is None or validation_labels is None:
+            perform_validation = False
+        else:
+            perform_validation = True
+
         fabric = L.Fabric(**kwargs)
         fabric.launch()
 
@@ -252,6 +260,15 @@ class LBFGSBMixin:
             use_distributed_sampler=True,
             move_to_device=True
         )
+        validation_dataloader = fabric.setup_dataloaders(
+            DataLoader(
+                TensorDataset(validation_features, validation_labels),
+                batch_size=batch_size,
+                shuffle=False
+            ),
+            use_distributed_sampler=True,
+            move_to_device=True
+        )
 
         def closure():
             optimizer.zero_grad()
@@ -261,24 +278,53 @@ class LBFGSBMixin:
                 fabric.backward(loss)
             return loss
     
-        epochs_bar = tqdm(range(max_epochs), leave=False)
+        # Prepare history
         train_loss_history = []
-        last_epoch_loss = float("inf")
+        best_epoch_loss = train_loss = val_loss = float("inf")
+        if perform_validation:
+            val_loss_history = []
+
+        # Start training
+        epochs_bar = tqdm(range(max_epochs), leave=False)
         for epoch in epochs_bar:
 
-            epochs_bar.set_description(f"Loss: {last_epoch_loss:.4f}")
+            if perform_validation:
+                epochs_bar.set_description(f"Train Loss: {train_loss:.4f} / Validation Loss: {val_loss:.4f}")
+            else:
+                epochs_bar.set_description(f"Train Loss: {train_loss:.4f}")
 
             # Train
-            self.train()
-            loss = optimizer.step(closure).item()
+            model.train()
+            train_loss = optimizer.step(closure)
+            train_loss_history.append(train_loss.item())
+            loss = train_loss
 
-            if abs(loss - last_epoch_loss) / max([abs(loss), last_epoch_loss, 1]) <= tolerance:
+            # Validation
+            if perform_validation:
+                model.eval()
+                val_loss = 0
+                with torch.no_grad():
+                    for batch_features, batch_labels in validation_dataloader:
+                        batch_logits = model(batch_features)
+                        val_loss += self.loss(batch_logits, batch_labels).item() * batch_features.shape[0]
+                    val_loss /= len(validation_dataloader.dataset)
+                val_loss_history.append(val_loss)
+                loss = val_loss
+
+            # Check for convergence
+            if abs(loss - best_epoch_loss) / max([1, loss, best_epoch_loss]) <= tolerance:
+                logger.info(f"Converged after {epoch} epochs")
                 break
-            train_loss_history.append(loss)
-            last_epoch_loss = loss
-        
+
+            # Save the best model
+            if loss < best_epoch_loss:
+                torch.save(model.state_dict(), os.path.join(model_checkpoint_dir, "best_model_state_dict.pt"))
+                best_epoch_loss = loss
+            
         self.train_loss_history = train_loss_history
+        self.val_loss_history = val_loss_history if perform_validation else None
         if epoch == max_epochs - 1:
             logger.warning(f"WARNING: Calibration did not converge after {max_epochs} epochs")
         
+        self.load_state_dict(torch.load(os.path.join(model_checkpoint_dir, "best_model_state_dict.pt")))
         return self

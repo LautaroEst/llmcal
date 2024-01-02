@@ -58,7 +58,7 @@ class QDACalibrator(BaseCalibrator):
         ], dim=0).T
         return logits
 
-    def fit(self, train_features, train_labels):
+    def fit(self, train_features, train_labels, validation_features=None, validation_labels=None, batch_size=32, accelerator=None, devices=None):
         num_samples = train_features.shape[0]
         for class_idx in range(self.num_classes):
             class_features = train_features[train_labels == class_idx]
@@ -93,7 +93,7 @@ class LDACalibrator(BaseCalibrator):
         s, P = torch.linalg.eigh(self.covariance)
         return P * (1 / s) @ P.T
 
-    def fit(self, train_features, train_labels):
+    def fit(self, train_features, train_labels, validation_features=None, validation_labels=None, batch_size=32, accelerator=None, devices=None):
         num_samples = train_features.shape[0]
         class_covariances = []
         for class_idx in range(self.num_classes):
@@ -115,7 +115,8 @@ class MahalanobisCalibrator(BaseCalibrator, SGDMixin):
         )
 
     def compute_covariance(self, class_idx):
-        features_centered = self.train_features - self.means[class_idx]
+        mu = self.means[class_idx]
+        features_centered = self.train_features.to(device=mu.device) - mu
         cov = features_centered.T @ features_centered / (self.train_features.shape[0] - 1)
         return cov
 

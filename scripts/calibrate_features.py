@@ -133,6 +133,7 @@ def main():
         "devices": args.devices,
     }
     if args.method == "affine":
+        fit_calibrator_args["model_checkpoint_dir"] = os.path.join(args.output_dir, method_id)
         fit_calibrator_args["learning_rate"] = args.learning_rate
         fit_calibrator_args["max_ls"] = args.max_ls
         fit_calibrator_args["max_epochs"] = args.max_epochs
@@ -147,7 +148,6 @@ def main():
         fit_calibrator_args["max_epochs"] = args.max_epochs
         fit_calibrator_args["learning_rate"] = args.learning_rate
         fit_calibrator_args["weight_decay"] = args.weight_decay
-        fit_calibrator_args["tolerance"] = args.tolerance
         fit_calibrator_args["patience"] = args.patience
     else:
         raise ValueError(f"Calibration method {args.method} not supported.")
