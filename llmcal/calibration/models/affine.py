@@ -6,6 +6,7 @@ import torch.nn as nn
 from .base import BaseCalibrator
 from ..optim import LBFGSBMixin
 from ..losses import LogLoss, BrierLoss
+from ..feature_maps import init_feature_map
 
 
 class AffineCalibrator(BaseCalibrator, LBFGSBMixin):
@@ -89,3 +90,26 @@ class AffineCalibrator(BaseCalibrator, LBFGSBMixin):
         alpha = self._get_alpha(features.device)
         logits = features @ alpha.T + self.bias
         return logits
+
+
+
+class AffineCalibratorWithFeatureMap(BaseCalibrator, LBFGSBMixin):
+
+    def __init__(
+        self, 
+        feature_map: str, 
+        **kwargs
+    ):
+        super().__init__(num_features=kwargs["num_features"], num_classes=kwargs["num_classes"], random_state=kwargs["random_state"])
+        self.feature_map = init_feature_map(kwargs["num_features"], feature_map)
+        kwargs["num_features"] = self.feature_map.num_features
+        self.calibrator = AffineCalibrator(**kwargs)
+
+    def forward(self, features):
+        return self.calibrator(self.feature_map(features))
+
+    def loss(self, logits, labels):
+        return self.calibrator.loss(logits, labels)
+
+
+

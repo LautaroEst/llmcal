@@ -94,7 +94,7 @@ class SGDMixin:
 
         # Prepare history
         train_loss_history = []
-        last_epoch_loss = float("inf")
+        best_epoch_loss = train_loss = val_loss = float("inf")
         if perform_validation:
             val_loss_history = []
 
@@ -113,7 +113,8 @@ class SGDMixin:
             train_loss = 0
             for batch_features, batch_labels in train_dataloader:
                 optimizer.zero_grad()
-                batch_loss = self.loss(model(batch_features), batch_labels)
+                batch_logits = model(batch_features)
+                batch_loss = self.loss(batch_logits, batch_labels)
                 train_loss += batch_loss.item() * batch_features.shape[0]
                 fabric.backward(batch_loss)
                 optimizer.step()
@@ -127,13 +128,14 @@ class SGDMixin:
                 val_loss = 0
                 with torch.no_grad():
                     for batch_features, batch_labels in validation_dataloader:
-                        val_loss += self.loss(model(batch_features), batch_labels).item() * batch_features.shape[0]
+                        batch_logits = model(batch_features)
+                        val_loss += self.loss(batch_logits, batch_labels).item() * batch_features.shape[0]
                     val_loss /= len(validation_dataloader.dataset)
                 val_loss_history.append(val_loss)
                 loss = val_loss
 
             # Check for convergence
-            if abs(loss - last_epoch_loss) / max([abs(loss), last_epoch_loss, 1]) <= tolerance:
+            if abs(loss - best_epoch_loss) / max([abs(loss), best_epoch_loss, 1]) <= tolerance:
                 if p_counter == 0:
                     logger.info(f"Converged after {epoch} epochs")
                     break
@@ -143,9 +145,9 @@ class SGDMixin:
                 p_counter = patience
 
             # Save the best model
-            if loss < last_epoch_loss:
+            if loss < best_epoch_loss:
                 torch.save(model.state_dict(), os.path.join(model_checkpoint_dir, "best_model_state_dict.pt"))
-            last_epoch_loss = loss
+                best_epoch_loss = loss
             
         self.train_loss_history = train_loss_history
         self.val_loss_history = val_loss_history if perform_validation else None

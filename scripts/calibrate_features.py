@@ -68,27 +68,33 @@ def main():
     train_features = np.load(args.train_features) # Train
     train_labels = train_features.argmax(axis=-1) if "logits.npy" in args.train_labels else np.load(args.train_labels)
     if args.subsample_train is not None:
-        all_idx = np.arange(len(train_features))
+        all_idx = np.arange(train_features.shape[0])
+        if args.subsample_train > train_features.shape[0]:
+            args.subsample_train = train_features.shape[0]
+            logger.warning(f"Subsample train ({args.subsample_train}) is larger than the number of training samples ({train_features.shape[0]}).")
         train_idx = rs.choice(all_idx, size=args.subsample_train, replace=False)
         non_train_idx = np.setdiff1d(all_idx, train_idx)
         non_train_features = train_features[non_train_idx]
         non_train_labels = train_labels[non_train_idx]
         train_features = train_features[train_idx]
         train_labels = train_labels[train_idx]
+    else:
+        non_train_features = np.array([[]])
+        non_train_labels = np.array([])
 
     eval_features = np.load(args.eval_features) # Evaluation
     eval_labels = np.load(args.eval_labels)
     if args.subsample_eval is not None:
-        eval_idx = rs.choice(np.arange(len(eval_features)), size=args.subsample_eval, replace=False)
+        if args.subsample_eval > eval_features.shape[0]:
+            args.subsample_eval = eval_features.shape[0]
+            logger.warning(f"Subsample evalaution ({args.subsample_eval}) is larger than the number of evaluation samples ({eval_features.shape[0]}).")
+        eval_idx = rs.choice(np.arange(eval_features.shape[0]), size=args.subsample_eval, replace=False)
         eval_features = eval_features[eval_idx]
         eval_labels = eval_labels[eval_idx]
 
     # Create train - validation split
-    if args.subsample_train > len(train_features):
-        args.subsample_train = len(train_features)
-        logger.warning(f"Subsample train ({args.subsample_train}) is larger than the number of training samples ({len(train_features)}).")
-    if args.validation_samples < 0 or args.validation_samples > len(train_features) - args.subsample_train:
-        raise ValueError(f"Invalid number of validation samples: {args.validation_samples}. Must be in [0, {len(train_features) - args.subsample_train}].")
+    if args.validation_samples < 0 or args.validation_samples > non_train_features.shape[0]:
+        raise ValueError(f"Invalid number of validation samples: {args.validation_samples}. Must be in [0, {non_train_features.shape[0]}].")
     elif args.validation_samples == 0:
         validation_features = None
         validation_labels = None
@@ -217,11 +223,17 @@ def obtain_calibrated_posteriors(
     elif method == "prior_adaptation":
         model = PriorsAdaptator(num_features, **init_calibrator_args)
     elif method == "qda":
-        model = QDACalibratorWithFeatureMap(feature_map, num_features=num_features, num_classes=num_classes, **init_calibrator_args)
+        if feature_map != "identity":
+            raise ValueError(f"QDA calibration does not support feature maps.")
+        model = QDACalibrator(num_features=num_features, num_classes=num_classes, **init_calibrator_args)
     elif method == "lda":
-        model = LDACalibratorWithFeatureMap(feature_map, num_features=num_features, num_classes=num_classes, **init_calibrator_args)
+        if feature_map != "identity":
+            raise ValueError(f"LDA calibration does not support feature maps.")
+        model = LDACalibrator(num_features=num_features, num_classes=num_classes, **init_calibrator_args)
     elif method == "mahalanobis":
-        model = MahalanobisCalibratorWithFeatureMap(feature_map, num_features=num_features, num_classes=num_classes, **init_calibrator_args)
+        if feature_map != "identity":
+            raise ValueError(f"Mahalanobis calibration does not support feature maps.")
+        model = MahalanobisCalibrator(num_features=num_features, num_classes=num_classes, **init_calibrator_args)
     else:
         raise ValueError(f"Calibration method {method} not supported.")
 

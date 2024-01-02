@@ -28,7 +28,9 @@ def square_mahalanobis_distance(X, mu, sigma):
         Square Mahalanobis distance between the samples and the multivariate distribution.
     """
     x_tilde = (X - mu)
-    return torch.sum(x_tilde * (x_tilde @ torch.linalg.inv(sigma)), dim=1)
+    # inv_sigma = torch.cholesky_inverse(sigma)
+    inv_sigma = torch.linalg.inv(sigma)
+    return torch.sum(x_tilde * (x_tilde @ inv_sigma.T), dim=1)
 
 
 class QDACalibrator(BaseCalibrator):
@@ -112,19 +114,51 @@ class MahalanobisCalibrator(BaseCalibrator, SGDMixin):
             [nn.Parameter(torch.randn(num_features,generator=self.generator)) for _ in range(num_classes)]
         )
 
-    def compute_covariance(self, class_features, class_mean):
-        x_tilde = (class_features - class_mean)
-        return x_tilde.T @ x_tilde / (class_features.shape[0] - 1)
+    def compute_covariance(self, class_idx):
+        features_centered = self.train_features - self.means[class_idx]
+        cov = features_centered.T @ features_centered / (self.train_features.shape[0] - 1)
+        return cov
 
     def compute_distances_matrix(self, features):
         return torch.stack([
             square_mahalanobis_distance(
                 features, 
                 mu=self.means[class_idx], 
-                sigma=self.compute_covariance(features, self.means[class_idx])
+                sigma=self.compute_covariance(class_idx)
             ) for class_idx in range(self.num_classes)
-        ], dim=0).T
-    
+        ], dim=1)
+
+    def fit(
+        self,
+        train_features: torch.Tensor,
+        train_labels: torch.Tensor,
+        **kwargs
+    ):
+        # Save training data
+        self.train_features = train_features
+        self.train_labels = train_labels
+
+        # Init means
+        for class_idx in range(self.num_classes):
+            class_features = train_features[train_labels == class_idx]
+            mean = []
+            for batch in torch.split(class_features, kwargs["batch_size"]):
+                mean.append(torch.sum(batch, dim=0))
+            self.means[class_idx].data = torch.sum(torch.stack(mean), dim=0) / class_features.shape[0]
+        super().fit(train_features, train_labels, **kwargs)
+        return self
+
+    # def compute_distances_matrix(self, features):
+    #     distances = []
+    #     for class_idx in range(self.num_classes):
+    #         mu = self.means[class_idx]
+    #         _, S, Vt = torch.linalg.svd(self.train_features - mu, full_matrices=False)
+    #         x_centered = features - mu
+    #         x_tilde = x_centered @ (Vt.T * (1 / S))
+    #         distance = torch.sum(x_tilde * x_tilde, dim=1)
+    #         distances.append(distance)
+    #     return torch.stack(distances, dim=1)
+        
     def loss(self, logits, labels):
         loss = F.cross_entropy(logits, labels)
         return loss
