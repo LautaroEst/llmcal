@@ -6,5 +6,6 @@ from .mahalanobis import (
     QDACalibrator,
     LDACalibrator,
     MahalanobisCalibrator,
+    MahalanobisCalibratorQR
 )
 from .priors import PriorsAdaptator

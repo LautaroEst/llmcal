@@ -157,6 +157,36 @@
                 "--output_dir", "results/calibrate_features/gpt2-xl/results-run_dataset_on_model-gpt2-xl-glue-sst2-train--results-run_dataset_on_model-gpt2-xl-glue-sst2-validation--50",
                 "--random_state", "21788",
             ]
+        },
+        {
+            "name": "mahalanobis_qr",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/calibrate_features.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "--train_features", "results/run_dataset_on_model/gpt2-xl/glue/sst2/train/0_shot/embeddings.npy",
+                "--train_labels", "results/run_dataset_on_model/gpt2-xl/glue/sst2/train/0_shot/labels.npy",
+                "--eval_features", "results/run_dataset_on_model/gpt2-xl/glue/sst2/validation/0_shot/embeddings.npy",
+                "--eval_labels", "results/run_dataset_on_model/gpt2-xl/glue/sst2/validation/0_shot/labels.npy",
+                "--subsample_train", "3800",
+                "--subsample_eval", "None",
+                "--validation_samples", "200",
+                "--num_classes", "2",
+                "--method", "mahalanobis_qr",
+                "--feature_map", "identity",
+                "--accelerator", "cpu",
+                "--devices", "1",
+                "--optimizer", "Adam",
+                "--batch_size", "32",
+                "--max_epochs", "400",
+                "--learning_rate", "0.001",
+                "--weight_decay", "0.0",
+                "--tolerance", "0.01",
+                "--output_dir", "results/calibrate_features/gpt2-xl/results-run_dataset_on_model-gpt2-xl-glue-sst2-train--results-run_dataset_on_model-gpt2-xl-glue-sst2-validation--50",
+                "--random_state", "21788",
+            ]
         }
     ]
 }
