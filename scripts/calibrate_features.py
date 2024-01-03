@@ -116,7 +116,7 @@ def main():
         init_calibrator_args["loss"] = args.loss
     elif args.method == "prior_adaptation":
         init_calibrator_args["priors"] = args.priors
-    elif args.method in ["qda", "lda", "mahalanobis", "mahalanobis_qr"]:
+    elif args.method in ["qda", "lda", "mahalanobis", "mahalanobis_qr", "mahalanobis_svd"]:
         pass
     else:
         raise ValueError(f"Calibration method {args.method} not supported.")
@@ -142,7 +142,7 @@ def main():
         pass
     elif args.method in ["qda", "lda"]:
         pass
-    elif args.method in ["mahalanobis", "mahalanobis_qr"]:
+    elif args.method in ["mahalanobis", "mahalanobis_qr", "mahalanobis_svd"]:
         fit_calibrator_args["model_checkpoint_dir"] = os.path.join(args.output_dir, method_id)
         fit_calibrator_args["optimizer"] = args.optimizer
         fit_calibrator_args["max_epochs"] = args.max_epochs
@@ -201,6 +201,8 @@ def get_method_id(args):
         method_id += f"_mahalanobis"
     elif args.method == "mahalanobis_qr":
         method_id += f"_mahalanobis_qr"
+    elif args.method == "mahalanobis_svd":
+        method_id += f"_mahalanobis_svd"
     else:
         raise ValueError(f"Calibration method {args.method} not supported.")
     return method_id
@@ -240,6 +242,10 @@ def obtain_calibrated_posteriors(
         if feature_map != "identity":
             raise ValueError(f"Mahalanobis calibration does not support feature maps.")
         model = MahalanobisCalibratorQR(num_features=num_features, num_classes=num_classes, **init_calibrator_args)
+    elif method == "mahalanobis_svd":
+        if feature_map != "identity":
+            raise ValueError(f"Mahalanobis calibration does not support feature maps.")
+        model = MahalanobisCalibratorSVD(num_features=num_features, num_classes=num_classes, **init_calibrator_args)
     else:
         raise ValueError(f"Calibration method {method} not supported.")
 
