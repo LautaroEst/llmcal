@@ -15,7 +15,7 @@ from llmcal.data import load_dataset, LoaderWithTemplateCollator, Template
 fabric_args = {
     "accelerator": "cpu",
     "devices": 1,
-    "precision": 32,
+    "precision": 16,
 }
 
 # Initialize fabric

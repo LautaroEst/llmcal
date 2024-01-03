@@ -97,4 +97,6 @@ class GLUEwnli(BaseDataset):
         super().__init__(dataset, subsample=subsample, random_state=random_state, sort_by_length=sort_by_length)
 
 
-    
+if __name__ == "__main__":
+    dataset = GLUEsst2("train", subsample=100)
+    print(dataset[0])
