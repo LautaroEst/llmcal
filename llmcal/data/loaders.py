@@ -1,60 +1,39 @@
 import torch
 from torch.utils.data import DataLoader, RandomSampler
+from .utils import Template
+
 
 class ClassificationTemplateCollator:
 
-    MAX_QUERY_TOKENS = 50
-
-    def __init__(self, tokenizer, template):
+    def __init__(self, tokenizer, template, labels):
         self.tokenizer = tokenizer
-        self.template = template
-        self.labels = template.labels
-        num_of_prompt_tokens_without_query = len(
-            tokenizer.tokenize(
-                template.construct_prompt(**{
-                    feature: " " for feature in template.features
-                })
-            )
-        )
-        if num_of_prompt_tokens_without_query + self.MAX_QUERY_TOKENS > tokenizer.max_len_single_sentence:
-            raise ValueError("The template is too long for the tokenizer.")
-        
-        max_len_label = max([len(self.tokenizer.tokenize(l)) for l in template.labels.values()])
-        self.max_tokens_per_feature = (
-            tokenizer.max_len_single_sentence - num_of_prompt_tokens_without_query - max_len_label - 5
-        ) // len(template.features)
+        self.template = Template(prompt=template)
+        self.labels = labels
+        self.max_length = self.tokenizer.model_max_length - max([len(self.tokenizer(label_name).input_ids) for label_name in self.labels])
+        self.encoded_labels = [self.tokenizer(label_name, return_tensors="pt", padding=True, truncation=True).input_ids for label_name in self.labels]
 
     def __call__(self, batch):
-
-        ids, prompts, labels = [], [], []
-        fetures = {feature: [] for feature in self.template.features}
+        indices, prompts, labels = [], [], []
         for sample in batch:
-            ids.append(sample["idx"])
-            prompts.append(
-                self.template.construct_prompt(**{
-                    feature: self.tokenizer.convert_tokens_to_string(
-                        self.tokenizer.tokenize(sample[feature])[:self.max_tokens_per_feature]
-                    ) for feature in self.template.features
-                })
-            )
+            indices.append(sample["idx"])
+            features_dict = {feature: value for feature, value in sample.items() if feature in self.template.features}
+            prompt = self.template.construct_prompt(**features_dict)
+            prompts.append(prompt)
             labels.append(sample["label"])
-            for feature in self.template.features:
-                fetures[feature].append(sample[feature])
-        encoded_labels = {idx: {k: v.repeat(len(prompts),1) for k, v in self.tokenizer([
-            self.template.construct_label(label)
-        ], return_tensors="pt", padding=True).items()} for idx, label in self.labels.items()}
+        encoded_prompts = self.tokenizer(prompts, return_tensors="pt", padding=True, truncation=True)
 
         return {
-            "idx": ids,
-            "encoded_prompt": self.tokenizer(prompts, return_tensors="pt", padding=True),
-            "label": torch.tensor(labels),
-            "encoded_labels": encoded_labels,
-            "features": {feature: fetures[feature] for feature in self.template.features}
+            "idx": indices,
+            "input_ids": encoded_prompts["input_ids"][:,:self.max_length],
+            "attention_mask": encoded_prompts["attention_mask"][:,:self.max_length],
+            "label": torch.tensor(labels, dtype=torch.long),
+            "encoded_labels": [l.clone() for l in self.encoded_labels],
         }
 
-class LoaderWithTemplateCollator(DataLoader):
 
-    def __init__(self, dataset, template, tokenizer, batch_size=32, shuffle=False, random_state=0, **kwargs):
+class LoaderWithTemplate(DataLoader):
+
+    def __init__(self, dataset, template, labels, tokenizer, batch_size=32, shuffle=False, random_state=0, **kwargs):
         self.tokenizer = tokenizer
         self.template = template
         kwargs.pop("collate_fn", None)
@@ -71,7 +50,8 @@ class LoaderWithTemplateCollator(DataLoader):
             sampler=sampler,
             collate_fn=ClassificationTemplateCollator(
                 tokenizer=tokenizer,
-                template=template
+                template=template,
+                labels=labels,
             ),
             **kwargs
         )

@@ -15,12 +15,12 @@ from llmcal.data import load_dataset, LoaderWithTemplateCollator, Template
 fabric_args = {
     "accelerator": "cpu",
     "devices": 1,
-    "precision": 16,
+    # "precision": 16,
 }
 
 # Initialize fabric
-fabric = L.Fabric(**fabric_args)
-fabric.launch()
+# fabric = L.Fabric(**fabric_args)
+# fabric.launch()
 
 
 
@@ -60,9 +60,10 @@ def main():
     # Load model
     print( "======================================")
     print(f">>> Loading {args.model_name} model...")
-    with fabric.init_module():
-        model = LanguageModelClassifier.from_model_name(args.model_name)
+    # with fabric.init_module():
+        # model = LanguageModelClassifier.from_model_name(args.model_name)
     # model = fabric.setup(model, move_to_device=True)
+    model = LanguageModelClassifier.from_model_name(args.model_name)
     print("Model loaded successfully!\n")
     model.eval()
 
@@ -110,7 +111,7 @@ def run_model_on_dataset(model, template_args, args, random_state=0):
             shuffle=False,
             random_state=random_state
         )
-        dataloader = fabric.setup_dataloaders(dataloader, use_distributed_sampler=True, move_to_device=True)
+        # dataloader = fabric.setup_dataloaders(dataloader, use_distributed_sampler=True, move_to_device=True)
         dataloader = tqdm(dataloader, leave=False)
 
         # Run model on dataset

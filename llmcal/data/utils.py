@@ -1,5 +1,5 @@
 
-import json
+import re
 from .datasets import dataset2class
 
 def load_dataset(dataset_name, split="train", subsample=None, random_state=None, sort_by_length=False):
@@ -9,15 +9,14 @@ def load_dataset(dataset_name, split="train", subsample=None, random_state=None,
 
 class Template:
 
-    def __init__(self, prompt: str, prompt_label_separator: str = " ", features: list = None, labels: dict = None):
-        
+    def __init__(self, prompt: str):
         self.prompt = prompt
-        self.prompt_label_separator = prompt_label_separator
-        self.features = features
-        self.labels = {int(i): l for i, l in labels.items()}
+        self.features = self._get_features(prompt)
     
     def construct_prompt(self, **kwargs):
-        return self.prompt.format(**kwargs)
-
-    def construct_label(self, label: str):
-        return f"{self.prompt_label_separator}{label}"
+        prompt = self.prompt.format(**kwargs)
+        return prompt
+    
+    def _get_features(self, prompt):
+        features = re.findall(r"\{(\w+)\}", prompt)
+        return features

@@ -1,5 +1,7 @@
 *.egg-info/
-results/
-*__pycache__/
-data/
-psrcal_new/
+*__pycache__*
+
+/results/
+/data/
+/psrcal_new/
+/llmcal.old/

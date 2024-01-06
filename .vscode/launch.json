@@ -23,17 +23,26 @@
             "request": "launch",
             "program": "${workspaceFolder}/scripts/run_dataset_on_model.py",
             "console": "integratedTerminal",
-            "justMyCode": true,
+            "justMyCode": false,
             "args": [
+                // "--model_name", "meta-llama/Llama-2-7b-hf",
                 "--model_name", "gpt2-xl",
-                "--dataset_name", "glue/cola",
-                "--templates", "${workspaceFolder}/results/templates/glue/cola/00.json",
-                "--splits", "train,validation",
-                "--num_samples", "1010,None",
+                "--dataset_name", "tony_zhao/sst2",
+                "--templates", "${workspaceFolder}/results/templates/tony_zhao/sst2/00.json",
+                "--splits", "train,test",
+                "--num_samples", "4000,None",
                 "--output_dir", "${workspaceFolder}/results",
                 "--save_embeddings",
-                "--random_state", "3945",
+                "--random_state", "9472",
             ]
+        },
+        {
+            "name": "test/llama_pask_key_values.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/tests/llama_pask_key_values.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
         },
         {
             "name": "calibrate_features.py",
