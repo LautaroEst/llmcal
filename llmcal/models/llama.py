@@ -26,7 +26,7 @@ class LlamaLMClassifier(LlamaForCausalLM):
         past_key_values: Optional[Tuple[Tuple[torch.Tensor]]] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
         output_attentions: Optional[bool] = None,
-        output_hidden_states: Optional[bool] = None,
+        output_embeddings: Optional[bool] = None,
         encoded_labels: Optional[List[torch.LongTensor]] = None
     ) -> torch.FloatTensor:
         
@@ -39,7 +39,7 @@ class LlamaLMClassifier(LlamaForCausalLM):
             labels=None,
             use_cache=encoded_labels is not None,
             output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
+            output_hidden_states=output_embeddings,
             return_dict=True
         )
 
@@ -63,7 +63,7 @@ class LlamaLMClassifier(LlamaForCausalLM):
                     position_ids=position_ids,
                     use_cache=False,
                     output_attentions=False,
-                    output_hidden_states=False,
+                    output_embeddingshidden_states=False,
                     return_dict=True
                 ).logits
                 
@@ -82,8 +82,8 @@ class LlamaLMClassifier(LlamaForCausalLM):
         output = {"logits": labels_logits}
         if output_attentions:
             output["attentions"] = outputs.attentions
-        if output_hidden_states:
-            output["hidden_states"] = outputs.hidden_states
+        if output_embeddings:
+            output["embeddings"] = outputs.hidden_states[-1][:,-1,:]
         return output
     
 

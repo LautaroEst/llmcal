@@ -23,7 +23,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/scripts/run_dataset_on_model.py",
             "console": "integratedTerminal",
-            "justMyCode": false,
+            "justMyCode": true,
             "args": [
                 // "--model_name", "meta-llama/Llama-2-7b-hf",
                 "--model_name", "gpt2-xl",
@@ -34,6 +34,8 @@
                 "--output_dir", "${workspaceFolder}/results",
                 "--save_embeddings",
                 "--random_state", "9472",
+                "--accelerator", "cpu",
+                "--devices", "1"
             ]
         },
         {

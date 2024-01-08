@@ -20,7 +20,9 @@ for DATASET in ${DATASETS[@]}; do
         --num_samples "4000,None" \
         --output_dir ${RESULTS_DIR} \
         --save_embeddings \
-        --random_state 9472
+        --random_state 9472 \
+        --accelerator "cpu" \
+        --devices "1"
 done
 
 echo =============

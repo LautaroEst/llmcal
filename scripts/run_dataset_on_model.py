@@ -9,19 +9,8 @@ import os
 from tqdm import tqdm
 import torch
 
-from llmcal.models import LanguageModelClassifier
-from llmcal.data import load_dataset, LoaderWithTemplateCollator, Template
-
-fabric_args = {
-    "accelerator": "cpu",
-    "devices": 1,
-    # "precision": 16,
-}
-
-# Initialize fabric
-# fabric = L.Fabric(**fabric_args)
-# fabric.launch()
-
+from llmcal.models import load_model_and_tokenizer
+from llmcal.data import load_dataset, LoaderWithTemplate
 
 
 SCRIPT_NAME = os.path.splitext(os.path.basename(__file__))[0]
@@ -36,6 +25,10 @@ def parse_args():
     parser.add_argument('--output_dir', type=str, required=True)
     parser.add_argument('--save_embeddings', action="store_true")
     parser.add_argument('--random_state', type=int, default=0)
+
+    parser.add_argument('--accelerator', type=str, default="cpu")
+    parser.add_argument('--devices', type=int, default=1)
+    parser.add_argument('--precision', default=None)
     args = parser.parse_args()
 
     args.splits = args.splits.split(",")
@@ -53,6 +46,15 @@ def main():
     # Read command args
     args = parse_args()
 
+    # Init Fabric
+    global fabric
+    fabric = L.Fabric(
+        accelerator=args.accelerator,
+        devices=args.devices,
+        precision=args.precision,
+    )
+    fabric.launch()
+
     # Prepare templates
     with open(os.path.join(args.templates), "r") as f:
         templates = json.load(f)
@@ -60,28 +62,23 @@ def main():
     # Load model
     print( "======================================")
     print(f">>> Loading {args.model_name} model...")
-    # with fabric.init_module():
-        # model = LanguageModelClassifier.from_model_name(args.model_name)
-    # model = fabric.setup(model, move_to_device=True)
-    model = LanguageModelClassifier.from_model_name(args.model_name)
+    with fabric.init_module():
+        model, tokenizer = load_model_and_tokenizer(args.model_name)
+    model = fabric.setup(model, move_to_device=True)
     print("Model loaded successfully!\n")
     model.eval()
 
     # Run model on each dataset
-    for template_args in templates:
-        run_model_on_dataset(model, template_args, args, random_state=args.random_state)
+    for template in templates:
+        run_model_on_dataset(model, tokenizer, template, args, random_state=args.random_state)
 
     print("\nDone!")
     print( "======================================\n\n")
     print()
     
 
-def run_model_on_dataset(model, template_args, args, random_state=0):
+def run_model_on_dataset(model, tokenizer, template, args, random_state=0):
     
-    template_id = template_args.pop("id")
-    batch_size = template_args.pop("batch_size")
-    template = Template(**template_args)
-
     # Run model on dataset
     for split, num_samples in zip(args.splits, args.num_samples):
 
@@ -90,7 +87,7 @@ def run_model_on_dataset(model, template_args, args, random_state=0):
         print(f"\t* Dataset: {args.dataset_name}")
         print(f"\t* Split: {split}")
         print(f"\t* Num samples: {num_samples}")
-        print(f"\t* Template: {template_id}")
+        print(f"\t* Template: {template['id']}")
 
         results_dir = os.path.join(
             args.output_dir, 
@@ -98,20 +95,21 @@ def run_model_on_dataset(model, template_args, args, random_state=0):
             args.model_name, 
             args.dataset_name,
             split,
-            template_id,
+            template['id'],
         )
         
         # Prepare dataloaders
         dataset = load_dataset(args.dataset_name, split=split, subsample=num_samples, random_state=random_state, sort_by_length=True)
-        dataloader = LoaderWithTemplateCollator(
-            dataset=dataset,
-            template=template,
-            tokenizer=model.tokenizer,
-            batch_size=batch_size,
-            shuffle=False,
+        dataloader = LoaderWithTemplate(
+            dataset=dataset, 
+            template=template["prompt"], 
+            labels=template["labels"], 
+            tokenizer=tokenizer, 
+            batch_size=template['batch_size'], 
+            shuffle=False, 
             random_state=random_state
         )
-        # dataloader = fabric.setup_dataloaders(dataloader, use_distributed_sampler=True, move_to_device=True)
+        dataloader = fabric.setup_dataloaders(dataloader, use_distributed_sampler=True, move_to_device=True)
         dataloader = tqdm(dataloader, leave=False)
 
         # Run model on dataset
@@ -127,7 +125,7 @@ def run_model_on_dataset(model, template_args, args, random_state=0):
                     pickle.dump(v, f)
     
         with open(os.path.join(results_dir, f"template.json"), "w") as f:
-            json.dump(template_args, f, indent=4, separators=(',', ': '))
+            json.dump(template, f, indent=4, separators=(',', ': '))
 
 
 def predict(model, dataloader, results_dir, save_embeddings=False):
@@ -149,42 +147,51 @@ def predict(model, dataloader, results_dir, save_embeddings=False):
         if are_previous_results:
             batch_size = len(batch["idx"])
             valid_idx = []
-            encoder_output = {"embeddings": []}
-            logits_batch = []
+            outputs = {"logits": [], "embeddings": []}
             for i in range(batch_size):
                 pi = np.where(previous_idx == batch["idx"][i])[0]
                 if len(pi) == 0:
                     valid_idx.append(i)
-                    encoder_output["embeddings"].append(None)
-                    logits_batch.append(None)
+                    outputs["embeddings"].append(None)
+                    outputs["logits"].append(None)
                 else:
                     if save_embeddings:
-                        encoder_output["embeddings"].append(previous_embeddings[pi[0]])
-                    logits_batch.append(previous_logits[pi[0]])
+                        outputs["embeddings"].append(previous_embeddings[pi[0]])
+                    outputs["logits"].append(previous_logits[pi[0]])
             if len(valid_idx) != 0:
-                encoded_prompt = {k: batch["encoded_prompt"][k][valid_idx,:] for k in batch["encoded_prompt"]}
-                encoded_labels = {ii: {k: v[valid_idx,:] for k, v in d.items()} for ii, d in batch["encoded_labels"].items()}
                 with torch.no_grad():
-                    eo, lb = model(encoded_prompt, encoded_labels, output_embeddings=save_embeddings)
+                    o = model(
+                        input_ids=batch["input_ids"][valid_idx,:],
+                        attention_mask=batch["attention_mask"][valid_idx,:],
+                        encoded_labels=[batch["encoded_labels"][vi] for vi in valid_idx],
+                        output_embeddings=save_embeddings
+                    )
                 counter = 0
                 for i in range(batch_size):
-                    if logits_batch[i] is None:
-                        logits_batch[i] = lb[counter]
+                    if outputs["logits"][i] is None:
+                        # outputs["logits"][i] = lb[counter]
+                        outputs["logits"][i] = o["logits"][counter]
                         if save_embeddings:
-                            encoder_output["embeddings"][i] = eo["embeddings"][counter]
+                            # outputs["embeddings"][i] = eo["embeddings"][counter]
+                            outputs["embeddings"][i] = o["embeddings"][counter]
                         counter += 1
-            logits_batch = torch.stack(logits_batch)
+            outputs["logits"] = torch.stack(outputs["logits"])
             if save_embeddings:
-                encoder_output["embeddings"] = torch.stack(encoder_output["embeddings"])
+                outputs["embeddings"] = torch.stack(outputs["embeddings"])
         else:
             with torch.no_grad():
-                encoder_output, logits_batch = model(batch["encoded_prompt"], batch["encoded_labels"], output_embeddings=save_embeddings)
+                outputs = model(
+                    input_ids=batch["input_ids"],
+                    attention_mask=batch["attention_mask"],
+                    encoded_labels=batch["encoded_labels"], 
+                    output_embeddings=save_embeddings
+                )
 
         results["ids"].extend(batch["idx"])
-        results["logits"].append(logits_batch.cpu().numpy())
+        results["logits"].append(outputs["logits"].cpu().numpy())
         results["labels"].append(batch["label"].cpu().numpy())
         if save_embeddings:
-            results["embeddings"].append(encoder_output["embeddings"].cpu().numpy())
+            results["embeddings"].append(outputs["embeddings"].cpu().numpy())
         for feature in batch["features"]:
             results["features"][feature].extend(batch["features"][feature])
 

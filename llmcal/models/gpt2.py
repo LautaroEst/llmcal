@@ -31,7 +31,7 @@ class GPT2LMClassifier(GPT2LMHeadModel):
         head_mask: Optional[torch.FloatTensor] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
         output_attentions: Optional[bool] = None,
-        output_hidden_states: Optional[bool] = None,
+        output_embeddings: Optional[bool] = None,
         encoded_labels: Optional[List[torch.LongTensor]] = None
     ) -> torch.FloatTensor:
         
@@ -46,7 +46,7 @@ class GPT2LMClassifier(GPT2LMHeadModel):
             labels=None,
             use_cache=encoded_labels is not None,
             output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
+            output_hidden_states=output_embeddings,
             return_dict=True
         )
 
@@ -99,8 +99,8 @@ class GPT2LMClassifier(GPT2LMHeadModel):
         output = {"logits": labels_logits}
         if output_attentions:
             output["attentions"] = outputs.attentions
-        if output_hidden_states:
-            output["hidden_states"] = outputs.hidden_states
+        if output_embeddings:
+            output["embeddings"] = outputs.hidden_states[-1][:,-1,:]
         return output
         
 

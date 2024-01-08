@@ -1,11 +1,13 @@
 
 import torch
-from llmcal import load_model_and_tokenizer, load_dataset, LoaderWithTemplate
+from llmcal.models import load_model_and_tokenizer
+from llmcal.data import load_dataset, LoaderWithTemplate
 
 
 def main():
 
     model_name = "gpt2-xl"
+    # model_name = "meta-llama/Llama-2-7b-hf"
     dataset_name, split = "tony_zhao/sst2", "train"
     subsample = None
     template = "Review: {sentence}\nSentiment:"
