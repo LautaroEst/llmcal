@@ -1,12 +1,11 @@
 
+import json
 import os
 import torch
 from torch import optim
 from torch.utils.data import DataLoader, TensorDataset
 import lightning as L
-from lightning.fabric.loggers import TensorBoardLogger
 from tqdm import tqdm
-import shutil
 
 
 class LBFGSMixin:
@@ -68,10 +67,6 @@ class LBFGSMixin:
             "max_ls": max_ls,
             "tolerance": tolerance,
         }
-        if os.path.exists(os.path.join(model_checkpoint_dir, "logs")):
-            shutil.rmtree(os.path.join(model_checkpoint_dir, "logs"))
-        logger = TensorBoardLogger(root_dir=model_checkpoint_dir, name='', default_hp_metric=False, version="logs")
-        logger.log_hyperparams(hparams)
 
         # Setup optimizer
         optimizer = optim.LBFGS(
@@ -87,6 +82,7 @@ class LBFGSMixin:
 
         train_dataset = TensorDataset(train_features, train_labels)
         train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+        history = {"train_loss": [], "epoch": []}
 
         if validation_features is not None and validation_labels is not None:
             validation_dataset = TensorDataset(validation_features, validation_labels)
@@ -97,6 +93,7 @@ class LBFGSMixin:
                 use_distributed_sampler=True,
                 move_to_device=True
             )
+            history["validation_loss"] = []
         else:
             train_dataloader = fabric.setup_dataloaders(train_dataloader, use_distributed_sampler=True, move_to_device=True)
             validation_dataloader = None
@@ -104,47 +101,60 @@ class LBFGSMixin:
         # Define closure for training
         def closure():
             optimizer.zero_grad()
+            loss_history = []
             for batch_features, batch_labels in train_dataloader:
                 batch_logits = model(batch_features)
                 loss = self.loss(batch_logits, batch_labels) * batch_features.shape[0] / len(train_dataloader.dataset)
                 fabric.backward(loss)
+                loss_history.append(loss.item())
             params_norm = torch.tensor(0.0, device=fabric.device)
             for param in model.parameters():
                 params_norm += torch.norm(param)
             loss = weight_decay * params_norm
             fabric.backward(loss)
+            loss = sum(loss_history) + loss.item()
             return loss
         
         # Start training
-        model.train()
-        epochs_bar = tqdm(range(max_epochs), leave=False)
-        last_epoch_loss = float("inf")
-        for epoch in epochs_bar:
+        try:
+            os.makedirs(model_checkpoint_dir, exist_ok=True)
+            model.train()
+            epochs_bar = tqdm(range(max_epochs), leave=False)
+            best_val_loss = float("inf")
+            for epoch in epochs_bar:
 
-            # Train
-            loss = optimizer.step(closure).item()
-            epochs_bar.set_description(f"Epoch {epoch + 1} | Loss: {loss:.4f}")
-            logger.log_metrics({"Loss/train": loss}, step=epoch)
-            if abs(loss - last_epoch_loss) / max([1, loss, last_epoch_loss]) <= tolerance:
-                print(f"Converged at epoch {epoch + 1} with loss {loss:.4f}")
-                break
-            last_epoch_loss = loss
+                # Train
+                loss = optimizer.step(closure)
+                epochs_bar.set_description(f"Epoch {epoch + 1} | Loss: {loss:.4f}")
+                history["train_loss"].append(loss)
+                
+                # Validate
+                if validation_dataloader is not None:
+                    model.eval()
+                    with torch.no_grad():
+                        loss = 0
+                        for batch_features, batch_labels in validation_dataloader:
+                            batch_logits = model(batch_features)
+                            loss += self.loss(batch_logits, batch_labels).item() * batch_features.shape[0] / len(validation_dataloader.dataset)
+                        params_norm = torch.tensor(0.0, device=fabric.device)
+                        for param in model.parameters():
+                            params_norm += torch.norm(param)
+                        loss += weight_decay * params_norm
+                        history["validation_loss"].append(loss.item())
+                    model.train()
+                    if loss < best_val_loss:
+                        best_val_loss = loss
+                        torch.save(self.state_dict(), os.path.join(model_checkpoint_dir, "model.pt"))
             
-            # Validate
-            if validation_dataloader is not None:
-                model.eval()
-                with torch.no_grad():
-                    loss = 0
-                    for batch_features, batch_labels in validation_dataloader:
-                        batch_logits = model(batch_features)
-                        loss += self.loss(batch_logits, batch_labels).item() * batch_features.shape[0] / len(validation_dataloader.dataset)
-                    params_norm = torch.tensor(0.0, device=fabric.device)
-                    for param in model.parameters():
-                        params_norm += torch.norm(param)
-                    loss += weight_decay * params_norm
-                    logger.log_metrics({"Loss/validation": loss}, step=epoch)
-                model.train()
+                history["epoch"].append(epoch)
         
-        # Save model
-        fabric.save(os.path.join(model_checkpoint_dir,"model.ckpt"), {"model": model, "optimizer": optimizer})
-        logger.finalize("success")
+        except KeyboardInterrupt:
+            print("Training interrupted. Exiting...")
+
+        # Load best model
+        self.load_state_dict(torch.load(os.path.join(model_checkpoint_dir, "model.pt")))
+
+        # Save history
+        with open(os.path.join(model_checkpoint_dir, "history.json"), "w") as f:
+            json.dump(history, f)
+        

@@ -41,8 +41,6 @@ def parse_args():
     parser.add_argument('--max_epochs', type=int, default=100)
     parser.add_argument('--learning_rate', type=float, default=1e-3)
     parser.add_argument('--weight_decay', type=float, default=0)
-    parser.add_argument('--tolerance', type=float, default=1e-4)
-    parser.add_argument('--patience', type=int, default=10)
 
     args = parser.parse_args()
     method_id = get_method_id(args)
@@ -72,7 +70,6 @@ def parse_args():
         fit_calibrator_args["learning_rate"] = args.learning_rate
         fit_calibrator_args["max_ls"] = args.max_ls
         fit_calibrator_args["max_epochs"] = args.max_epochs
-        fit_calibrator_args["tolerance"] = args.tolerance
         fit_calibrator_args["weight_decay"] = args.weight_decay
     elif args.method in ["qda", "lda"]:
         pass
@@ -82,7 +79,6 @@ def parse_args():
         fit_calibrator_args["max_epochs"] = args.max_epochs
         fit_calibrator_args["learning_rate"] = args.learning_rate
         fit_calibrator_args["weight_decay"] = args.weight_decay
-        fit_calibrator_args["patience"] = args.patience
     else:
         raise ValueError(f"Calibration method {args.method} not supported.")
 
@@ -237,7 +233,6 @@ def train_calibrator(
         validation_labels=torch.from_numpy(validation_labels) if validation_labels is not None else None,
         **fit_calibrator_args
     )
-    print("Done.")
     print()
     return model
 
@@ -294,7 +289,4 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("Interrupted. Exiting...")
+    main()
