@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader, TensorDataset
 import lightning as L
 from lightning.fabric.loggers import TensorBoardLogger
 from tqdm import tqdm
+import shutil
 
 
 class LBFGSMixin:
@@ -59,15 +60,18 @@ class LBFGSMixin:
         fabric.launch()
 
         # Setup logging
-        logger = TensorBoardLogger(root_dir=model_checkpoint_dir)
-        logger.log_hyperparams({
+        hparams = {
             "max_epochs": max_epochs,
             "batch_size": batch_size,
             "learning_rate": learning_rate,
             "weight_decay": weight_decay,
             "max_ls": max_ls,
             "tolerance": tolerance,
-        })
+        }
+        if os.path.exists(os.path.join(model_checkpoint_dir, "logs")):
+            shutil.rmtree(os.path.join(model_checkpoint_dir, "logs"))
+        logger = TensorBoardLogger(root_dir=model_checkpoint_dir, name='', default_hp_metric=False, version="logs")
+        logger.log_hyperparams(hparams)
 
         # Setup optimizer
         optimizer = optim.LBFGS(
@@ -104,6 +108,11 @@ class LBFGSMixin:
                 batch_logits = model(batch_features)
                 loss = self.loss(batch_logits, batch_labels) * batch_features.shape[0] / len(train_dataloader.dataset)
                 fabric.backward(loss)
+            params_norm = torch.tensor(0.0, device=fabric.device)
+            for param in model.parameters():
+                params_norm += torch.norm(param)
+            loss = weight_decay * params_norm
+            fabric.backward(loss)
             return loss
         
         # Start training
@@ -115,7 +124,7 @@ class LBFGSMixin:
             # Train
             loss = optimizer.step(closure).item()
             epochs_bar.set_description(f"Epoch {epoch + 1} | Loss: {loss:.4f}")
-            logger.log_metrics({"train_loss": loss}, step=epoch)
+            logger.log_metrics({"Loss/train": loss}, step=epoch)
             if abs(loss - last_epoch_loss) / max([1, loss, last_epoch_loss]) <= tolerance:
                 print(f"Converged at epoch {epoch + 1} with loss {loss:.4f}")
                 break
@@ -129,7 +138,11 @@ class LBFGSMixin:
                     for batch_features, batch_labels in validation_dataloader:
                         batch_logits = model(batch_features)
                         loss += self.loss(batch_logits, batch_labels).item() * batch_features.shape[0] / len(validation_dataloader.dataset)
-                    logger.log_metrics({"val_loss": loss}, step=epoch)
+                    params_norm = torch.tensor(0.0, device=fabric.device)
+                    for param in model.parameters():
+                        params_norm += torch.norm(param)
+                    loss += weight_decay * params_norm
+                    logger.log_metrics({"Loss/validation": loss}, step=epoch)
                 model.train()
         
         # Save model
