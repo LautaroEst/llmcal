@@ -1,10 +1,13 @@
+#!/bin/bash
 
-
-
+# Directories:
 SCRIPTS_DIR="./scripts"
 RESULTS_DIR="./results"
 
+# Model:
 MODEL="gpt2-xl"
+
+# Dataset:
 declare -A DATASETS=(
     # ["glue/cola"]="2"
     # ["glue/sst2"]="2"
@@ -14,7 +17,11 @@ declare -A DATASETS=(
     # ["glue/rte"]="2"
     # ["glue/wnli"]="2"
 )
+
+# Template:
 TEMPLATE="0_shot"
+
+# Training samples:
 declare -A TRAIN_SAMPLES=(
     ["glue/cola"]="50 200 800 2000 3800"
     ["glue/sst2"]="50 200 800 2000 3800"
@@ -24,11 +31,18 @@ declare -A TRAIN_SAMPLES=(
     ["glue/rte"]="50 200 800 2290"
     ["glue/wnli"]="50 200 435"
 )
+
+# Random state:
 BASE_SEED=21738
+
+# Validation samples:
 VALIDATION_SAMPLES=200
 
+# Device:
 DEVICE="gpu"
 
+
+# Run:
 for DATASET in "${!DATASETS[@]}"; do
     TRAIN_FILE=$RESULTS_DIR/run_dataset_on_model/$MODEL/$DATASET/train/$TEMPLATE
     EVAL_FILE=$RESULTS_DIR/run_dataset_on_model/$MODEL/$DATASET/validation/$TEMPLATE
