@@ -12,8 +12,8 @@ MODEL="gpt2-xl"
 TEMPLATE_NAME="00.json"
 
 
-# DATASETS=("tony_zhao/trec" "tony_zhao/sst2" "tony_zhao/agnews" "tony_zhao/dbpedia")
-DATASETS=("tony_zhao/sst2" )
+DATASETS=("tony_zhao/trec" "tony_zhao/sst2" "tony_zhao/agnews" "tony_zhao/dbpedia")
+# DATASETS=("tony_zhao/sst2" )
 for DATASET in ${DATASETS[@]}; do
     python ${SCRIPTS_DIR}/run_dataset_on_model.py \
         --model_name ${MODEL} \

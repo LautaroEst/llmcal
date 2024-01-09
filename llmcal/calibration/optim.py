@@ -1,6 +1,7 @@
 
 import json
 import os
+from typing import Literal
 import torch
 from torch import optim
 from torch.utils.data import DataLoader, TensorDataset
@@ -104,12 +105,10 @@ class LBFGSMixin:
             loss_history = []
             for batch_features, batch_labels in train_dataloader:
                 batch_logits = model(batch_features)
-                loss = self.loss(batch_logits, batch_labels) * batch_features.shape[0] / len(train_dataloader.dataset)
+                loss = self.loss(batch_logits, batch_labels)  * batch_features.shape[0] / len(validation_dataloader.dataset)
                 fabric.backward(loss)
                 loss_history.append(loss.item())
-            params_norm = torch.tensor(0.0, device=fabric.device)
-            for param in model.parameters():
-                params_norm += torch.norm(param)
+            params_norm = torch.cat([param.view(-1) for param in model.parameters()]).norm()
             loss = weight_decay * params_norm
             fabric.backward(loss)
             loss = sum(loss_history) + loss.item()
@@ -136,9 +135,7 @@ class LBFGSMixin:
                         for batch_features, batch_labels in validation_dataloader:
                             batch_logits = model(batch_features)
                             loss += self.loss(batch_logits, batch_labels).item() * batch_features.shape[0] / len(validation_dataloader.dataset)
-                        params_norm = torch.tensor(0.0, device=fabric.device)
-                        for param in model.parameters():
-                            params_norm += torch.norm(param)
+                        params_norm = torch.cat([param.view(-1) for param in model.parameters()]).norm()
                         loss += weight_decay * params_norm
                         history["validation_loss"].append(loss.item())
                     model.train()
@@ -158,3 +155,101 @@ class LBFGSMixin:
         with open(os.path.join(model_checkpoint_dir, "history.json"), "w") as f:
             json.dump(history, f)
         
+
+class SGDMixin:
+
+    def fit(
+        self,
+        train_features: torch.FloatTensor,
+        train_labels: torch.LongTensor,
+        validation_features: torch.FloatTensor = None,
+        validation_labels: torch.LongTensor = None,
+        optimizer: Literal["sgd", "adam"] = "sgd",
+        max_epochs: int = 100,
+        batch_size: int = 32,
+        learning_rate: float = 0.001,
+        weight_decay: float = 0.0,
+        model_checkpoint_dir: str = None,
+        **kwargs
+    ):
+        
+        fabric = L.Fabric(**kwargs)
+        fabric.launch()
+
+        if optimizer == "sgd":
+            optimizer = optim.SGD(
+                self.parameters(),
+                lr=learning_rate,
+                weight_decay=weight_decay
+            )
+        elif optimizer == "adam":
+            optimizer = optim.Adam(
+                self.parameters(),
+                lr=learning_rate,
+                weight_decay=weight_decay
+            )
+        else:
+            raise ValueError(f"Invalid optimizer: {optimizer}")
+        
+        model, optimizer = fabric.setup(self, optimizer)
+
+        # Setup dataloaders
+        if batch_size is None:
+            batch_size = train_features.shape[0]
+
+        train_dataset = TensorDataset(train_features, train_labels)
+        train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+        history = {"train_loss": [], "epoch": []}
+
+        if validation_features is not None and validation_labels is not None:
+            validation_dataset = TensorDataset(validation_features, validation_labels)
+            validation_dataloader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False)
+            train_dataloader, validation_dataloader = fabric.setup_dataloaders(
+                train_dataloader, 
+                validation_dataloader,
+                use_distributed_sampler=True,
+                move_to_device=True
+            )
+            history["validation_loss"] = []
+        else:
+            train_dataloader = fabric.setup_dataloaders(train_dataloader, use_distributed_sampler=True, move_to_device=True)
+            validation_dataloader = None
+
+        # Start training
+        try:
+            os.makedirs(model_checkpoint_dir, exist_ok=True)
+            model.train()
+            epochs_bar = tqdm(range(max_epochs), leave=False)
+            best_val_loss = float("inf")
+            for epoch in epochs_bar:
+
+                # Train
+                loss_history = []
+                for batch_features, batch_labels in train_dataloader:
+                    optimizer.zero_grad()
+                    batch_logits = model(batch_features)
+                    loss = self.loss(batch_logits, batch_labels)
+                    fabric.backward(loss)
+                    optimizer.step()
+                    loss_history.append(loss.item())
+                epochs_bar.set_description(f"Epoch {epoch + 1} | Loss: {sum(loss_history):.4f}")
+                history["train_loss"].append(sum(loss_history))
+                
+                # Validate
+                if validation_dataloader is not None:
+                    model.eval()
+                    with torch.no_grad():
+                        loss = 0
+                        for batch_features, batch_labels in validation_dataloader:
+                            batch_logits = model(batch_features)
+                            loss += self.loss(batch_logits, batch_labels).item() * batch_features.shape[0] / len(validation_dataloader.dataset)
+                        history["validation_loss"].append(loss)
+                    model.train()
+                    if loss < best_val_loss:
+                        best_val_loss = loss
+                        torch.save(self.state_dict(), os.path.join(model_checkpoint_dir, "model.pt"))
+            
+                history["epoch"].append(epoch)
+        
+        except KeyboardInterrupt:
+            print("Training interrupted. Exiting...")

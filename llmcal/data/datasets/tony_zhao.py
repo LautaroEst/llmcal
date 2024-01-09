@@ -86,7 +86,9 @@ class TonyZhaoDBPEDIA(BaseDataset):
     features = ["article"]
 
     def __init__(self, split, subsample=None, random_state=None, sort_by_length=False):
-        data = pd.read_csv(f'./data/tony_zhao/dbpedia/{split}_subset.csv')
+        if split == "train":
+            split = "train_subset"
+        data = pd.read_csv(f'./data/tony_zhao/dbpedia/{split}.csv')
         articles = data['Text']
         articles = list([item.replace('""', '"') for item in articles])
         labels = list(data['Class'])
