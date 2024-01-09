@@ -15,7 +15,7 @@ from .tony_zhao import (
     TonyZhaoAGNEWS,
     TonyZhaoDBPEDIA
 )
-
+from .refind import REFinD
 
 dataset2class = {
     "glue/cola": GLUEcola,
@@ -32,4 +32,6 @@ dataset2class = {
     "tony_zhao/sst2": TonyZhaoSST2,
     "tony_zhao/agnews": TonyZhaoAGNEWS,
     "tony_zhao/dbpedia": TonyZhaoDBPEDIA,
+
+    "refind": REFinD,
 }

@@ -12,15 +12,16 @@ MODEL="gpt2-xl"
 TEMPLATE_NAME="00.json"
 
 
-DATASETS=("tony_zhao/trec" "tony_zhao/sst2" "tony_zhao/agnews" "tony_zhao/dbpedia")
+# DATASETS=("tony_zhao/trec" "tony_zhao/sst2" "tony_zhao/agnews" "tony_zhao/dbpedia")
 # DATASETS=("tony_zhao/sst2" )
+DATASETS=("refind" )
 for DATASET in ${DATASETS[@]}; do
     python ${SCRIPTS_DIR}/run_dataset_on_model.py \
         --model_name ${MODEL} \
         --dataset_name ${DATASET} \
         --templates ${RESULTS_DIR}/templates/${DATASET}/${TEMPLATE_NAME} \
-        --splits "train,test" \
-        --num_samples "4000,None" \
+        --splits "train,dev,test" \
+        --num_samples "4000,None,None" \
         --output_dir ${RESULTS_DIR} \
         --save_embeddings \
         --random_state 9472 \
