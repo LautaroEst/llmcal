@@ -1,0 +1,14 @@
+
+accelerator: "gpu"
+devices: 1
+precision: "bf16-true"
+quantize: null
+
+
+class_name: "LitLanguageModel"
+model_name_or_path: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
+
+train:
+  class_name: ""
+  random_state: 8293
+  val_batch_size: 8

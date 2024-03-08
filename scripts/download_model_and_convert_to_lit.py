@@ -9,7 +9,6 @@ from dataclasses import asdict
 from functools import partial
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
-import shutil
 
 import torch
 from lightning.fabric.utilities.load import _NotYetLoadedTensor as NotYetLoadedTensor
