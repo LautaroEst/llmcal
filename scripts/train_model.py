@@ -1,31 +1,38 @@
 
+from typing import Optional
 from llmcal.utils import load_yaml
+from llmcal.data.utils import load_dataset
+from llmcal.prompt.utils import load_prompt
+from llmcal.model.utils import load_model
 
 def main(
-    data: str,
+    dataset: str,
     model: str,
-    prompt: str,
+    prompt: Optional[str] = None,
 ):
-    # Load data
-    data_args = load_yaml(data)
-    dataset = load_dataset(data_args)
+    # Read the config files
+    dataset_args = load_yaml(f"configs/dataset/{dataset}.yaml")
+    model_args = load_yaml(f"configs/model/{model}.yaml")
 
-    # Load prompt
-    prompt_args = load_yaml(prompt)
-    prompt, answer = load_prompt(prompt_args)
-    dataloaders = create_dataloader(dataset, prompt, answer)
+    # Load the dataset
+    dataset = load_dataset(dataset_args)
 
-    # Load model and trainer
-    model_args = load_yaml(model)
-    fabric = init_fabric(model_args)
-    model = load_model(model_args)
-    trainer = load_trainer(model_args)
+    # Init prompt and train it
+    if prompt is not None:
+        prompt_args = load_yaml(f"configs/prompt/{prompt}.yaml")
+        prompt = load_prompt(prompt_args)
+        prompt.fit(dataset["train"])
 
-    # Train model and predict
-    trainer.fit(model, dataloaders["train"], dataloaders["validation"])
-    trainer.predict(model, dataloaders["train"])
-    trainer.predict(model, dataloaders["validation"])
-    trainer.predict(model, dataloaders["test"])
+    # Init model and trainer
+    model, trainer = load_model(model_args)
+    
+    # Fit the model to the dataset
+    trainer.fit(model, prompt, dataset["train"], dataset["validation"])
+    
+    # Predict on all data
+    results = {}
+    for split in ["train", "validation", "test"]:
+        results[split] = trainer.predict(dataset[split])
 
 
 

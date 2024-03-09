@@ -4,11 +4,12 @@ devices: 1
 precision: "bf16-true"
 quantize: null
 
-
-class_name: "LitLanguageModel"
-model_name_or_path: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
+model:
+  class_name: "LitGPTPromptClassifier"
+  model_name_or_path: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
+  embeddings_pooling: "last"
 
 train:
-  class_name: ""
-  random_state: 8293
+  class_name: "PromptClassifierPredictror"
   val_batch_size: 8
+  random_state: 8293
