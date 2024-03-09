@@ -15,7 +15,7 @@ def main(
     model_args = load_yaml(f"configs/model/{model}.yaml")
 
     # Load the dataset
-    dataset = load_dataset(dataset_args)
+    dataset = load_dataset(**dataset_args)
 
     # Init prompt and train it
     if prompt is not None:

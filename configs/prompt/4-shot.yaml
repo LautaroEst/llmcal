@@ -1,0 +1,9 @@
+
+
+class_name: FewShotClassificationPrompt
+preface: "Classify the sentiment of the sentence below in one of the following categories:\nA. Negative\nB. Positive\n"
+shots_template: "Question: What is the sentiment of the sentence \"{sentence}\"?\nAnswer: {label}\n"
+question: "Question: What is the sentiment of the sentence \"{sentence}\"?\nAnswer:"
+label2answer: ["A", "B"]
+n_shots: 4
+random_state: 728
