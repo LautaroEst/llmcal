@@ -1,4 +1,5 @@
-dataset: "glue--sst2" 
+dataset: "glue--sst2"
+load_from_hub: True
 random_state: 89
 train_samples: 10
 validation_samples: null
