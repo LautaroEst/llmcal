@@ -12,7 +12,9 @@ setup(
         'datasets',
         'scikit-learn',
         'pandas',
+        'matplotlib',
         'tensorboard',
+        'jupyter',
         'lit_gpt @ git+https://github.com/Lightning-AI/lit-gpt.git',
     ],
 )
