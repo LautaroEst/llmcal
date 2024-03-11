@@ -8,6 +8,7 @@ import lightning as L
 
 from lit_gpt import GPT, Config
 from lit_gpt.utils import load_checkpoint
+from .tokenizer import LitGPTTokenizer
 
 
 class LitGPT(GPT):
@@ -22,6 +23,7 @@ class LitGPT(GPT):
         config = Config.from_checkpoint(model_name_or_path)
         super().__init__(config)
         self.set_kv_cache(batch_size=1)
+        self.tokenizer = LitGPTTokenizer(model_name_or_path)
 
     def init_params(self, fabric: L.Fabric):
         checkpoint_path = Path(self.model_name_or_path) / "lit_model.pth"
@@ -102,8 +104,8 @@ class LitGPTPromptClassifier(LitGPT):
                 input_pos = torch.arange(T, answer.shape[1] + T, device=answer.device, dtype=answer.dtype) 
                 ans_out = self._forward_single_sample(answer, input_pos)
                 logprobs = torch.cat([output["logits"], ans_out["logits"][:,:-1,:]], dim=1).log_softmax(dim=2)
-                index = torch.cat([input_ids[:,1:], answer], dim=1)
-                gather_probs = logprobs.gather(logprobs, dim=-1, index=index)
+                index = torch.cat([input_ids[:,1:], answer], dim=1).unsqueeze(2)
+                gather_probs = torch.gather(logprobs, -1, index).squeeze(2)
                 ans_logit = gather_probs.sum()
                 answers_logits.append(ans_logit)
             logits.append(torch.stack(answers_logits, dim=0))

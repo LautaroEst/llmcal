@@ -15,7 +15,7 @@ def load_dataset_from_hub(dataset_name: str) -> Dict[str,Dataset]:
         full_dataset[split_name] = dataset_attrs['loading_function'](split_name)
     return full_dataset
 
-def load_dataset_from_disk(path: str) -> Dict[Dataset]:
+def load_dataset_from_disk(path: str) -> Dict[str,Dataset]:
     full_dataset = {}
     for split_name in ["train", "validation", "test"]:
         full_dataset[split_name] = load_from_disk(os.path.join(path,split_name))
@@ -25,7 +25,7 @@ def load_dataset_from_disk(path: str) -> Dict[Dataset]:
 def load_dataset(
     dataset: str, 
     load_from_hub: bool = False,
-    random_state: int = 0,
+    random_state: Optional[int] = None,
     train_samples: Optional[int] = None,
     validation_samples: Optional[int] = None,
     test_samples: Optional[int] = None,
@@ -40,9 +40,10 @@ def load_dataset(
         data_split = splits[split]
         if n is None:
             n = len(data_split)
-        rs = np.random.RandomState(random_state)
-        idx = rs.choice(len(data_split), n, replace=False)
-        data_split = data_split.select(idx)
+        if random_state is not None:
+            rs = np.random.RandomState(random_state)
+            idx = rs.choice(len(data_split), n, replace=False)
+            data_split = data_split.select(idx)
         splits[split] = data_split
 
     return splits

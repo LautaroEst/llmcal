@@ -6,43 +6,45 @@ from llmcal.data.utils import load_dataset
 from llmcal.prompt.utils import load_prompt
 from llmcal.model.utils import load_model
 
-experiment_name = __file__.split("/")[-1].split(".")[0]
-
 def main(
     dataset: str,
     model: str,
-    prompt: Optional[str] = "no_prompt",
+    prompt: Optional[str] = None,
 ):
     
     # Prepare results directory
-    results_dir = f"results/{experiment_name}/{dataset}/{model}/{prompt}"
+    if prompt is not None:
+        results_dir = f"experiments/{dataset}/{prompt}/{model}"
+    else:
+        results_dir = f"experiments/{dataset}/no_prompt/{model}"
     os.makedirs(results_dir, exist_ok=True)
 
-    # Read the config files
-    dataset_args = load_yaml(f"configs/{experiment_name}/dataset/{dataset}.yaml")
-    model_args = load_yaml(f"configs/{experiment_name}/model/{model}.yaml")
-    prompt_args = load_yaml(f"configs/{experiment_name}/prompt/{prompt}.yaml")
-
     # Load the dataset
+    print("Loading the dataset...")
+    dataset_args = load_yaml(f"configs/dataset/{dataset}.yaml")
     dataset = load_dataset(**dataset_args)
 
     # Init prompt and train it
-    if prompt_args["class_name"] is not None:
+    if prompt is not None:
+        print("Training the prompt...")
+        prompt_args = load_yaml(f"configs/prompt/{prompt}.yaml")
         prompt = load_prompt(prompt_args)
         prompt.fit(dataset["train"])
-    else:
-        prompt = None
 
     # Init model and trainer
+    print("Loading the model...")
+    model_args = load_yaml(f"configs/model/{model}.yaml")
     model, trainer = load_model(model_args)
     
     # Fit the model to the dataset
+    print("Training the model...")
     trainer.fit(model, prompt, dataset["train"], dataset["validation"])
     
     # Predict on all data
-    results = {}
     for split in ["train", "validation", "test"]:
-        results[split] = trainer.predict(dataset[split])
+        print(f"Predicting on {split} set...")
+        results = trainer.predict(dataset[split])
+        results.save_to_disk(f"{results_dir}/{split}")
 
 
 

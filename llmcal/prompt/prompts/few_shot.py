@@ -16,14 +16,18 @@ class FewShotClassificationPrompt:
         self.random_state = random_state
 
     def fit(self, shots: Dataset):
-        shots_template_features = re.findall(r'\{(\w+)\}', self.shots_template)
-        if not set(shots_template_features).issubset(set(shots.features.keys())):
-            raise ValueError(f"Expected features {shots_template_features} in shots, got {list(shots.features.keys())}")
 
         self.question_features = re.findall(r'\{(\w+)\}', self.question)
-        shots_str = ""
 
-        index = np.random.RandomState(self.random_state).choice(len(shots), self.n_shots, replace=False)
+        if self.n_shots > 0:
+            shots_template_features = re.findall(r'\{(\w+)\}', self.shots_template)
+            if not set(shots_template_features).issubset(set(shots.features.keys())):
+                raise ValueError(f"Expected features {shots_template_features} in shots, got {list(shots.features.keys())}")
+            index = np.random.RandomState(self.random_state).choice(len(shots), self.n_shots, replace=False).tolist()
+        else:
+            index = []
+        
+        shots_str = ""
         for idx in index:
             features = {}
             for feature in shots_template_features:
@@ -44,5 +48,5 @@ class FewShotClassificationPrompt:
             for feature in self.question_features:
                 features[feature] = samples[feature][i]
             prompts.append(self.prompt_template.format(**features))
-            answers.append([self.label2answer[label] for label in samples["label"][i]])
+            answers.append([self.label2answer[label] for label in range(len(self.label2answer))])
         return {"prompt": prompts, "answers": answers}

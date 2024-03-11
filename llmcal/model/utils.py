@@ -72,7 +72,7 @@ def load_model(config: dict):
     trainer_cls_name = trainer_args.pop("class_name")
     if not check_if_trainer_compatile_with_model(trainer_cls_name, model_cls_name):
         raise ValueError(f"Model {model_cls_name} is not compatible with trainer {trainer_cls_name}")
-    trainer_cls = getattr(trainers, trainer_cls)
+    trainer_cls = getattr(trainers, trainer_cls_name)
     if fabric is None:
         trainer = trainer_cls(**trainer_args)
     else:

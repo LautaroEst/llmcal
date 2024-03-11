@@ -7,9 +7,9 @@ quantize: null
 model:
   class_name: "LitGPTPromptClassifier"
   model_name_or_path: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
-  embeddings_pooling: "last"
+  embedding_pooling: "last"
 
 train:
-  class_name: "PromptClassifierPredictror"
+  class_name: "PromptClassifierPredictor"
   val_batch_size: 8
   random_state: 8293

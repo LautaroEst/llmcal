@@ -20,7 +20,7 @@ class LitGPTTokenizer:
         self.tokenizer = _Tokenizer(model_name_or_path)
         self.tokenizer.pad_token_id = 0
 
-    def forward(self, prompts: List[str]) -> Dict[Literal["input_ids","attention_mask"], torch.LongTensor]:
+    def __call__(self, prompts: List[str]) -> Dict[Literal["input_ids","attention_mask"], torch.LongTensor]:
         device = torch.device("cpu")
         input_ids = []
         lens = []

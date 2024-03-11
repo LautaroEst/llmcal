@@ -1,5 +1,3 @@
-
-import argparse
 import os
 import sys
 import gc
@@ -429,63 +427,38 @@ def download_from_hub(
             os.remove(safetensor_path)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--repo_id", 
-        type=str, 
-        help="Repository ID"
-    )
-    parser.add_argument(
-        "--dtype", 
-        type=str, 
-        help="Data type of the checkpoint", 
-        default=None
-    )
-    return parser.parse_args()
-
-
-def main():
-
-    args = parse_args()
-
+def main(
+    repo_id: str,
+    dtype: Optional[str] = None,
+):
     checkpoint_dir = os.getenv("LIT_CHECKPOINTS")
-    if checkpoint_dir is None:
-        # add the variable LIT_CHECKPOINTS to .bashrc
-        print("Select a directory to store the checkpoints:\n>>> ", end="")
-        checkpoint_dir = input()
-        with open(str(Path.home() / ".bashrc"), "a") as f:
-            f.write(f"\nexport LIT_CHECKPOINTS={checkpoint_dir}")
-        os.environ["LIT_CHECKPOINTS"] = checkpoint_dir
-        print("Models will be stored in", checkpoint_dir)
-
     checkpoint_dir = Path(checkpoint_dir)
-    
     if not checkpoint_dir.exists():
         checkpoint_dir.mkdir(parents=True)
-    elif (checkpoint_dir / args.repo_id / "lit_model.pth").exists():
-        print(f"{args.repo_id} is already downloaded and converted")
+    elif (checkpoint_dir / repo_id / "lit_model.pth").exists():
+        print(f"{repo_id} is already downloaded and converted")
         return
 
     download_from_hub(
-        repo_id = args.repo_id,
+        repo_id = repo_id,
         access_token = os.getenv("HF_TOKEN"),
         tokenizer_only = False,
         checkpoint_dir = checkpoint_dir,
     )
 
     convert_hf_checkpoint(
-        checkpoint_dir = checkpoint_dir / args.repo_id, 
-        model_name = args.repo_id, 
-        dtype = args.dtype
+        checkpoint_dir = checkpoint_dir / repo_id, 
+        model_name = repo_id.split("/")[-1], 
+        dtype = dtype
     )
 
-    for p in (checkpoint_dir / args.repo_id).glob("*.safetensors"):
+    for p in (checkpoint_dir / repo_id).glob("*.safetensors"):
         os.remove(p)
-    for p in (checkpoint_dir / args.repo_id).glob("*.bin"):
+    for p in (checkpoint_dir / repo_id).glob("*.bin"):
         os.remove(p)
     
 
 
 if __name__ == "__main__":
-    main()
+    from fire import Fire
+    Fire(main)
