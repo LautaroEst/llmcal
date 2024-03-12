@@ -1,6 +1,0 @@
-dataset: "data/tony_zhao--agnews"
-load_from_hub: False
-random_state: 89
-train_samples: 10
-validation_samples: null
-test_samples: null
