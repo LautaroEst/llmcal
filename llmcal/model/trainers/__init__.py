@@ -1,1 +1,1 @@
-from .prompt_classifier import PromptClassifierPredictor
+from .prompt_classification import PromptClassificationTrainer

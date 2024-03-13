@@ -1,6 +1,19 @@
 #!/bin/bash
 
-python scripts/train_model.py \
-    --dataset tony_zhao--agnews_n=10_rs=89 \
+# python scripts/main.py \
+#     --model tinyllama \
+#     --train_task glue--sst2_inst_4-shot \
+#     --test_task glue--sst2_inst_4-shot \
+#     --splits n=10_rs=89
+
+# python scripts/main.py \
+#     --model tinyllama \
+#     --train_task glue--sst2_inst_4-shot \
+#     --test_task glue--sst2_inst_4-shot \
+#     --splits all
+
+python scripts/main.py \
     --model tinyllama \
-    --prompt news_0-shot
+    --train_task glue--sst2_tinyllama-logits \
+    --test_task glue--sst2_tinyllama-logits \
+    --splits n=10_rs=89

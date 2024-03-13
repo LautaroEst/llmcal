@@ -1,1 +1,1 @@
-from .prompt_lm import LitGPTLanguageModel, LitGPTPromptClassifier, LitGPTSequenceClassification
+from .lit_gpt import LitGPTLanguageModel, LitGPTPromptClassifier, LitGPTSequenceClassification

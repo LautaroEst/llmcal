@@ -49,7 +49,7 @@ def init_fabric(model_args):
 
 
 def check_if_trainer_compatile_with_model(trainer_cls_name: str, model_cls_name: str) -> bool:
-    if trainer_cls_name == "PromptClassifierPredictor":
+    if trainer_cls_name == "PromptClassificationTrainer":
         if model_cls_name in ["LitGPTPromptClassifier"]:
             return True
     return False

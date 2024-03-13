@@ -1,40 +1,57 @@
 
 import os
-from llmcal.utils import load_yaml
+from typing import Optional, List
+from llmcal.utils import load_yaml, perform_modifications
 from llmcal.model.utils import load_model
+from llmcal.data.utils import load_dataset_and_cast_task
 
 def main(
     model: str,
     train_task: str,
     test_task: str,
     splits: str, 
+    mods: Optional[List[str]] = [],
 ):
+    print("=" * 20)
+    print("Starting the experiment...")
+    print(f"Model: {model}")
+    print(f"Train task: {train_task}")
+    print(f"Test task: {test_task}")
+    print(f"Splits: {splits}")
+    print(f"Modifications: {mods}")
+    print()
+
+    # Parse arguments:
+    model_args = load_yaml(f"configs/model/{model}.yaml")
+    train_task_args = load_yaml(f"configs/task/{train_task}.yaml")
+    eval_task_args = load_yaml(f"configs/task/{test_task}.yaml")
+    split_config = load_yaml(f"configs/splits/{splits}.yaml")
+    args = perform_modifications(
+        {"model": model_args, "train_task": train_task_args, "eval_task": eval_task_args, "splits": split_config}, mods
+    )
 
     # Load the train and test dataset:
     print("Loading the data...")
-    split_config = load_yaml(f"configs/split/{splits}.yaml")
-    train_task_args = load_yaml(f"configs/dataset/{train_task}.yaml")
-    train_dataset = load_dataset_and_cast_task(
-        dataset=train_task_args["task"], 
-        prompt_config=train_task_args["prompt"],
+    train_dataset, train_prompt = load_dataset_and_cast_task(
+        dataset=args["train_task"]["task"], 
         split="train",
-        n_samples=split_config["train_samples"],
-        random_state=split_config["random_state"]
+        n_samples=args["splits"]["train_samples"],
+        random_state=args["splits"]["random_state"],
+        prompt_obj_or_config=args["train_task"]["prompt"],
     )
-    val_dataset = load_dataset_and_cast_task(
-        dataset=train_task_args["task"], 
-        prompt_config=train_task_args["prompt"],
+    val_dataset, _ = load_dataset_and_cast_task(
+        dataset=args["train_task"]["task"], 
         split="validation",
-        n_samples=split_config["validation_samples"],
-        random_state=split_config["random_state"]
+        n_samples=args["splits"]["validation_samples"],
+        random_state=args["splits"]["random_state"],
+        prompt_obj_or_config=train_prompt,
     )
-    eval_task_args = load_yaml(f"configs/dataset/{test_task}.yaml")
-    test_dataset = load_dataset_and_cast_task(
-        dataset=eval_task_args["task"], 
-        prompt_config=eval_task_args["prompt"],
+    test_dataset, test_prompt = load_dataset_and_cast_task(
+        dataset=args["eval_task"]["task"], 
         split="test",
-        n_samples=split_config["test_samples"],
-        random_state=split_config["random_state"]
+        n_samples=args["splits"]["test_samples"],
+        random_state=args["splits"]["random_state"],
+        prompt_obj_or_config=args["eval_task"]["prompt"],
     )
     # {split}_dataset is dataset with columns [idx, input, target]
     # input could be (prompt, anwsers) or numpy array of features
@@ -46,8 +63,7 @@ def main(
 
     # Init model and trainer
     print("Loading the model...")
-    model_args = load_yaml(f"configs/model/{model}.yaml")
-    model, trainer = load_model(model_args)
+    model, trainer = load_model(args["model"])
     # model is nn.Module and trainer is a trainer for LM, LMClassification or Classification
     # or a do-nothing trainer for feature extraction
     
@@ -57,7 +73,7 @@ def main(
     
     # Predict on all data
     print(f"Predicting on the train set...")
-    results = trainer.predict(train_dataset)
+    results = trainer.predict(train_dataset) # results is a dataset with columns [idx, input, label, output]
     results.save_to_disk(f"{results_dir}/train")
     
     print(f"Predicting on the validation set...")
@@ -68,6 +84,9 @@ def main(
     results = trainer.predict(test_dataset)
     results.save_to_disk(f"{results_dir}/test")
 
+    print("Done!")
+    print("=" * 20)
+    print()
 
 
 if __name__ == "__main__":

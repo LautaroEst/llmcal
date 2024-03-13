@@ -1,49 +1,43 @@
-
 import os
-from typing import Optional, Dict
 from datasets import load_from_disk, Dataset
 import numpy as np
-from .datasets import SUPPORTED_DATASETS
-
-def load_dataset_from_hub(dataset_name: str) -> Dict[str,Dataset]:
-    try:
-        dataset_attrs = SUPPORTED_DATASETS[dataset_name]
-    except KeyError:
-        raise ValueError(f"Dataset {dataset_name} not supported. Supported datasets are {list(SUPPORTED_DATASETS.keys())}")
-    full_dataset = {}
-    for split_name in ["train", "validation", "test"]:
-        full_dataset[split_name] = dataset_attrs['loading_function'](split_name)
-    return full_dataset
-
-def load_dataset_from_disk(path: str) -> Dict[str,Dataset]:
-    full_dataset = {}
-    for split_name in ["train", "validation", "test"]:
-        full_dataset[split_name] = load_from_disk(os.path.join(path,split_name))
-    return full_dataset
+from typing import Literal, Union, Any
 
 
-def load_dataset(
+def init_prompt(data: Dataset, prompt_config: dict) -> Dataset:
+    from ..prompt import prompts
+    prompt_cls_name = prompt_config.pop("class_name")
+    prompt_cls = getattr(prompts, prompt_cls_name)
+    prompt = prompt_cls(**prompt_config)
+    prompt.fit(data)
+    return prompt
+
+
+def load_dataset_and_cast_task(
     dataset: str, 
-    load_from_hub: bool = False,
-    random_state: Optional[int] = None,
-    train_samples: Optional[int] = None,
-    validation_samples: Optional[int] = None,
-    test_samples: Optional[int] = None,
-)-> Dict[str,Dataset]:
+    split: Literal["train", "validation", "test"],
+    n_samples: int = None,
+    random_state: int = None,
+    prompt_obj_or_config: Union[dict,Any] = {},
+) -> Dataset:
     
-    if load_from_hub:
-        splits = load_dataset_from_hub(dataset)
-    else:
-        splits = load_dataset_from_disk(dataset)
+    # Load dataset and sample
+    data = load_from_disk(os.path.join(dataset, split))
+    if n_samples is None:
+        n_samples = len(data)
+    if random_state is not None:
+        rs = np.random.RandomState(random_state)
+        idx = rs.choice(len(data), n_samples, replace=False).tolist()
+        data = data.select(idx)
 
-    for n, split in zip([train_samples, validation_samples, test_samples],splits):
-        data_split = splits[split]
-        if n is None:
-            n = len(data_split)
-        if random_state is not None:
-            rs = np.random.RandomState(random_state)
-            idx = rs.choice(len(data_split), n, replace=False)
-            data_split = data_split.select(idx)
-        splits[split] = data_split
-
-    return splits
+    # Cast task
+    if isinstance(prompt_obj_or_config, dict):
+        if len(prompt_obj_or_config) == 0:
+            data = data.rename_column("input", "old_input")
+            data = data.rename_column("output", "input")
+            data = data.remove_columns("old_input")
+            return data, prompt_obj_or_config
+        prompt_obj_or_config = init_prompt(data, prompt_obj_or_config)
+    data = prompt_obj_or_config.transform(data)
+    data = data.select_columns(["idx", "input", "label"])
+    return data, prompt_obj_or_config

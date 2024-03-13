@@ -10,6 +10,7 @@ model:
   embedding_pooling: "last"
 
 train:
-  class_name: "PromptClassifierPredictor"
+  class_name: "PromptClassificationTrainer"
   val_batch_size: 8
   random_state: 8293
+  max_epochs: 0

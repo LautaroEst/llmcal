@@ -1,5 +1,5 @@
 
 
-task: "experiments/tinyllama/glue--sst2_tinyllama_logits/glue--sst2_tinyllama_logits/all/"
+task: "experiments/tinyllama/glue--sst2_inst_4-shot/glue--sst2_inst_4-shot/all/"
 prompt:
 

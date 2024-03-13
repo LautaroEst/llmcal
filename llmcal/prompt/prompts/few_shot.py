@@ -39,14 +39,19 @@ class FewShotClassificationPrompt:
         self.prompt_template = f"{self.preface}{shots_str}{self.question}"
         return self
     
-    def transform(self, samples: Dict[str,List[Any]]):
+    def _transform(self, samples: Dict[str,List[Any]]):
         batch_size = len(samples["idx"])
-        prompts = []
-        answers = []
+        inputs = []
         for i in range(batch_size):
             features = {}
             for feature in self.question_features:
                 features[feature] = samples[feature][i]
-            prompts.append(self.prompt_template.format(**features))
-            answers.append([self.label2answer[label] for label in range(len(self.label2answer))])
-        return {"prompt": prompts, "answers": answers}
+            inputs.append({
+                "prompt": self.prompt_template.format(**features),
+                "answers": [self.label2answer[label] for label in range(len(self.label2answer))],
+            })
+        return {"idx": samples["idx"], "input": inputs, "label": samples["label"]}
+    
+    def transform(self, data: Dataset) -> Dataset:
+        data = data.map(lambda samples: self._transform(samples), batched=True, batch_size=1000)
+        return data

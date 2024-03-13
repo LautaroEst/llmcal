@@ -90,11 +90,11 @@ class LitGPTPromptClassifier(LitGPT):
         self,
         prompt_ids: torch.Tensor, 
         prompt_mask: torch.Tensor, 
-        answer_ids: List[List[torch.Tensor]],
+        answers_ids: List[List[torch.Tensor]],
     ):
         prompt_hidden_states = []
         logits = []
-        for input_ids, attention_mask, answers in zip(prompt_ids, prompt_mask, answer_ids):
+        for input_ids, attention_mask, answers in zip(prompt_ids, prompt_mask, answers_ids):
             T = torch.sum(attention_mask)
             input_ids = input_ids[attention_mask == 1].unsqueeze(0)
             output = self._forward_single_sample(input_ids)
