@@ -1,1 +1,2 @@
 from .lit_gpt import LitGPTLanguageModel, LitGPTPromptClassifier, LitGPTSequenceClassification
+from .affine_calibrator import AffineCalibrator

@@ -2,7 +2,7 @@
 import os
 from typing import Optional, Dict
 from llmcal.data.datasets import SUPPORTED_DATASETS
-from datasets import Dataset, load_from_disk
+from datasets import Dataset
 import numpy as np
 
 def load_dataset(dataset_name: str) -> Dict[str,Dataset]:
@@ -16,9 +16,7 @@ def load_dataset(dataset_name: str) -> Dict[str,Dataset]:
     return full_dataset
 
 
-def main(
-    *datasets
-):
+def main(*datasets):
     
     # Prepare data directory
     data_dir = f"data/"
@@ -28,7 +26,7 @@ def main(
         if os.path.exists(os.path.join(data_dir, dataset_name)):
             print(f"Dataset {dataset_name} already exists in {data_dir}. Skipping.")
             continue
-        dataset = load_dataset(dataset=dataset_name)
+        dataset = load_dataset(dataset_name)
         for split in dataset:
             dataset[split].save_to_disk(os.path.join(data_dir, dataset_name, split))
 

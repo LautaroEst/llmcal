@@ -1,5 +1,5 @@
 
 train_samples: 100
-validation_samples: null
-test_samples: null
+validation_samples: 200
+test_samples: 200
 random_state: 7384

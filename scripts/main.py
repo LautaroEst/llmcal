@@ -32,26 +32,26 @@ def main(
 
     # Load the train and test dataset:
     print("Loading the data...")
-    train_dataset, train_prompt = load_dataset_and_cast_task(
+    train_dataset, train_cast = load_dataset_and_cast_task(
         dataset=args["train_task"]["task"], 
         split="train",
         n_samples=args["splits"]["train_samples"],
         random_state=args["splits"]["random_state"],
-        prompt_obj_or_config=args["train_task"]["prompt"],
+        cast_obj_or_config=args["train_task"]["casting"],
     )
     val_dataset, _ = load_dataset_and_cast_task(
         dataset=args["train_task"]["task"], 
         split="validation",
         n_samples=args["splits"]["validation_samples"],
         random_state=args["splits"]["random_state"],
-        prompt_obj_or_config=train_prompt,
+        cast_obj_or_config=train_cast,
     )
-    test_dataset, test_prompt = load_dataset_and_cast_task(
+    test_dataset, test_cast = load_dataset_and_cast_task(
         dataset=args["eval_task"]["task"], 
         split="test",
         n_samples=args["splits"]["test_samples"],
         random_state=args["splits"]["random_state"],
-        prompt_obj_or_config=args["eval_task"]["prompt"],
+        cast_obj_or_config=args["eval_task"]["casting"],
     )
     # {split}_dataset is dataset with columns [idx, input, target]
     # input could be (prompt, anwsers) or numpy array of features
@@ -63,7 +63,7 @@ def main(
 
     # Init model and trainer
     print("Loading the model...")
-    model, trainer = load_model(args["model"])
+    model, trainer = load_model(args["model"], model_checkpoint_dir=os.path.join(results_dir,".cache"))
     # model is nn.Module and trainer is a trainer for LM, LMClassification or Classification
     # or a do-nothing trainer for feature extraction
     

@@ -1,0 +1,18 @@
+
+accelerator: "gpu"
+devices: 1
+precision: "bf16-true"
+quantize: null
+
+model:
+  class_name: "AffineCalibrator"
+  num_classes: 2
+  alpha: "vector"
+  beta: True
+
+train:
+  class_name: "AffineCalibratorTrainer"
+  loss: "cross_entropy"
+  val_batch_size: 8
+  random_state: 8293
+  max_epochs: 10

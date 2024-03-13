@@ -4,13 +4,13 @@ import numpy as np
 from typing import Literal, Union, Any
 
 
-def init_prompt(data: Dataset, prompt_config: dict) -> Dataset:
-    from ..prompt import prompts
-    prompt_cls_name = prompt_config.pop("class_name")
-    prompt_cls = getattr(prompts, prompt_cls_name)
-    prompt = prompt_cls(**prompt_config)
-    prompt.fit(data)
-    return prompt
+def init_casting_obj(data: Dataset, cast_config: dict) -> Dataset:
+    from .. import casting
+    cast_cls_name = cast_config.pop("class_name")
+    cast_cls = getattr(casting, cast_cls_name)
+    cast = cast_cls(**cast_config)
+    cast.fit(data)
+    return cast
 
 
 def load_dataset_and_cast_task(
@@ -18,7 +18,7 @@ def load_dataset_and_cast_task(
     split: Literal["train", "validation", "test"],
     n_samples: int = None,
     random_state: int = None,
-    prompt_obj_or_config: Union[dict,Any] = {},
+    cast_obj_or_config: Union[dict,Any] = {},
 ) -> Dataset:
     
     # Load dataset and sample
@@ -31,13 +31,7 @@ def load_dataset_and_cast_task(
         data = data.select(idx)
 
     # Cast task
-    if isinstance(prompt_obj_or_config, dict):
-        if len(prompt_obj_or_config) == 0:
-            data = data.rename_column("input", "old_input")
-            data = data.rename_column("output", "input")
-            data = data.remove_columns("old_input")
-            return data, prompt_obj_or_config
-        prompt_obj_or_config = init_prompt(data, prompt_obj_or_config)
-    data = prompt_obj_or_config.transform(data)
-    data = data.select_columns(["idx", "input", "label"])
-    return data, prompt_obj_or_config
+    if isinstance(cast_obj_or_config, dict):
+        cast_obj_or_config = init_casting_obj(data, cast_obj_or_config)
+    data = cast_obj_or_config.transform(data).select_columns(["idx", "input", "target"])
+    return data, cast_obj_or_config

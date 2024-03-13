@@ -11,6 +11,7 @@ MODULES_WITH_FABRIC_INIT = [
     "LitGPTLanguageModel",
     "LitGPTPromptClassifier",
     "LitGPTSequenceClassification",
+    "AffineCalibrator",
 ]
 
 
@@ -52,10 +53,13 @@ def check_if_trainer_compatile_with_model(trainer_cls_name: str, model_cls_name:
     if trainer_cls_name == "PromptClassificationTrainer":
         if model_cls_name in ["LitGPTPromptClassifier"]:
             return True
+    if trainer_cls_name == "AffineCalibratorTrainer":
+        if model_cls_name in ["AffineCalibrator"]:
+            return True
     return False
 
 
-def load_model(config: dict):
+def load_model(config: dict, model_checkpoint_dir: str = None):
     model_args = config["model"]
     model_cls_name = model_args.pop("class_name")
     model_cls = getattr(modules, model_cls_name)
@@ -69,6 +73,7 @@ def load_model(config: dict):
         model = model_cls(**model_args)
 
     trainer_args = config["train"]
+    trainer_args["model_checkpoint_dir"] = model_checkpoint_dir
     trainer_cls_name = trainer_args.pop("class_name")
     if not check_if_trainer_compatile_with_model(trainer_cls_name, model_cls_name):
         raise ValueError(f"Model {model_cls_name} is not compatible with trainer {trainer_cls_name}")

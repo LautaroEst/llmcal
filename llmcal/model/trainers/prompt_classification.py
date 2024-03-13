@@ -17,6 +17,7 @@ class PromptClassificationTrainer:
         fabric, 
         val_batch_size = 8, 
         random_state = 0,
+        model_checkpoint_dir: Optional[str] = None,
         batch_size: Optional[int] = 8,
         learning_rate: Optional[float] = 1e-4,
         weight_decay: Optional[float] = 0.0,
@@ -32,6 +33,7 @@ class PromptClassificationTrainer:
         self.fabric = fabric
         self.val_batch_size = val_batch_size
         self.random_state = random_state
+        self.model_checkpoint_dir = model_checkpoint_dir
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
@@ -70,11 +72,11 @@ class PromptClassificationTrainer:
                     output[key] = value
                 outputs["output"].extend([{key: output[key][i] for key in output.keys()} for i in range(len(batch["idx"]))])
                 outputs["idx"].append(batch["idx"].cpu())
-                outputs["label"].append(batch["label"].cpu())
+                outputs["target"].append(batch["target"].cpu())
                 outputs["input"].extend(batch["input"])
             
         outputs["idx"] = torch.cat(outputs["idx"], dim=0)
-        outputs["label"] = torch.cat(outputs["label"], dim=0)
+        outputs["target"] = torch.cat(outputs["target"], dim=0)
         outputs = Dataset.from_dict(dict(outputs))
         return outputs
 
@@ -113,6 +115,6 @@ class PromptClassificationTrainer:
         new_batch["prompt_ids"] = tokenized_prompt["input_ids"]
         new_batch["prompt_mask"] = tokenized_prompt["attention_mask"]
         new_batch["idx"] = torch.tensor(new_batch["idx"], dtype=torch.long)
-        new_batch["label"] = torch.tensor(new_batch["label"], dtype=torch.long)
+        new_batch["target"] = torch.tensor(new_batch["target"], dtype=torch.long)
         return dict(new_batch)
     

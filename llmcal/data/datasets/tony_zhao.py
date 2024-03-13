@@ -38,6 +38,7 @@ def load_cb(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
     
     dataset = Dataset.from_dict(data)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 def load_rte(split):
@@ -70,6 +71,7 @@ def load_rte(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
 
     dataset = Dataset.from_dict(data)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 def load_trec(split):
@@ -106,6 +108,7 @@ def load_trec(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
 
     dataset = Dataset.from_dict()
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 def load_sst2(split):
@@ -128,6 +131,7 @@ def load_sst2(split):
     data = _load_data(f"./data/tony_zhao/sst2/stsa.binary.{split}.txt")
 
     dataset = Dataset.from_dict(data)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 def load_agnews(split):
@@ -162,6 +166,7 @@ def load_agnews(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
     
     dataset = Dataset.from_dict(data)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 
@@ -195,6 +200,7 @@ def load_dbpedia(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
 
     dataset = Dataset.from_dict(data)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 

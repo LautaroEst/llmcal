@@ -2,10 +2,10 @@
 
 task: "data/glue--sst2"
 
-prompt:
+casting:
   class_name: FewShotClassificationPrompt
   preface: "Classify the sentiment of the sentence below in one of the following categories:\nA. Negative\nB. Positive\n"
-  shots_template: "Question: What is the sentiment of the sentence \"{sentence}\"?\nAnswer: {label}\n"
+  shots_template: "Question: What is the sentiment of the sentence \"{sentence}\"?\nAnswer: {target}\n"
   question: "Question: What is the sentiment of the sentence \"{sentence}\"?\nAnswer:"
   label2answer: ["A", "B"]
   n_shots: 4

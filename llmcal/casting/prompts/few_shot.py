@@ -50,7 +50,7 @@ class FewShotClassificationPrompt:
                 "prompt": self.prompt_template.format(**features),
                 "answers": [self.label2answer[label] for label in range(len(self.label2answer))],
             })
-        return {"idx": samples["idx"], "input": inputs, "label": samples["label"]}
+        return {"idx": samples["idx"], "input": inputs, "target": samples["target"]}
     
     def transform(self, data: Dataset) -> Dataset:
         data = data.map(lambda samples: self._transform(samples), batched=True, batch_size=1000)

@@ -14,6 +14,7 @@ def load_cola(split):
         elif split == "train":
             idx = idx[400:10400]
         dataset = dataset.select(idx)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 def load_mnli(split):
@@ -31,6 +32,7 @@ def load_mnli(split):
         elif split == "train":
             idx = idx[300:10300]
         dataset = dataset.select(idx)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 def load_mrpc(split):
@@ -45,6 +47,7 @@ def load_mrpc(split):
         elif split == "train":
             idx = idx[400:]
         dataset = dataset.select(idx)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 
@@ -63,6 +66,7 @@ def load_qnli(split):
         elif split == "train":
             idx = idx[400:10400]
         dataset = dataset.select(idx)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 
@@ -81,6 +85,7 @@ def load_qqp(split):
         elif split == "train":
             idx = idx[400:10400]
         dataset = dataset.select(idx)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 def load_rte(split):
@@ -95,6 +100,7 @@ def load_rte(split):
         elif split == "train":
             idx = idx[400:]
         dataset = dataset.select(idx)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 
@@ -110,6 +116,7 @@ def load_sst2(split):
         elif split == "train":
             idx = idx[400:10400]
         dataset = dataset.select(idx)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 
@@ -125,6 +132,7 @@ def load_wnli(split):
         elif split == "train":
             idx = idx[100:]
         dataset = dataset.select(idx)
+    dataset = dataset.rename_column("label","target")
     return dataset
 
 
