@@ -15,4 +15,4 @@ train:
   loss: "cross_entropy"
   val_batch_size: 8
   random_state: 8293
-  max_epochs: 10
+  max_epochs: 100000

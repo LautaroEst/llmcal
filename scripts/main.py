@@ -73,7 +73,7 @@ def main(
     
     # Predict on all data
     print(f"Predicting on the train set...")
-    results = trainer.predict(train_dataset) # results is a dataset with columns [idx, input, label, output]
+    results = trainer.predict(train_dataset) # results is a dataset with columns [idx, input, target, output]
     results.save_to_disk(f"{results_dir}/train")
     
     print(f"Predicting on the validation set...")

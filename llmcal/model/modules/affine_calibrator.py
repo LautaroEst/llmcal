@@ -63,12 +63,12 @@ class AffineCalibrator(nn.Module):
         if beta is not None:
             output += beta
 
-        return logits
+        return output
     
     def init_params(self, fabric: L.Fabric):
         if self.alpha is not None:
-            self.alpha.fill_(1.)
+            self.alpha.data.fill_(1.)
         if self.beta is not None:
-            self.beta.fill_(0.)
+            self.beta.data.fill_(0.)
         self = fabric.setup_module(self)
         return self
