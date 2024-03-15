@@ -3,14 +3,14 @@ import os
 import time
 from typing import Literal
 import torch
-from torch.optim import LBFGS
+from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import lightning as L
 from .utils import TBLogger
 from datasets import Dataset
 
-class LBFGSTrainer:
+class LoRATrainer:
 
     def __init__(
         self,
@@ -18,7 +18,6 @@ class LBFGSTrainer:
         val_batch_size = 8, 
         random_state = 0,
         learning_rate: float = 1,
-        max_ls: int = 40,
         max_epochs: int = 100,
         tolerance: float = 1e-4,
         loss: Literal["cross_entropy", "mse"] = "cross_entropy",
@@ -29,7 +28,6 @@ class LBFGSTrainer:
         self.val_batch_size = val_batch_size
         self.random_state = random_state
         self.learning_rate = learning_rate
-        self.max_ls = max_ls
         self.max_epochs = max_epochs
         self.tolerance = tolerance
         self.model_checkpoint_dir = model_checkpoint_dir
@@ -37,7 +35,6 @@ class LBFGSTrainer:
 
         self.hyperparams = {
             "learning_rate": self.learning_rate,
-            "max_ls": self.max_ls,
             "max_epochs": self.max_epochs,
             "tolerance": self.tolerance,
         }
@@ -48,13 +45,22 @@ class LBFGSTrainer:
             self.loss = torch.nn.MSELoss()
             raise ValueError(f"Invalid loss: {loss}")
         
-    def create_dataloader(self, dataset, batch_size=None):
+    def create_dataloader(self, dataset, batch_size=32, shuffle=True, random_state=None):
         if batch_size is None:
             batch_size = len(dataset)
+
+        if shuffle:
+            generator = torch.Generator()
+            if random_state is not None:
+                generator.manual_seed(random_state)
+        else:
+            generator = None                
+
         dataloader = DataLoader(
             dataset,
             batch_size=batch_size,
-            shuffle=False,
+            shuffle=shuffle,
+            generator=generator,
         )
         dataloader = self.fabric.setup_dataloaders(dataloader)
         return dataloader
@@ -62,7 +68,7 @@ class LBFGSTrainer:
     def fit(self, model, train_dataset, validation_dataset):
 
         # Prepare the optimizer
-        optimizer = LBFGS(
+        optimizer = AdamW(
             model.parameters(),
             lr=self.learning_rate,
             max_iter=self.max_ls
@@ -85,19 +91,10 @@ class LBFGSTrainer:
             offset_time = 0
 
         # Prepare the data
-        train_dataset = train_dataset.flatten().select_columns(["input","target"]).with_format("torch")
-        validation_dataset = validation_dataset.flatten().select_columns(["input","target"]).with_format("torch")
+        train_dataset = train_dataset.select_columns(["input","target"]).flatten().with_format("torch")
+        validation_dataset = validation_dataset.select_columns(["input","target"]).flatten().with_format("torch")
         train_dataloader = self.create_dataloader(train_dataset)
         validation_dataloader = self.create_dataloader(validation_dataset)
-
-        def closure():
-            optimizer.zero_grad()
-            batch = next(iter(train_dataloader))
-            inputs, targets = batch["input"], batch["target"]
-            logits = model(inputs)
-            loss = self.loss(logits, targets)
-            self.fabric.backward(loss)
-            return loss
 
         # Configure training loop
         os.makedirs(self.model_checkpoint_dir, exist_ok=True)
@@ -115,22 +112,25 @@ class LBFGSTrainer:
         start_time = time.time()
         best_val_loss = float("inf")
         last_train_loss = float("inf")
-        
+        model.train()
+
         # Start training
         try:
             for epoch in epochs_bar:
 
                 # Train
-                model.train()
-                train_loss = optimizer.step(closure).item()
-                
+                for i, batch in enumerate(train_dataloader):
+                    inputs = {k: batch[f"input.{k}"] for k in batch if f"input.{k}" in batch}
+                    targets = batch["target"]
+                    logits = model(**inputs)
+                    train_loss = self.loss(logits, targets)
+                    self.fabric.backward(train_loss)
+                    optimizer.step()
+                    optimizer.zero_grad()
+                    epochs_bar.set_description(f"Epoch {epoch + 1} | Train loss: {train_loss.item():.4f} | Val loss: {val_loss:.4f}")
+
                 # Validate
-                model.eval()
-                with torch.no_grad():
-                    batch = next(iter(validation_dataloader))
-                    inputs, targets = batch["input"], batch["target"]
-                    logits = model(inputs)
-                    val_loss = self.loss(logits, targets).item()
+                val_loss = self._validate(self.fabric, model, validation_dataloader, self.loss)
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     state["model"] = model
@@ -138,8 +138,7 @@ class LBFGSTrainer:
                     state["epoch"] = epoch
                     state["step"] = epoch
                     self.fabric.save(os.path.join(self.model_checkpoint_dir, "best_model.ckpt"), state)
-                epochs_bar.set_description(f"Epoch {epoch + 1} | Train loss: {train_loss:.4f} | Val loss: {val_loss:.4f}")
-
+                
                 # Save history
                 logger.log_metrics({
                     "loss/train": train_loss,
@@ -166,6 +165,20 @@ class LBFGSTrainer:
         self.fabric.save(os.path.join(self.model_checkpoint_dir, "last_model.ckpt"), state)
 
         return self
+    
+    @staticmethod
+    @torch.no_grad()
+    def _validate(fabric, model, dataloader, loss):
+        model.eval()
+        val_loss = 0
+        for i, batch in enumerate(dataloader):
+            inputs = {k: batch[f"input.{k}"] for k in batch if f"input.{k}" in batch}
+            targets = batch["target"]
+            logits = model(**inputs)
+            val_loss += loss(logits, targets).item() * len(targets)
+        val_loss /= len(dataloader.dataset)
+        return val_loss.item()
+            
 
     def predict(self, model, dataset):
 

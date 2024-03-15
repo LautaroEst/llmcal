@@ -15,3 +15,8 @@ python scripts/download_model_and_convert_to_lit.py \
 python scripts/download_model_and_convert_to_lit.py \
     --repo_id TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
     --dtype bfloat16
+
+
+python scripts/download_model_and_convert_to_lit.py \
+    --repo_id meta-llama/Llama-2-7b-hf \
+    --dtype bfloat16
