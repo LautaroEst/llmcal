@@ -53,7 +53,7 @@ def check_if_trainer_compatile_with_model(trainer_cls_name: str, model_cls_name:
     if trainer_cls_name == "PromptClassificationTrainer":
         if model_cls_name in ["LitGPTPromptClassifier"]:
             return True
-    if trainer_cls_name == "AffineCalibratorTrainer":
+    if trainer_cls_name == "LBFGSTrainer":
         if model_cls_name in ["AffineCalibrator"]:
             return True
     return False

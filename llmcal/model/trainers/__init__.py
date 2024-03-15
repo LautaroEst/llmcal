@@ -1,2 +1,2 @@
 from .prompt_classification import PromptClassificationTrainer
-from .affine_calibration_trainer import AffineCalibratorTrainer
+from .lbfgs_trainer import LBFGSTrainer

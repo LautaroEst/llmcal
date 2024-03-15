@@ -11,7 +11,7 @@ model:
   beta: True
 
 train:
-  class_name: "AffineCalibratorTrainer"
+  class_name: "LBFGSTrainer"
   loss: "cross_entropy"
   val_batch_size: 8
   random_state: 8293
