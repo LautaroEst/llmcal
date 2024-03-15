@@ -49,7 +49,6 @@ class PromptClassificationTrainer:
 
     def fit(self, model, train_dataset, validation_dataset):
         model.init_params(self.fabric)
-        self.model = model
         self.tokenizer = model.tokenizer
 
         if self.max_epochs == 0:
@@ -58,13 +57,13 @@ class PromptClassificationTrainer:
         # TODO: implement fit method
 
 
-    def predict(self, dataset: Dataset) -> Dataset:
+    def predict(self, model, dataset: Dataset) -> Dataset:
         dataloader = self.create_dataloader(dataset, batch_size=self.val_batch_size, shuffle=False)
 
         outputs = defaultdict(list)
         with torch.no_grad():
             for batch in tqdm(dataloader):
-                output = self.model(prompt_ids=batch["prompt_ids"], prompt_mask=batch["prompt_mask"], answers_ids=batch["answers_ids"])
+                output = model(prompt_ids=batch["prompt_ids"], prompt_mask=batch["prompt_mask"], answers_ids=batch["answers_ids"])
                 for key, value in output.items():
                     value = value.cpu()
                     if torch.is_floating_point(value):

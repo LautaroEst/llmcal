@@ -26,9 +26,9 @@ def load_cb(split):
         return data
         
     if split == "test":
-        data = _load_data(f"./data/tony_zhao/cb/val.jsonl")
+        data = _load_data(f"./data/raw_data/tony_zhao/cb/val.jsonl")
     elif split in ["train", "validation"]:
-        data = _load_data(f"./data/tony_zhao/cb/train.jsonl")
+        data = _load_data(f"./data/raw_data/tony_zhao/cb/train.jsonl")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(data["idx"]))
         if split == "validation":
@@ -39,6 +39,8 @@ def load_cb(split):
     
     dataset = Dataset.from_dict(data)
     dataset = dataset.rename_column("label","target")
+    dataset = dataset.map(lambda x: {"input": {"premise": x["premise"], "hypothesis": x["hypothesis"]}})
+    dataset = dataset.remove_columns(["premise", "hypothesis"])
     return dataset
 
 def load_rte(split):
@@ -59,9 +61,9 @@ def load_rte(split):
         return data
     
     if split == "test":
-        data = _load_data(f"./data/tony_zhao/rte/val.jsonl")
+        data = _load_data(f"./data/raw_data/tony_zhao/rte/val.jsonl")
     elif split in ["train", "validation"]:
-        data = _load_data(f"./data/tony_zhao/rte/train.jsonl")
+        data = _load_data(f"./data/raw_data/tony_zhao/rte/train.jsonl")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(data["idx"]))
         if split == "validation":
@@ -72,6 +74,8 @@ def load_rte(split):
 
     dataset = Dataset.from_dict(data)
     dataset = dataset.rename_column("label","target")
+    dataset = dataset.map(lambda x: {"input": {"premise": x["premise"], "hypothesis": x["hypothesis"]}})
+    dataset = dataset.remove_columns(["premise", "hypothesis"])
     return dataset
 
 def load_trec(split):
@@ -96,9 +100,9 @@ def load_trec(split):
         }
     
     if split == "test":
-        data = _load_data(f"./data/tony_zhao/rte/test.txt")
+        data = _load_data(f"./data/raw_data/tony_zhao/trec/test.txt")
     elif split in ["train", "validation"]:
-        data = _load_data(f"./data/tony_zhao/rte/train.txt")
+        data = _load_data(f"./data/raw_data/tony_zhao/trec/train.txt")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(data["idx"]))
         if split == "validation":
@@ -107,8 +111,9 @@ def load_trec(split):
             idx = idx[100:]
         data = {k: [v[i] for i in idx] for k, v in data.items()}
 
-    dataset = Dataset.from_dict()
+    dataset = Dataset.from_dict(data)
     dataset = dataset.rename_column("label","target")
+    dataset = dataset.rename_column("sentence","input")
     return dataset
 
 def load_sst2(split):
@@ -128,10 +133,11 @@ def load_sst2(split):
         }
     
     split = "dev" if split == "validation" else split
-    data = _load_data(f"./data/tony_zhao/sst2/stsa.binary.{split}.txt")
+    data = _load_data(f"./data/raw_data/tony_zhao/sst2/stsa.binary.{split}")
 
     dataset = Dataset.from_dict(data)
     dataset = dataset.rename_column("label","target")
+    dataset = dataset.rename_column("sentence","input")
     return dataset
 
 def load_agnews(split):
@@ -151,12 +157,12 @@ def load_agnews(split):
         }
 
     if split == "test":
-        data = _load_data(f"./data/tony_zhao/agnews/test.csv")
+        data = _load_data(f"./data/raw_data/tony_zhao/agnews/test.csv")
         rs = np.random.RandomState(0)
         idx = rs.permutation(len(data["idx"]))[:1000]
         data = {k: [v[i] for i in idx] for k, v in data.items()}
     elif split in ["train", "validation"]:
-        data = _load_data(f"./data/tony_zhao/agnews/train.csv")
+        data = _load_data(f"./data/raw_data/tony_zhao/agnews/train.csv")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(data["idx"]))
         if split == "validation":
@@ -167,6 +173,7 @@ def load_agnews(split):
     
     dataset = Dataset.from_dict(data)
     dataset = dataset.rename_column("label","target")
+    dataset = dataset.rename_column("article","input")
     return dataset
 
 
@@ -185,12 +192,12 @@ def load_dbpedia(split):
         }
 
     if split == "test":
-        data = _load_data(f"./data/tony_zhao/dbpedia/test.csv")
+        data = _load_data(f"./data/raw_data/tony_zhao/dbpedia/test.csv")
         rs = np.random.RandomState(0)
         idx = rs.permutation(len(data["idx"]))[:1000]
         data = {k: [v[i] for i in idx] for k, v in data.items()}
     elif split in ["train", "validation"]:
-        data = _load_data(f"./data/tony_zhao/dbpedia/train_subset.csv")
+        data = _load_data(f"./data/raw_data/tony_zhao/dbpedia/train_subset.csv")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(data["idx"]))
         if split == "validation":
@@ -201,34 +208,17 @@ def load_dbpedia(split):
 
     dataset = Dataset.from_dict(data)
     dataset = dataset.rename_column("label","target")
+    dataset = dataset.rename_column("article","input")
     return dataset
 
 
 TONYZHAO_DATASETS = [
-    ("tony_zhao--cb", {
-        "loading_function": load_cb,
-        "features": ["premise", "hypothesis"],
-    }),
-    ("tony_zhao--rte", {
-        "loading_function": load_rte,
-        "features": ["premise", "hypothesis"],
-    }),
-    ("tony_zhao--trec", {
-        "loading_function": load_trec,
-        "features": ["sentence"],
-    }),
-    ("tony_zhao--sst2", {
-        "loading_function": load_sst2,
-        "features": ["sentence"],
-    }),
-    ("tony_zhao--agnews", {
-        "loading_function": load_agnews,
-        "features": ["article"],
-    }),
-    ("tony_zhao--dbpedia", {
-        "loading_function": load_dbpedia,
-        "features": ["article"],
-    }),
+    ("tony_zhao_cb", load_cb),
+    ("tony_zhao_rte", load_rte),
+    ("tony_zhao_trec", load_trec),
+    ("tony_zhao_sst2", load_sst2),
+    ("tony_zhao_agnews", load_agnews),
+    ("tony_zhao_dbpedia", load_dbpedia),
 ]
 
 

@@ -1,64 +1,58 @@
 
 import os
-from typing import Optional, List
-from llmcal.utils import load_yaml, perform_modifications
+from llmcal.utils import load_yaml
 from llmcal.model.utils import load_model
 from llmcal.data.utils import load_dataset_and_cast_task
 
 def main(
     model: str,
-    train_task: str,
-    test_task: str,
+    task: str,
     splits: str, 
-    mods: Optional[List[str]] = [],
 ):
     print("=" * 20)
     print("Starting the experiment...")
     print(f"Model: {model}")
-    print(f"Train task: {train_task}")
-    print(f"Test task: {test_task}")
+    print(f"Task: {task}")
     print(f"Splits: {splits}")
-    print(f"Modifications: {mods}")
     print()
 
     # Parse arguments:
-    model_args = load_yaml(f"configs/model/{model}.yaml")
-    train_task_args = load_yaml(f"configs/task/{train_task}.yaml")
-    eval_task_args = load_yaml(f"configs/task/{test_task}.yaml")
-    split_config = load_yaml(f"configs/splits/{splits}.yaml")
-    args = perform_modifications(
-        {"model": model_args, "train_task": train_task_args, "eval_task": eval_task_args, "splits": split_config}, mods
-    )
+    args = {
+        "model": load_yaml(f"configs/model/{model}.yaml"),
+        "task": load_yaml(f"configs/task/{task}.yaml"),
+        "splits": load_yaml(f"configs/splits/{splits}.yaml"),
+    }
 
     # Load the train and test dataset:
     print("Loading the data...")
     train_dataset, train_cast = load_dataset_and_cast_task(
-        dataset=args["train_task"]["task"], 
+        dataset=args["task"]["task"], 
         split="train",
         n_samples=args["splits"]["train_samples"],
         random_state=args["splits"]["random_state"],
-        cast_obj_or_config=args["train_task"]["casting"],
+        cast_obj_or_config=args["task"]["casting"],
     )
     val_dataset, _ = load_dataset_and_cast_task(
-        dataset=args["train_task"]["task"], 
+        dataset=args["task"]["task"], 
         split="validation",
         n_samples=args["splits"]["validation_samples"],
         random_state=args["splits"]["random_state"],
         cast_obj_or_config=train_cast,
     )
-    test_dataset, test_cast = load_dataset_and_cast_task(
-        dataset=args["eval_task"]["task"], 
+    test_dataset, _ = load_dataset_and_cast_task(
+        dataset=args["task"]["task"], 
         split="test",
         n_samples=args["splits"]["test_samples"],
         random_state=args["splits"]["random_state"],
-        cast_obj_or_config=args["eval_task"]["casting"],
+        cast_obj_or_config=train_cast,
     )
+
     # {split}_dataset is dataset with columns [idx, input, target]
     # input could be (prompt, anwsers) or numpy array of features
     # target is the output to predict, could be a string or an int
 
     # Prepare results directory
-    results_dir = f"experiments/{model}/{train_task}/{test_task}/{splits}"
+    results_dir = f"experiments/{task}/{model}/{splits}"
     os.makedirs(results_dir, exist_ok=True)
 
     # Init model and trainer

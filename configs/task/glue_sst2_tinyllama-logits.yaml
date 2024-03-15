@@ -1,0 +1,8 @@
+
+
+task: "experiments/tinyllama/glue_sst2_inst_4-shot/n=100_rs=7384/"
+casting:
+  class_name: FeaturesSelector
+  features: "output.logits"
+
+

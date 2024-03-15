@@ -6,7 +6,7 @@ import torch
 from torch import nn
 import lightning as L
 
-from lit_gpt import GPT, Config
+from lit_gpt.lora import GPT, Config
 from lit_gpt.utils import load_checkpoint
 from .tokenizer import LitGPTTokenizer
 
@@ -56,7 +56,6 @@ class LitGPT(GPT):
             "logits": self.lm_head(x)
         }
         return outputs
-
 
 class LitGPTLanguageModel(LitGPT):
 

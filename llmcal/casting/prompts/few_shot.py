@@ -31,8 +31,8 @@ class FewShotClassificationPrompt:
         for idx in index:
             features = {}
             for feature in shots_template_features:
-                if feature == "label":
-                    features["label"] = self.label2answer[shots[idx]["label"]]
+                if feature == "target":
+                    features["target"] = self.label2answer[shots[idx]["target"]]
                 else:
                     features[feature] = shots[idx][feature]
             shots_str += self.shots_template.format(**features)
