@@ -49,6 +49,7 @@ class LBFGSTrainer:
             raise ValueError(f"Invalid loss: {loss}")
         
     def create_dataloader(self, dataset, batch_size=None):
+        dataset = dataset.select_columns(["input","target"]).with_format("torch")
         if batch_size is None:
             batch_size = len(dataset)
         dataloader = DataLoader(
@@ -81,21 +82,20 @@ class LBFGSTrainer:
             with open(os.path.join(self.model_checkpoint_dir, "training.interrupted"), "r") as f:
                 offset_time = float(f.read())
         else:
-            state["model"].init_params(self.fabric)
             offset_time = 0
 
         # Prepare the data
-        train_dataset = train_dataset.flatten().select_columns(["input","target"]).with_format("torch")
-        validation_dataset = validation_dataset.flatten().select_columns(["input","target"]).with_format("torch")
+        
+        validation_dataset = validation_dataset.select_columns(["input","target"]).with_format("torch")
         train_dataloader = self.create_dataloader(train_dataset)
         validation_dataloader = self.create_dataloader(validation_dataset)
 
         def closure():
             optimizer.zero_grad()
             batch = next(iter(train_dataloader))
-            inputs, targets = batch["input"], batch["target"]
-            logits = model(inputs)
-            loss = self.loss(logits, targets)
+            targets = batch.pop("target")
+            output = model(**batch["input"])
+            loss = self.loss(output["logits"], targets)
             self.fabric.backward(loss)
             return loss
 
@@ -128,9 +128,9 @@ class LBFGSTrainer:
                 model.eval()
                 with torch.no_grad():
                     batch = next(iter(validation_dataloader))
-                    inputs, targets = batch["input"], batch["target"]
-                    logits = model(inputs)
-                    val_loss = self.loss(logits, targets).item()
+                    targets = batch.pop("target")
+                    output = model(**batch["input"])
+                    val_loss = self.loss(output["logits"], targets).item()
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     state["model"] = model
@@ -170,22 +170,18 @@ class LBFGSTrainer:
     def predict(self, model, dataset):
 
         model.eval()
-        dataset = dataset.flatten().select_columns(["idx", "input","target"]).with_format("torch")
+        dataset = dataset.select_columns(["input","target"]).with_format("torch")
         dataloader = self.create_dataloader(dataset, batch_size=self.val_batch_size)
-        outputs = {"idx": [], "input": [], "target": [], "output": []}
+        outputs = []
         with torch.no_grad():
             for batch in tqdm(dataloader):
-                inputs, targets = batch["input"], batch["target"]
-                logits = model(inputs)
-                outputs["idx"].append(batch["idx"].cpu())
-                outputs["input"].append(batch["input"].cpu())
-                outputs["target"].append(targets.cpu())
-                outputs["output"].append(logits.cpu())
-
-        outputs["idx"] = torch.cat(outputs["idx"], dim=0)
-        outputs["input"] = torch.cat(outputs["input"], dim=0)
-        outputs["target"] = torch.cat(outputs["target"], dim=0)
-        outputs["output"] = torch.cat(outputs["output"], dim=0)
-        outputs = Dataset.from_dict(dict(outputs))
-        return outputs
-        
+                batch_size = len(batch.pop("target"))
+                output = model(**batch["input"])
+                for key, value in output.items():
+                    value = value.cpu()
+                    if torch.is_floating_point(value):
+                        value = value.type(torch.float32)
+                    output[key] = value.numpy()
+                outputs.extend([{key: output[key][i] for key in output.keys()} for i in range(batch_size)])
+        dataset = dataset.add_column("output", outputs)
+        return dataset        

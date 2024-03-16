@@ -10,7 +10,7 @@ model:
   embedding_pooling: "last"
 
 train:
-  class_name: "PromptClassificationTrainer"
+  class_name: "FullFinetuningTrainer"
   val_batch_size: 8
   random_state: 8293
   max_epochs: 0

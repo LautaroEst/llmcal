@@ -63,7 +63,7 @@ class AffineCalibrator(nn.Module):
         if beta is not None:
             output += beta
 
-        return output
+        return {"calibrated_logits": output}
     
     def init_params(self, fabric: L.Fabric):
         if self.alpha is not None:

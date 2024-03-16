@@ -1,7 +1,7 @@
 #!/bin/bash
 
 python scripts/main.py \
-    --model tinyllama \
+    --model tinyllama_no_adapt \
     --task glue--sst2_inst_4-shot \
     --splits n=100_rs=7384
 

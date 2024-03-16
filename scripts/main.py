@@ -23,7 +23,7 @@ def main(
         "splits": load_yaml(f"configs/splits/{splits}.yaml"),
     }
 
-    # Load the train and test dataset:
+    # Load the datasets and cast to the task
     print("Loading the data...")
     train_dataset, train_cast = load_dataset_and_cast_task(
         dataset=args["task"]["task"], 

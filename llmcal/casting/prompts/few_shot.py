@@ -17,6 +17,7 @@ class FewShotClassificationPrompt:
 
     def fit(self, shots: Dataset):
 
+        shots = shots.flatten()
         self.question_features = re.findall(r'\{(\w+)\}', self.question)
 
         if self.n_shots > 0:

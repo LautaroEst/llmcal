@@ -50,8 +50,8 @@ def init_fabric(model_args):
 
 
 def check_if_trainer_compatile_with_model(trainer_cls_name: str, model_cls_name: str) -> bool:
-    if trainer_cls_name == "PromptClassificationTrainer":
-        if model_cls_name in ["LitGPTPromptClassifier"]:
+    if trainer_cls_name in ["FullFinetuningTrainer", "LoRATrainer"]:
+        if model_cls_name in ["LitGPTPromptClassifier", "LitGPTSequenceClassification", "LitGPTLanguageModel"]:
             return True
     if trainer_cls_name == "LBFGSTrainer":
         if model_cls_name in ["AffineCalibrator"]:
@@ -68,6 +68,7 @@ def load_model(config: dict, model_checkpoint_dir: str = None):
         fabric = init_fabric(config)
         with fabric.init_module(empty_init=True):
             model = model_cls(**model_args)
+        model.init_params(fabric)
     else:
         fabric = None
         model = model_cls(**model_args)
