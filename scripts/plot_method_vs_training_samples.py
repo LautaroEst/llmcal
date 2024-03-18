@@ -1,16 +1,22 @@
 
+
 from collections import defaultdict
 import os
 from typing import List
-from datasets import load_from_disk
+
 import numpy as np
+from llmcal.utils import load_yaml
+from datasets import load_from_disk
 from scipy.special import log_softmax
 import pandas as pd
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
+
 def _compute_metric(logits, targets, metric):
     if metric == "accuracy":
         return accuracy_score(targets, logits.argmax(axis=1))
+    elif metric == "error_rate":
+        return 1 - accuracy_score(targets, logits.argmax(axis=1))
     elif metric == "norm_cross_entropy":
         naive_priors = np.bincount(targets, minlength=logits.shape[1]) / len(targets)
         naive_entropy = - np.mean(np.log(naive_priors[targets]))
@@ -32,45 +38,37 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
         values.append(_compute_metric(logits[idx], targets[idx], metric))
     return values
 
-
-
 def main(
-    task: str,
-    metrics: List[str],
-    bootstrap: int,
-    random_state: int,
+    *methods,
+    metrics: List[str] = ["error_rate", "norm_cross_entropy"],
+    bootstrap: int = 100,
+    random_state: int = 0,
+    split: str = "test", 
 ):
-    experiments_dir = f"experiments/{task}"
-    models = os.listdir(experiments_dir)
+    experiments_dir = f"experiments"
     all_results = defaultdict(list)
-    for split in ["train", "validation", "test"]:
-        for model in models:
-            for fold in os.listdir(os.path.join(experiments_dir, model)):
-                fold_dir = os.path.join(experiments_dir, model, fold)
-                if not os.path.isdir(fold_dir):
-                    continue
-                results = load_from_disk(os.path.join(fold_dir, split)).flatten().select_columns(["output.logits", "target"]).with_format("numpy")
+    for task in os.listdir(experiments_dir):
+        for model in os.listdir(os.path.join(experiments_dir,task)):
+            method = os.path.join(task, model)
+            if method not in methods:
+                continue
+            for fold in os.listdir(os.path.join(experiments_dir,task,model)):
+                config = load_yaml(os.path.join(experiments_dir, task, model, fold, "config.yaml"))
+                results = load_from_disk(os.path.join(experiments_dir, task, model, fold, split)).flatten().select_columns(["output.logits", "target"]).with_format("numpy")
                 logits = results["output.logits"]
                 targets = results["target"]
                 for metric in metrics:
                     value = compute_metric(logits, targets, metric, bootstrap, random_state)
                     all_results["value"].extend(value)
                     all_results["metric"].extend([metric]*len(value))
-                    all_results["model"].extend([model]*len(value))
+                    all_results["method"].extend([method]*len(value))
+                    all_results["n_samples"].extend([config["splits"]["train_samples"]]*len(value))
                     all_results["fold"].extend([fold]*len(value))
-                    all_results["split"].extend([split]*len(value))
-        
-        split_results = pd.DataFrame(all_results)
-        print(f"Split: {split}")
-        df_metric = split_results.groupby(["model","metric"]).agg({"value": ["mean", "std"]})
-        for metric in metrics:
-            print(f"{metric}:")
-            print(df_metric)
-        print()
+    df = pd.DataFrame(all_results)
+    import pdb; pdb.set_trace()
+    print(df)
 
 
 if __name__ == "__main__":
     from fire import Fire
     Fire(main)
-
-

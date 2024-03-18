@@ -53,6 +53,7 @@ class FullFinetuningTrainer:
             return self
         
         # TODO: implement fit method
+        #   - Implement gradient accumulation
         self.set_collate_function(model)
 
 

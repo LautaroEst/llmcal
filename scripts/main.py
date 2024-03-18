@@ -1,6 +1,6 @@
 
 import os
-from llmcal.utils import load_yaml
+from llmcal.utils import load_yaml, save_yaml
 from llmcal.model.utils import load_model
 from llmcal.data.utils import load_dataset_and_cast_task
 
@@ -32,6 +32,7 @@ def main(
         random_state=args["splits"]["random_state"],
         cast_obj_or_config=args["task"]["casting"],
     )
+    args["splits"]["train_samples"] = len(train_dataset)
     val_dataset, _ = load_dataset_and_cast_task(
         dataset=args["task"]["task"], 
         split="validation",
@@ -39,6 +40,7 @@ def main(
         random_state=args["splits"]["random_state"],
         cast_obj_or_config=train_cast,
     )
+    args["splits"]["validation_samples"] = len(val_dataset)
     test_dataset, _ = load_dataset_and_cast_task(
         dataset=args["task"]["task"], 
         split="test",
@@ -46,6 +48,7 @@ def main(
         random_state=args["splits"]["random_state"],
         cast_obj_or_config=train_cast,
     )
+    args["splits"]["test_samples"] = len(test_dataset)
 
     # {split}_dataset is dataset with columns [idx, input, target]
     # input could be (prompt, anwsers) or numpy array of features
@@ -78,6 +81,8 @@ def main(
     results = trainer.predict(model, test_dataset)
     results.save_to_disk(f"{results_dir}/test")
 
+    save_yaml(args, f"{results_dir}/config.yaml")
+
     print("Done!")
     print("=" * 20)
     print()
@@ -87,3 +92,7 @@ if __name__ == "__main__":
     from fire import Fire
     Fire(main)
     
+    # TODO:
+    #   - Add logging with logger
+    #   - Replace datasets for a custom class that reads metadata and doesn't copy all the dataset
+    #   - Replace the configuration to gin-style

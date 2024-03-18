@@ -446,15 +446,16 @@ def main(
         checkpoint_dir = checkpoint_dir,
     )
 
+    checkpoint_dir = checkpoint_dir / repo_id
     convert_hf_checkpoint(
-        checkpoint_dir = checkpoint_dir / repo_id, 
+        checkpoint_dir = checkpoint_dir, 
         model_name = repo_id.split("/")[-1], 
         dtype = dtype
     )
 
-    for p in (checkpoint_dir / repo_id).glob("*.safetensors"):
+    for p in (checkpoint_dir).glob("*.safetensors"):
         os.remove(p)
-    for p in (checkpoint_dir / repo_id).glob("*.bin"):
+    for p in (checkpoint_dir).glob("*.bin"):
         os.remove(p)
     
 
