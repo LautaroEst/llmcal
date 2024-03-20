@@ -6,7 +6,7 @@ quantize: null
 
 model:
   class_name: "LitGPTPromptClassifier"
-  model_name_or_path: "TinyLlama/TinyLlama-1.1B-intermediate-step-955k-token-2T"
+  model_name_or_path: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
   embedding_pooling: "last"
 
 train:

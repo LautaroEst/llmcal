@@ -21,6 +21,9 @@ def load_dataset_and_cast_task(
     cast_obj_or_config: Union[dict,Any] = {},
 ) -> Dataset:
     
+    if n_samples is not None and random_state is None:
+        raise ValueError("If n_samples is not None, random_state must be specified.")
+    
     # Load dataset and sample
     data = load_from_disk(os.path.join(dataset, split))
     if n_samples is None:

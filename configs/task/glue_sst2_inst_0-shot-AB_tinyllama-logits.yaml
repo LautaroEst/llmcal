@@ -1,6 +1,6 @@
 
 
-task: "experiments/glue_sst2_inst_4-shot/tinyllama_no_adapt/n=100_rs=7384/"
+task: "experiments/glue_sst2_inst_0-shot-AB_prompt/tinyllama/all/"
 casting:
   class_name: FeaturesSelector
   features:

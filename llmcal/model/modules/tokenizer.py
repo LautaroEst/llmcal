@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, List, Literal
+from typing import Dict, List, Literal, Optional
 
 import torch
 from lit_gpt import Tokenizer as _Tokenizer
@@ -20,12 +20,14 @@ class LitGPTTokenizer:
         self.tokenizer = _Tokenizer(model_name_or_path)
         self.tokenizer.pad_token_id = 0
 
-    def __call__(self, prompts: List[str]) -> Dict[Literal["input_ids","attention_mask"], torch.LongTensor]:
+    def __call__(self, prompts: List[str], max_seq_length: Optional[int] = None) -> Dict[Literal["input_ids","attention_mask"], torch.LongTensor]:
         device = torch.device("cpu")
         input_ids = []
         lens = []
         for prompt in prompts:
             idx = self.tokenizer.encode(prompt, device=device, bos=True)
+            if max_seq_length:
+                idx = idx[:max_seq_length]
             input_ids.append(idx)
             lens.append(len(idx))
         max_len = max(lens)
@@ -42,7 +44,9 @@ class LitGPTTokenizer:
                     torch.ones(len(idx), dtype=torch.long, device=device)
                 ])
             )
+
         return {
             "input_ids": torch.stack(padded_input_ids, dim=0),
             "attention_mask": torch.stack(padded_attention_mask, dim=0)
         }
+

@@ -35,7 +35,7 @@ class LitGPT(GPT):
         T = idx.size(1)
         if self.max_seq_length < T:
             raise ValueError(f"Cannot forward sequence of length {T}, max seq length is only {self.max_seq_length}.")
-
+        
         if input_pos is not None:  # use the kv cache
             cos = self.cos.index_select(0, input_pos)
             sin = self.sin.index_select(0, input_pos)
@@ -146,7 +146,7 @@ class LitGPTSequenceClassification(LitGPT):
             embeddings.append(self._pool_embeddings(output["last_hidden_state"])[0])
         embeddings = torch.stack(embeddings, dim=0)
         logits = self.classifier(embeddings)
-        return logits
+        return {"logits": logits}
 
     def _pool_embeddings(self, embeddings: torch.Tensor) -> torch.Tensor:
         if self.embedding_pooling == "mean":

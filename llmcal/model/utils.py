@@ -11,6 +11,9 @@ MODULES_WITH_FABRIC_INIT = [
     "LitGPTLanguageModel",
     "LitGPTPromptClassifier",
     "LitGPTSequenceClassification",
+    "LoRALitGPTLanguageModel",
+    "LoRALitGPTPromptClassifier",
+    "LoRALitGPTSequenceClassification",
     "AffineCalibrator",
 ]
 
@@ -50,8 +53,11 @@ def init_fabric(model_args):
 
 
 def check_if_trainer_compatile_with_model(trainer_cls_name: str, model_cls_name: str) -> bool:
-    if trainer_cls_name in ["FullFinetuningTrainer", "LoRATrainer"]:
+    if trainer_cls_name == "FullFinetuningTrainer":
         if model_cls_name in ["LitGPTPromptClassifier", "LitGPTSequenceClassification", "LitGPTLanguageModel"]:
+            return True
+    if trainer_cls_name == "LoRATrainer":
+        if model_cls_name in ["LoRALitGPTPromptClassifier", "LoRALitGPTSequenceClassification", "LoRALitGPTLanguageModel"]:
             return True
     if trainer_cls_name == "LBFGSTrainer":
         if model_cls_name in ["AffineCalibrator"]:

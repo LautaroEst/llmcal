@@ -1,8 +1,8 @@
 
 
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 import os
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 from llmcal.utils import load_yaml
@@ -10,7 +10,7 @@ from datasets import load_from_disk
 from scipy.special import log_softmax
 import pandas as pd
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-
+import matplotlib.pyplot as plt
 
 def _compute_metric(logits, targets, metric):
     if metric == "accuracy":
@@ -38,12 +38,27 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
         values.append(_compute_metric(logits[idx], targets[idx], metric))
     return values
 
+METHODS = OrderedDict([
+    ("glue_sst2_inst_0-shot-AB_prompt/tinyllama/all", {"label": "No adaptation", "color": "black", "marker": "o",  "markersize": 5, "alpha": 0.8}),
+    ("glue_sst2_inst_0-shot-AB_tinyllama-logits/affine_vector", {"label": "Affine vector", "color": "C0", "marker": "o",  "markersize": 5, "linestyle": "--", "linewidth": 1, "alpha": 1})
+])
+
+METRICS = {
+    "accuracy": {"label": "Accuracy", "ylims": None},
+    "error_rate": {"label": "Error rate", "ylims": None},
+    "norm_cross_entropy": {"label": "Normalized\ncross-entropy", "ylims": None},
+}
+
+
 def main(
     *methods,
+    baseline_method: Optional[str] = None,
     metrics: List[str] = ["error_rate", "norm_cross_entropy"],
     bootstrap: int = 100,
     random_state: int = 0,
     split: str = "test", 
+    title: str = "Method comparison",
+    filename: str = "plot.png"
 ):
     experiments_dir = f"experiments"
     all_results = defaultdict(list)
@@ -62,12 +77,48 @@ def main(
                     all_results["value"].extend(value)
                     all_results["metric"].extend([metric]*len(value))
                     all_results["method"].extend([method]*len(value))
-                    all_results["n_samples"].extend([config["splits"]["train_samples"]]*len(value))
+                    all_results["n_samples"].extend([config["splits"]["train_samples"] + config["splits"]["validation_samples"]]*len(value))
                     all_results["fold"].extend([fold]*len(value))
     df = pd.DataFrame(all_results)
-    import pdb; pdb.set_trace()
-    print(df)
+    df = df.groupby(["method", "metric", "n_samples"]).agg({"value": ["mean", "std"]}).reset_index()
+    num_samples = df["n_samples"].unique()
+    fig, ax = plt.subplots(len(metrics), 1, figsize=(len(num_samples) * 6, len(metrics) * 5), sharex=True)
+    if len(metrics) == 1:
+        ax = np.array([ax])
 
+    for i, metric in enumerate(metrics):
+        if metric == "norm_cross_entropy":
+            ax[i].axhline(1, color="black", linestyle="--", linewidth=1)
+        dfp = df[df["metric"] == metric].pivot(index="n_samples", columns="method", values=("value", "mean"))
+        dfp = dfp.rename(columns=lambda x: METHODS[x]["label"])
+        dfp = dfp.reindex([v["label"] for k, v in METHODS.items() if k != baseline_method], axis=1)
+        dfp = dfp.sort_index(ascending=True)
+        yerr = df[df["metric"] == metric].pivot(index="n_samples", columns="method", values=("value", "std"))
+        yerr = yerr.rename(columns=lambda x: METHODS[x]["label"])
+        yerr = yerr.reindex([v["label"] for k, v in METHODS.items() if k != baseline_method], axis=1)
+        yerr = yerr.sort_index(ascending=True)
+        dfp.plot(kind="line", ax=ax[i], yerr=yerr, capsize=5, legend=False)
+
+        if baseline_method:
+            results = load_from_disk(os.path.join(experiments_dir, baseline_method, split)).flatten().select_columns(["output.logits", "target"]).with_format("numpy")
+            logits = results["output.logits"]
+            targets = results["target"]
+            value = compute_metric(logits, targets, metric, bootstrap, random_state)
+            ax[i].errorbar([-1], np.mean(value), yerr=np.std(value), **METHODS[baseline_method])
+
+        ax[i].grid()
+        ax[i].set_ylim(METRICS[metric]["ylims"])
+        ax[i].set_ylabel(METRICS[metric]["label"], fontsize=15)
+
+    ax[-1].set_xticks(num_samples)
+    ax[-1].set_xticklabels(dfp.index, fontsize=15, rotation=0)
+    ax[-1].set_xlabel("Size of training data", fontsize=15)
+    ax[-1].legend(fontsize=15, bbox_to_anchor=(0.5,-0.8), ncol=6, loc="lower center")
+    ax[0].set_title(title, fontsize=20)
+    fig.tight_layout()
+
+    os.makedirs("plots", exist_ok=True)
+    plt.savefig(f"plots/{filename}")
 
 if __name__ == "__main__":
     from fire import Fire

@@ -11,9 +11,9 @@ from lit_gpt.utils import load_checkpoint
 from .tokenizer import LitGPTTokenizer
 
 
-class LitGPT(GPT):
+class LoRALitGPT(GPT):
 
-    def __init__(self, model_name_or_path: str):
+    def __init__(self, model_name_or_path: str, **lora_kwargs):
         self.model_name_or_path = model_name_or_path
         model_name_or_path = Path(model_name_or_path)
         if not model_name_or_path.is_dir():
@@ -21,6 +21,8 @@ class LitGPT(GPT):
             if not model_name_or_path.is_dir():
                 raise ValueError(f"Invalid model_name_or_path {model_name_or_path}")
         config = Config.from_checkpoint(model_name_or_path)
+        for k, v in lora_kwargs.items():
+            setattr(config, k.split("lora_")[-1], v)
         super().__init__(config)
         self.set_kv_cache(batch_size=1)
         self.tokenizer = LitGPTTokenizer(model_name_or_path)
@@ -57,7 +59,7 @@ class LitGPT(GPT):
         }
         return outputs
 
-class LitGPTLanguageModel(LitGPT):
+class LoRALitGPTLanguageModel(LoRALitGPT):
 
     def forward(
         self, 
@@ -79,10 +81,10 @@ class LitGPTLanguageModel(LitGPT):
         return outputs
 
                 
-class LitGPTPromptClassifier(LitGPT):
+class LoRALitGPTPromptClassifier(LoRALitGPT):
 
-    def __init__(self, model_name_or_path: str, embedding_pooling: Literal["mean", "max", "last"] = "last"):
-        super().__init__(model_name_or_path)
+    def __init__(self, model_name_or_path: str, embedding_pooling: Literal["mean", "max", "last"] = "last", **lora_kwargs):
+        super().__init__(model_name_or_path, **lora_kwargs)
         self.embedding_pooling = embedding_pooling
 
     def forward(
@@ -100,8 +102,10 @@ class LitGPTPromptClassifier(LitGPT):
             answers_logits = []
             for answer in answers:
                 answer = answer.unsqueeze(0)
-                input_pos = torch.arange(T, answer.shape[1] + T, device=answer.device, dtype=answer.dtype) 
+                input_pos = torch.arange(T, answer.shape[1] + T, device=answer.device, dtype=answer.dtype)
+                # input_pos = None
                 ans_out = self._forward_single_sample(answer, input_pos)
+                answers_logits.append(ans_out["logits"].sum())
                 logprobs = torch.cat([output["logits"][:,-1:,:], ans_out["logits"][:,:-1,:]], dim=1).log_softmax(dim=2)
                 index = answer.unsqueeze(2)
                 gather_probs = torch.gather(logprobs, -1, index).squeeze(2)
@@ -112,6 +116,9 @@ class LitGPTPromptClassifier(LitGPT):
         logits = torch.stack(logits, dim=0)
         prompt_hidden_states = torch.stack(prompt_hidden_states, dim=0)
         return {"logits": logits, "prompt_hidden_states": prompt_hidden_states}
+        # loss = torch.stack(answers_logits, dim=0).mean()
+        # return loss
+        
     
     def _pool_embeddings(self, embeddings: torch.Tensor) -> torch.Tensor:
         if self.embedding_pooling == "mean":
@@ -125,10 +132,10 @@ class LitGPTPromptClassifier(LitGPT):
 
         
 
-class LitGPTSequenceClassification(LitGPT):
+class LoRALitGPTSequenceClassification(LoRALitGPT):
 
-    def __init__(self, model_name_or_path: str, embedding_pooling: Literal["mean", "max", "last"], num_classes: int):
-        super().__init__(model_name_or_path)
+    def __init__(self, model_name_or_path: str, embedding_pooling: Literal["mean", "max", "last"], num_classes: int, **lora_kwargs):
+        super().__init__(model_name_or_path, **lora_kwargs)
         self.embedding_pooling = embedding_pooling
         self.num_classes = num_classes
         self.classifier = nn.Linear(self.config.n_embd, num_classes)
@@ -145,7 +152,7 @@ class LitGPTSequenceClassification(LitGPT):
             embeddings.append(self._pool_embeddings(output["last_hidden_state"])[0])
         embeddings = torch.stack(embeddings, dim=0)
         logits = self.classifier(embeddings)
-        return logits
+        return {"logits": logits}
 
     def _pool_embeddings(self, embeddings: torch.Tensor) -> torch.Tensor:
         if self.embedding_pooling == "mean":

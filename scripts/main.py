@@ -18,9 +18,9 @@ def main(
 
     # Parse arguments:
     args = {
-        "model": load_yaml(f"configs/model/{model}.yaml"),
-        "task": load_yaml(f"configs/task/{task}.yaml"),
-        "splits": load_yaml(f"configs/splits/{splits}.yaml"),
+        "model": load_yaml(os.path.join("configs/model",f"{model}.yaml")),
+        "task": load_yaml(os.path.join("configs/task",f"{task}.yaml")),
+        "splits": load_yaml(os.path.join("configs/splits",f"{splits}.yaml")),
     }
 
     # Load the datasets and cast to the task
@@ -90,6 +90,8 @@ def main(
 
 if __name__ == "__main__":
     from fire import Fire
+    import torch
+    torch.autograd.set_detect_anomaly(True)
     Fire(main)
     
     # TODO:

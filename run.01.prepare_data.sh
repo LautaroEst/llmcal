@@ -14,4 +14,5 @@ python scripts/prepare_data.py \
     "tony_zhao_trec" \
     "tony_zhao_sst2" \
     "tony_zhao_agnews" \
-    "tony_zhao_dbpedia" 
+    "tony_zhao_dbpedia" \
+    "refind"
