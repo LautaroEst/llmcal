@@ -17,6 +17,8 @@ def _compute_metric(logits, targets, metric):
         return accuracy_score(targets, logits.argmax(axis=1))
     elif metric == "error_rate":
         return 1 - accuracy_score(targets, logits.argmax(axis=1))
+    elif metric == "f1_score":
+        return f1_score(targets, logits.argmax(axis=1), average="macro")
     elif metric == "norm_cross_entropy":
         naive_priors = np.bincount(targets, minlength=logits.shape[1]) / len(targets)
         naive_entropy = - np.mean(np.log(naive_priors[targets]))
@@ -46,6 +48,7 @@ METHODS = OrderedDict([
 METRICS = {
     "accuracy": {"label": "Accuracy", "ylims": None},
     "error_rate": {"label": "Error rate", "ylims": None},
+    "f1_score": {"label": "F1 score", "ylims": None},
     "norm_cross_entropy": {"label": "Normalized\ncross-entropy", "ylims": None},
 }
 
@@ -79,25 +82,29 @@ def main(
                     all_results["method"].extend([method]*len(value))
                     all_results["n_samples"].extend([config["splits"]["train_samples"] + config["splits"]["validation_samples"]]*len(value))
                     all_results["fold"].extend([fold]*len(value))
-    df = pd.DataFrame(all_results)
-    df = df.groupby(["method", "metric", "n_samples"]).agg({"value": ["mean", "std"]}).reset_index()
-    num_samples = df["n_samples"].unique()
+    if all_results:
+        df = pd.DataFrame(all_results)
+        df = df.groupby(["method", "metric", "n_samples"]).agg({"value": ["mean", "std"]}).reset_index()
+        num_samples = df["n_samples"].unique()
+    else:
+        num_samples = [0]
     fig, ax = plt.subplots(len(metrics), 1, figsize=(len(num_samples) * 6, len(metrics) * 5), sharex=True)
     if len(metrics) == 1:
         ax = np.array([ax])
 
     for i, metric in enumerate(metrics):
-        if metric == "norm_cross_entropy":
-            ax[i].axhline(1, color="black", linestyle="--", linewidth=1)
-        dfp = df[df["metric"] == metric].pivot(index="n_samples", columns="method", values=("value", "mean"))
-        dfp = dfp.rename(columns=lambda x: METHODS[x]["label"])
-        dfp = dfp.reindex([v["label"] for k, v in METHODS.items() if k != baseline_method], axis=1)
-        dfp = dfp.sort_index(ascending=True)
-        yerr = df[df["metric"] == metric].pivot(index="n_samples", columns="method", values=("value", "std"))
-        yerr = yerr.rename(columns=lambda x: METHODS[x]["label"])
-        yerr = yerr.reindex([v["label"] for k, v in METHODS.items() if k != baseline_method], axis=1)
-        yerr = yerr.sort_index(ascending=True)
-        dfp.plot(kind="line", ax=ax[i], yerr=yerr, capsize=5, legend=False)
+        if all_results:
+            if metric == "norm_cross_entropy":
+                ax[i].axhline(1, color="black", linestyle="--", linewidth=1)
+            dfp = df[df["metric"] == metric].pivot(index="n_samples", columns="method", values=("value", "mean"))
+            dfp = dfp.rename(columns=lambda x: METHODS[x]["label"])
+            dfp = dfp.reindex([v["label"] for k, v in METHODS.items() if k != baseline_method], axis=1)
+            dfp = dfp.sort_index(ascending=True)
+            yerr = df[df["metric"] == metric].pivot(index="n_samples", columns="method", values=("value", "std"))
+            yerr = yerr.rename(columns=lambda x: METHODS[x]["label"])
+            yerr = yerr.reindex([v["label"] for k, v in METHODS.items() if k != baseline_method], axis=1)
+            yerr = yerr.sort_index(ascending=True)
+            dfp.plot(kind="line", ax=ax[i], yerr=yerr, capsize=5, legend=False)
 
         if baseline_method:
             results = load_from_disk(os.path.join(experiments_dir, baseline_method, split)).flatten().select_columns(["output.logits", "target"]).with_format("numpy")
@@ -110,8 +117,9 @@ def main(
         ax[i].set_ylim(METRICS[metric]["ylims"])
         ax[i].set_ylabel(METRICS[metric]["label"], fontsize=15)
 
-    ax[-1].set_xticks(num_samples)
-    ax[-1].set_xticklabels(dfp.index, fontsize=15, rotation=0)
+    if all_results:
+        ax[-1].set_xticks(num_samples)
+        ax[-1].set_xticklabels(dfp.index, fontsize=15, rotation=0)
     ax[-1].set_xlabel("Size of training data", fontsize=15)
     ax[-1].legend(fontsize=15, bbox_to_anchor=(0.5,-0.8), ncol=6, loc="lower center")
     ax[0].set_title(title, fontsize=20)

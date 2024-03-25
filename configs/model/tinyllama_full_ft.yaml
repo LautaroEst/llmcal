@@ -5,20 +5,18 @@ precision: "bf16-true"
 quantize: null
 
 model:
-  class_name: "LitGPTSequenceClassification"
+  class_name: "LitGPTPromptClassification"
   model_name_or_path: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
   embedding_pooling: "last"
-  num_classes: 4
 
 train:
-  class_name: "FullFinetuningTrainer"
-  batch_size: 32
-  micro_batch_size: 4
+  class_name: "MiniBatchGDTrainer"
+  batch_size: 6
+  micro_batch_size: 3
   learning_rate: 0.0001 
   weight_decay: 0
-  max_epochs: 10
-  tolerance: 0.000001
+  max_epochs: 2
   random_state: 738
   loss: cross_entropy
-  log_interval: 2
-  val_interval: 4
+  val_interval: 2
+  checkpoint_interval: 16

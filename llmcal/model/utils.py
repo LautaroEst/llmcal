@@ -9,10 +9,10 @@ from lit_gpt.utils import get_default_supported_precision
 
 MODULES_WITH_FABRIC_INIT = [
     "LitGPTLanguageModel",
-    "LitGPTPromptClassifier",
+    "LitGPTPromptClassification",
     "LitGPTSequenceClassification",
     "LoRALitGPTLanguageModel",
-    "LoRALitGPTPromptClassifier",
+    "LoRALitGPTPromptClassification",
     "LoRALitGPTSequenceClassification",
     "AffineCalibrator",
 ]
@@ -53,14 +53,23 @@ def init_fabric(model_args):
 
 
 def check_if_trainer_compatile_with_model(trainer_cls_name: str, model_cls_name: str) -> bool:
-    if trainer_cls_name == "FullFinetuningTrainer":
-        if model_cls_name in ["LitGPTPromptClassifier", "LitGPTSequenceClassification", "LitGPTLanguageModel"]:
+    if trainer_cls_name == "MiniBatchGDTrainer":
+        if model_cls_name in [
+            "LitGPTPromptClassification", 
+            "LitGPTSequenceClassification", 
+            "LitGPTLanguageModel",
+            "LoRALitGPTPromptClassification", 
+            "LoRALitGPTSequenceClassification", 
+            "LoRALitGPTLanguageModel",
+            "AffineCalibrator",
+            "Linear"
+        ]:
             return True
-    if trainer_cls_name == "LoRATrainer":
-        if model_cls_name in ["LoRALitGPTPromptClassifier", "LoRALitGPTSequenceClassification", "LoRALitGPTLanguageModel"]:
-            return True
-    if trainer_cls_name == "LBFGSTrainer":
-        if model_cls_name in ["AffineCalibrator"]:
+    if trainer_cls_name == "GradientDescentTrainer":
+        if model_cls_name in [
+            "AffineCalibrator",
+            "Linear"
+        ]:
             return True
     return False
 

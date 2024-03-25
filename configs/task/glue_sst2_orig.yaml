@@ -1,0 +1,12 @@
+
+task: "data/glue_sst2"
+
+casting:
+  class_name: "FewShotClassificationPrompt"
+  preface: ""
+  shots_template: null
+  question: "Review: {input.sentence}\nSentiment:"
+  label2answer: ["Negative", "Positive"]
+  n_shots: 0
+  random_state: 728
+

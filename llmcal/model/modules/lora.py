@@ -6,7 +6,7 @@ import torch
 from torch import nn
 import lightning as L
 
-from lit_gpt.lora import GPT, Config
+from lit_gpt.lora import GPT, Config, mark_only_lora_as_trainable
 from lit_gpt.utils import load_checkpoint
 from .tokenizer import LitGPTTokenizer
 
@@ -32,8 +32,12 @@ class LoRALitGPT(GPT):
         if not checkpoint_path.is_file():
             checkpoint_path = Path(os.getenv("LIT_CHECKPOINTS")) / self.model_name_or_path / "lit_model.pth"
         load_checkpoint(fabric, self, checkpoint_path, strict=False)
+        mark_only_lora_as_trainable(self)
 
-    def _forward_single_sample(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def get_trainable_parameters(self):
+        return (param for param in self.parameters() if param.requires_grad)
+
+    def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None) -> torch.Tensor:
         T = idx.size(1)
         if self.max_seq_length < T:
             raise ValueError(f"Cannot forward sequence of length {T}, max seq length is only {self.max_seq_length}.")
@@ -80,14 +84,37 @@ class LoRALitGPTLanguageModel(LoRALitGPT):
         outputs["logits"] = torch.cat(outputs["logits"], dim=0)
         return outputs
 
+    def train_step(
+        self,
+        prompt_ids: torch.Tensor,
+        prompt_mask: torch.Tensor,
+        labels: torch.Tensor,
+        loss_fn: str = "cross_entropy",
+    ):
+        if loss_fn != "cross_entropy":
+            raise NotImplementedError(f"Loss function {loss_fn} not implemented")
+        
+        outputs = self(prompt_ids, prompt_mask)["logits"].log_softmax(dim=2)
+        gather_lobprobs = torch.gather(outputs, -1, labels.unsqueeze(2)).squeeze(2)
+        loss = -(gather_lobprobs * prompt_mask).sum() / torch.sum(prompt_mask)
+        return loss
+    
+    def predict_step(
+        self,
+        prompt_ids: torch.Tensor, 
+        prompt_mask: torch.Tensor,
+    ):
+        return self(prompt_ids, prompt_mask)
+        
+
                 
-class LoRALitGPTPromptClassifier(LoRALitGPT):
+class LoRALitGPTPromptClassification(LoRALitGPT):
 
     def __init__(self, model_name_or_path: str, embedding_pooling: Literal["mean", "max", "last"] = "last", **lora_kwargs):
         super().__init__(model_name_or_path, **lora_kwargs)
         self.embedding_pooling = embedding_pooling
 
-    def forward(
+    def predict_step(
         self,
         prompt_ids: torch.Tensor, 
         prompt_mask: torch.Tensor, 
@@ -98,14 +125,12 @@ class LoRALitGPTPromptClassifier(LoRALitGPT):
         for input_ids, attention_mask, answers in zip(prompt_ids, prompt_mask, answers_ids):
             T = torch.sum(attention_mask)
             input_ids = input_ids[attention_mask == 1].unsqueeze(0)
-            output = self._forward_single_sample(input_ids)
+            output = self(input_ids)
             answers_logits = []
             for answer in answers:
                 answer = answer.unsqueeze(0)
-                input_pos = torch.arange(T, answer.shape[1] + T, device=answer.device, dtype=answer.dtype)
-                # input_pos = None
-                ans_out = self._forward_single_sample(answer, input_pos)
-                answers_logits.append(ans_out["logits"].sum())
+                input_pos = torch.arange(T, answer.shape[1] + T, device=answer.device, dtype=answer.dtype) 
+                ans_out = self(answer, input_pos)
                 logprobs = torch.cat([output["logits"][:,-1:,:], ans_out["logits"][:,:-1,:]], dim=1).log_softmax(dim=2)
                 index = answer.unsqueeze(2)
                 gather_probs = torch.gather(logprobs, -1, index).squeeze(2)
@@ -116,10 +141,33 @@ class LoRALitGPTPromptClassifier(LoRALitGPT):
         logits = torch.stack(logits, dim=0)
         prompt_hidden_states = torch.stack(prompt_hidden_states, dim=0)
         return {"logits": logits, "prompt_hidden_states": prompt_hidden_states}
-        # loss = torch.stack(answers_logits, dim=0).mean()
-        # return loss
-        
-    
+
+    def train_step(
+        self,
+        prompt_ids: torch.Tensor,
+        prompt_mask: torch.Tensor,
+        answers_ids: List[List[torch.Tensor]],
+        labels: torch.Tensor,
+        loss_fn: str = "cross_entropy",
+    ):
+        if loss_fn != "cross_entropy":
+            raise NotImplementedError(f"Loss function {loss_fn} not implemented")
+
+        loss = 0
+        num_tokens = 0
+        for input_ids, attention_mask, answers, label in zip(prompt_ids, prompt_mask, answers_ids, labels):
+            input_ids = torch.cat([
+                input_ids[attention_mask == 1].unsqueeze(0),
+                answers[label.item()].unsqueeze(0)
+            ], dim=1)
+            logprobs = self(input_ids)["logits"][:,:-1,:].log_softmax(dim=2)
+            index = input_ids[:,1:].unsqueeze(2)
+            gather_logprobs = torch.gather(logprobs, -1, index).squeeze(2)
+            loss = loss - gather_logprobs.sum()
+            num_tokens = num_tokens + input_ids.shape[1]
+        loss = loss / num_tokens
+        return loss
+
     def _pool_embeddings(self, embeddings: torch.Tensor) -> torch.Tensor:
         if self.embedding_pooling == "mean":
             return embeddings.mean(dim=1)
@@ -153,6 +201,27 @@ class LoRALitGPTSequenceClassification(LoRALitGPT):
         embeddings = torch.stack(embeddings, dim=0)
         logits = self.classifier(embeddings)
         return {"logits": logits}
+    
+    def train_step(
+        self,
+        prompt_ids: torch.Tensor,
+        prompt_mask: torch.Tensor,
+        labels: torch.Tensor,
+        loss_fn: str = "cross_entropy",
+    ):
+        if loss_fn != "cross_entropy":
+            raise NotImplementedError(f"Loss function {loss_fn} not implemented")
+        
+        outputs = self(prompt_ids, prompt_mask)["logits"]
+        loss = nn.functional.cross_entropy(outputs, labels)
+        return loss
+    
+    def predict_step(
+        self,
+        prompt_ids: torch.Tensor, 
+        prompt_mask: torch.Tensor,
+    ):
+        return self(prompt_ids, prompt_mask)
 
     def _pool_embeddings(self, embeddings: torch.Tensor) -> torch.Tensor:
         if self.embedding_pooling == "mean":

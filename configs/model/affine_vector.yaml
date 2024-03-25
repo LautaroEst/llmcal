@@ -1,7 +1,7 @@
 
 accelerator: "gpu"
 devices: 1
-precision: "bf16-true"
+precision: 32
 quantize: null
 
 model:
@@ -11,9 +11,8 @@ model:
   beta: True
 
 train:
-  class_name: "LBFGSTrainer"
+  class_name: "GradientDescentTrainer"
   loss: "cross_entropy"
-  val_batch_size: 8
+  batch_size: 8
   random_state: 8293
-  max_epochs: 20
-  tolerance: 0.000001
+  max_steps: 20

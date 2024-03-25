@@ -7,14 +7,31 @@ from llmcal.data.utils import load_dataset_and_cast_task
 def main(
     model: str,
     task: str,
-    splits: str, 
+    splits: str,
+    **mods,
 ):
+
+    model_with_mods_name = model
+    for mod in mods:
+        if "." in mod:
+            k_1, k_2 = mod.split(".")
+            args["model"][k_1][k_2] = mods[mod]
+        else:
+            args["model"][mod] = mods[mod]
+        model_with_mods_name += f"_{mod}={mods[mod]}"
+    results_dir = f"experiments/{task}/{model_with_mods_name}/{splits}"
+    os.makedirs(results_dir, exist_ok=True)
+    
     print("=" * 20)
-    print("Starting the experiment...")
+    print("Experiment configuration:\n")
     print(f"Model: {model}")
     print(f"Task: {task}")
     print(f"Splits: {splits}")
     print()
+
+    if os.path.exists(os.path.join(results_dir, "config.yaml")):
+        print("Experiment already done.\n" + "=" * 20 + "\n")
+        return
 
     # Parse arguments:
     args = {
@@ -54,10 +71,6 @@ def main(
     # input could be (prompt, anwsers) or numpy array of features
     # target is the output to predict, could be a string or an int
 
-    # Prepare results directory
-    results_dir = f"experiments/{task}/{model}/{splits}"
-    os.makedirs(results_dir, exist_ok=True)
-
     # Init model and trainer
     print("Loading the model...")
     model, trainer = load_model(args["model"], model_checkpoint_dir=os.path.join(results_dir,".cache"))
@@ -67,31 +80,35 @@ def main(
     # Fit the model to the dataset
     print("Training the model...")
     trainer.fit(model, train_dataset, val_dataset)
+    if os.path.exists(os.path.join(results_dir,".cache","training.interrupted")):
+        print("=" * 20 + "\n")
+        return
     
     # Predict on all data
-    print(f"Predicting on the train set...")
-    results = trainer.predict(model, train_dataset) # results is a dataset with columns [idx, input, target, output]
-    results.save_to_disk(f"{results_dir}/train")
+    if not os.path.exists(os.path.join(results_dir,".cache","train_prediction.success")):
+        print(f"Predicting on the train set...")
+        results = trainer.predict(model, train_dataset, prefix="train") # results is a dataset with columns [idx, input, target, output]
+        results.save_to_disk(f"{results_dir}/train")
     
-    print(f"Predicting on the validation set...")
-    results = trainer.predict(model, val_dataset)
-    results.save_to_disk(f"{results_dir}/validation")
+    if not os.path.exists(os.path.join(results_dir,".cache","validation_prediction.success")):
+        print(f"Predicting on the validation set...")
+        results = trainer.predict(model, val_dataset, prefix="validation")
+        results.save_to_disk(f"{results_dir}/validation")
 
-    print(f"Predicting on the test set...")
-    results = trainer.predict(model, test_dataset)
-    results.save_to_disk(f"{results_dir}/test")
+    if not os.path.exists(os.path.join(results_dir,".cache","test_prediction.success")):
+        print(f"Predicting on the test set...")
+        results = trainer.predict(model, test_dataset, prefix="test")
+        results.save_to_disk(f"{results_dir}/test")
 
-    save_yaml(args, f"{results_dir}/config.yaml")
+    interrupted_files = [f for f in os.listdir(os.path.join(results_dir,".cache")) if f.endswith(".interrupted")]
+    if not interrupted_files:
+        save_yaml(args, f"{results_dir}/config.yaml")
 
-    print("Done!")
-    print("=" * 20)
-    print()
+    print("Done!\n" + "=" * 20 + "\n")
 
 
 if __name__ == "__main__":
     from fire import Fire
-    import torch
-    torch.autograd.set_detect_anomaly(True)
     Fire(main)
     
     # TODO:

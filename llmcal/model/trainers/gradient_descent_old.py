@@ -10,7 +10,7 @@ import lightning as L
 from .utils import TBLogger
 from datasets import Dataset
 
-class LBFGSTrainer:
+class GradientDescentTrainer:
 
     def __init__(
         self,

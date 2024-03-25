@@ -15,8 +15,10 @@ def load_cola(split):
             idx = idx[400:10400]
         dataset = dataset.select(idx)
     dataset = dataset.rename_column("label","target")
-    dataset = dataset.rename_column("sentence","input")
+    dataset = dataset.map(lambda x: {"input": {"sentence": x["sentence"]}})
+    dataset = dataset.remove_columns(["sentence"])
     return dataset
+
 
 def load_mnli(split):
     if split == "test":
@@ -37,6 +39,7 @@ def load_mnli(split):
     dataset = dataset.map(lambda x: {"input": {"premise": x["premise"], "hypothesis": x["hypothesis"]}})
     dataset = dataset.remove_columns(["premise", "hypothesis"])
     return dataset
+
 
 def load_mrpc(split):
     if split == "test":
@@ -97,6 +100,7 @@ def load_qqp(split):
     dataset = dataset.remove_columns(["question1", "question2"])
     return dataset
 
+
 def load_rte(split):
     if split == "test":
         dataset = load_dataset("nyu-mll/glue", "rte", split="validation")
@@ -111,6 +115,7 @@ def load_rte(split):
         dataset = dataset.select(idx)
     dataset = dataset.rename_column("label","target")
     dataset = dataset.map(lambda x: {"input": {"sentence1": x["sentence1"], "sentence2": x["sentence2"]}})
+    dataset = dataset.remove_columns(["sentence1", "sentence2"])
     return dataset
 
 
@@ -127,7 +132,8 @@ def load_sst2(split):
             idx = idx[400:10400]
         dataset = dataset.select(idx)
     dataset = dataset.rename_column("label","target")
-    dataset = dataset.rename_column("sentence","input")
+    dataset = dataset.map(lambda x: {"input": {"sentence": x["sentence"]}})
+    dataset = dataset.remove_columns(["sentence"])
     return dataset
 
 
@@ -145,6 +151,7 @@ def load_wnli(split):
         dataset = dataset.select(idx)
     dataset = dataset.rename_column("label","target")
     dataset = dataset.map(lambda x: {"input": {"sentence1": x["sentence1"], "sentence2": x["sentence2"]}})
+    dataset = dataset.remove_columns(["sentence1", "sentence2"])
     return dataset
 
 

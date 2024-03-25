@@ -30,7 +30,19 @@
 #     --task tony_zhao_agnews_inst_0-shot_prompt \
 #     --splits all
 
+# python scripts/main.py \
+#     --model tinyllama_full_ft \
+#     --task glue_sst2_mc \
+#     --splits n=100_rs=7384
+
+
+
+## Affine methods:
 python scripts/main.py \
-    --model tinyllama_full_ft \
-    --task tony_zhao_agnews_inst_0-shot_prompt \
-    --splits n=1000_rs=8389
+    --model tinyllama \
+    --task glue_sst2_orig \
+    --splits all
+# python scripts/main.py \
+#     --model affine_vector \
+#     --task glue_sst2_mc \
+#     --splits n=100_rs=7384

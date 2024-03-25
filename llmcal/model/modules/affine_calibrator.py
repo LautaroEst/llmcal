@@ -35,40 +35,32 @@ class AffineCalibrator(nn.Module):
 
         # Set the alpha parameter
         if alpha == "matrix":
-            self.alpha = nn.Parameter(torch.zeros(num_classes, num_classes))
+            self.alpha = nn.Parameter(torch.zeros(num_classes, num_classes), requires_grad=True)
         elif alpha == "vector":
-            self.alpha = nn.Parameter(torch.zeros(num_classes))
+            self.alpha = nn.Parameter(torch.zeros(num_classes), requires_grad=True)
         elif alpha == "scalar":
-            self.alpha = nn.Parameter(torch.tensor(0))
+            self.alpha = nn.Parameter(torch.tensor(1.), requires_grad=True)
         elif alpha == "none":
-            self.alpha = None
+            self.alpha = nn.Parameter(torch.tensor(1.), requires_grad=False)
         else:
             raise ValueError(f"Invalid alpha: {alpha}")
         
         # Set the beta parameter
-        self.beta = nn.Parameter(torch.zeros(num_classes)) if beta else None
+        self.beta = nn.Parameter(torch.zeros(num_classes), requires_grad=beta)
 
     def forward(self, logits: torch.Tensor) -> torch.Tensor:
-        alpha = self.alpha
-        num_classes = self.num_classes
-        beta = self.beta
-
-        if alpha is None:
-            output = logits
-        elif alpha.shape == (num_classes, num_classes):
-            output = alpha @ logits
-        elif alpha.shape in [(num_classes,), ()]:
-            output = alpha * logits
-
-        if beta is not None:
-            output += beta
+        if self.alpha.shape == (self.num_classes, self.num_classes):
+            output = logits @ self.alpha.T
+        elif self.alpha.shape in [(self.num_classes,), ()]:
+            output = logits * self.alpha
+        output = output + self.beta
 
         return {"logits": output}
     
     def init_params(self, fabric: L.Fabric):
-        if self.alpha is not None:
-            self.alpha.data.fill_(1.)
-        if self.beta is not None:
-            self.beta.data.fill_(0.)
-        self = fabric.setup_module(self)
+        self.alpha.data.fill_(1.)
+        self.beta.data.fill_(0.)
         return self
+    
+    def get_trainable_parameters(self):
+        return (p for p in self.parameters() if p.requires_grad)
