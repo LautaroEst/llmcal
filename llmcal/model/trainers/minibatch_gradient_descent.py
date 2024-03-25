@@ -274,7 +274,8 @@ class MiniBatchGDTrainer:
                 outputs = []
 
             with torch.no_grad():
-                for batch_idx, batch in enumerate(progress_bar, start=batch_idx):
+                while batch_idx < len(dataloader):
+                    batch = next(progress_bar)
                     batch_size = len(batch["target"])
                     output = model.predict_step(**batch["input"])
                     for key, value in output.items():
@@ -283,6 +284,7 @@ class MiniBatchGDTrainer:
                             value = value.type(torch.float32)
                         output[key] = value.numpy()
                     outputs.extend([{key: output[key][i] for key in output.keys()} for i in range(batch_size)])
+                    batch_idx += 1
                 progress_bar.close()
             dataset = dataset.add_column("output", outputs)
 

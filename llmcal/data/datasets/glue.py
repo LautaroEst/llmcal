@@ -6,7 +6,7 @@ def load_cola(split):
     if split == "test":
         dataset = load_dataset("nyu-mll/glue", "cola", split="validation")
     elif split in ["train", "validation"]:
-        dataset = load_dataset("glue", "cola", split="train")
+        dataset = load_dataset("nyu-mll/glue", "cola", split="train")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(dataset))
         if split == "validation":
@@ -27,7 +27,7 @@ def load_mnli(split):
         idx = rs.permutation(len(dataset))[:2000]
         dataset = dataset.select(idx)
     elif split in ["train", "validation"]:
-        dataset = load_dataset("glue", "mnli", split="train")
+        dataset = load_dataset("nyu-mll/glue", "mnli", split="train")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(dataset))
         if split == "validation":
@@ -45,7 +45,7 @@ def load_mrpc(split):
     if split == "test":
         dataset = load_dataset("nyu-mll/glue", "mrpc", split="validation")
     elif split in ["train", "validation"]:
-        dataset = load_dataset("glue", "mrpc", split="train")
+        dataset = load_dataset("nyu-mll/glue", "mrpc", split="train")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(dataset))
         if split == "validation":
@@ -66,7 +66,7 @@ def load_qnli(split):
         idx = rs.permutation(len(dataset))[:2000]
         dataset = dataset.select(idx)
     elif split in ["train", "validation"]:
-        dataset = load_dataset("glue", "qnli", split="train")
+        dataset = load_dataset("nyu-mll/glue", "qnli", split="train")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(dataset))
         if split == "validation":
@@ -87,7 +87,7 @@ def load_qqp(split):
         idx = rs.permutation(len(dataset))[:2000]
         dataset = dataset.select(idx)
     elif split in ["train", "validation"]:
-        dataset = load_dataset("glue", "qqp", split="train")
+        dataset = load_dataset("nyu-mll/glue", "qqp", split="train")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(dataset))
         if split == "validation":
@@ -105,7 +105,7 @@ def load_rte(split):
     if split == "test":
         dataset = load_dataset("nyu-mll/glue", "rte", split="validation")
     elif split in ["train", "validation"]:
-        dataset = load_dataset("glue", "rte", split="train")
+        dataset = load_dataset("nyu-mll/glue", "rte", split="train")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(dataset))
         if split == "validation":
@@ -123,7 +123,7 @@ def load_sst2(split):
     if split == "test":
         dataset = load_dataset("nyu-mll/glue", "sst2", split="validation")
     elif split in ["train", "validation"]:
-        dataset = load_dataset("glue", "sst2", split="train")
+        dataset = load_dataset("nyu-mll/glue", "sst2", split="train")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(dataset))
         if split == "validation":
@@ -141,7 +141,7 @@ def load_wnli(split):
     if split == "test":
         dataset = load_dataset("nyu-mll/glue", "wnli", split="validation")
     elif split in ["train", "validation"]:
-        dataset = load_dataset("glue", "wnli", split="train")
+        dataset = load_dataset("nyu-mll/glue", "wnli", split="train")
         rs = np.random.RandomState(78)
         idx = rs.permutation(len(dataset))
         if split == "validation":

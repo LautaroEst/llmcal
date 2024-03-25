@@ -39,8 +39,8 @@
 
 ## Affine methods:
 python scripts/main.py \
-    --model tinyllama \
-    --task glue_sst2_orig \
+    --model tinyllama_orig \
+    --task tony_zhao_agnews_orig \
     --splits all
 # python scripts/main.py \
 #     --model affine_vector \

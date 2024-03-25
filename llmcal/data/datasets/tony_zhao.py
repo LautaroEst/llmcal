@@ -18,11 +18,11 @@ def load_cb(split):
                 data["premise"].append(myjson['premise'])
                 curr_label = myjson['label']
                 if curr_label == 'contradiction':
-                    data["label"].append(0)
+                    data["target"].append(0)
                 elif curr_label == 'neutral':
-                    data["label"].append(1)
+                    data["target"].append(1)
                 elif curr_label == 'entailment':
-                    data["label"].append(2)
+                    data["target"].append(2)
         return data
         
     if split == "test":
@@ -38,7 +38,6 @@ def load_cb(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
     
     dataset = Dataset.from_dict(data)
-    dataset = dataset.rename_column("label","target")
     dataset = dataset.map(lambda x: {"input": {"premise": x["premise"], "hypothesis": x["hypothesis"]}})
     dataset = dataset.remove_columns(["premise", "hypothesis"])
     return dataset
@@ -55,9 +54,9 @@ def load_rte(split):
                 data["premise"].append(myjson['premise'])
                 curr_label = myjson['label']
                 if curr_label == 'not_entailment':
-                    data["label"].append(0)
+                    data["target"].append(0)
                 elif curr_label == 'entailment':
-                    data["label"].append(1)
+                    data["target"].append(1)
         return data
     
     if split == "test":
@@ -73,7 +72,6 @@ def load_rte(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
 
     dataset = Dataset.from_dict(data)
-    dataset = dataset.rename_column("label","target")
     dataset = dataset.map(lambda x: {"input": {"premise": x["premise"], "hypothesis": x["hypothesis"]}})
     dataset = dataset.remove_columns(["premise", "hypothesis"])
     return dataset
@@ -96,7 +94,7 @@ def load_trec(split):
         return {
             'idx': list(range(len(sentences))),
             'sentence': sentences,
-            'label': labels,
+            'target': labels,
         }
     
     if split == "test":
@@ -112,8 +110,8 @@ def load_trec(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
 
     dataset = Dataset.from_dict(data)
-    dataset = dataset.rename_column("label","target")
-    dataset = dataset.rename_column("sentence","input")
+    dataset = dataset.map(lambda x: {"input": {"premise": x["premise"], "hypothesis": x["hypothesis"]}})
+    dataset = dataset.remove_columns(["premise", "hypothesis"])
     return dataset
 
 def load_sst2(split):
@@ -129,15 +127,15 @@ def load_sst2(split):
         return {
             'idx': list(range(len(sentences))),
             'sentence': sentences,
-            'label': labels,
+            'target': labels,
         }
     
     split = "dev" if split == "validation" else split
     data = _load_data(f"./data/raw_data/tony_zhao/sst2/stsa.binary.{split}")
 
     dataset = Dataset.from_dict(data)
-    dataset = dataset.rename_column("label","target")
-    dataset = dataset.rename_column("sentence","input")
+    dataset = dataset.map(lambda x: {"input": {"sentence": x["sentence"]}})
+    dataset = dataset.remove_columns(["sentence"])
     return dataset
 
 def load_agnews(split):
@@ -153,7 +151,7 @@ def load_agnews(split):
         return {
             'idx': list(range(len(articles))),
             'article': articles,
-            'label': labels,
+            'target': labels,
         }
 
     if split == "test":
@@ -172,8 +170,8 @@ def load_agnews(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
     
     dataset = Dataset.from_dict(data)
-    dataset = dataset.rename_column("label","target")
-    dataset = dataset.rename_column("article","input")
+    dataset = dataset.map(lambda x: {"input": {"article": x["article"]}})
+    dataset = dataset.remove_columns(["article"])
     return dataset
 
 
@@ -188,7 +186,7 @@ def load_dbpedia(split):
         return {
             'idx': list(range(len(articles))),
             'article': articles,
-            'label': labels,
+            'target': labels,
         }
 
     if split == "test":
@@ -207,8 +205,8 @@ def load_dbpedia(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
 
     dataset = Dataset.from_dict(data)
-    dataset = dataset.rename_column("label","target")
-    dataset = dataset.rename_column("article","input")
+    dataset = dataset.map(lambda x: {"input": {"article": x["article"]}})
+    dataset = dataset.remove_columns(["article"])
     return dataset
 
 
