@@ -24,6 +24,7 @@ class MiniBatchGDTrainer:
         weight_decay: float = 0,
         max_epochs: int = 100,
         max_steps: int = 100000,
+        warmup_steps: int = 0,
         random_state = 0,
         loss: Literal["cross_entropy"] = "cross_entropy",
         val_interval: int = 1,
@@ -38,6 +39,7 @@ class MiniBatchGDTrainer:
         self.weight_decay = weight_decay
         self.max_epochs = max_epochs
         self.max_steps = max_steps
+        self.warmup_steps = warmup_steps
         self.random_state = random_state
 
         self.val_interval = val_interval
@@ -52,15 +54,23 @@ class MiniBatchGDTrainer:
             "max_epochs": self.max_epochs,
         }
 
-        
+    def get_lr_scheduler(self, optimizer, max_steps):
+        # linear warmup followed by cosine annealing
+        scheduler1 = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda step: step / self.warmup_steps)
+        scheduler2 = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=(max_steps - self.warmup_steps))
+        return torch.optim.lr_scheduler.SequentialLR(optimizer, [scheduler1, scheduler2], milestones=[self.warmup_steps])
+            
     def fit(self, model, train_dataset, validation_dataset):
 
+        logger = TBLogger(root_dir=self.model_checkpoint_dir)
+
         if self.max_epochs == 0:
+            logger.finalize("success", time = 0)
             return self
         
         # Find checkpoint and resume from there
         trainable_parameters = model.get_trainable_parameters()
-        optimizer = SGD(
+        optimizer = AdamW(
             trainable_parameters,
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
@@ -96,10 +106,13 @@ class MiniBatchGDTrainer:
         validation_dataloader = self.create_dataloader(validation_dataset, batch_size=self.micro_batch_size, max_seq_length=model.max_seq_length, shuffle=False)
 
         # Setup logging, model and otpiumizer
-        logger = TBLogger(root_dir=self.model_checkpoint_dir)
         logger.log_hyperparams(self.hyperparams)
         model = self.fabric.setup_module(state["model"])
         optimizer = self.fabric.setup_optimizers(state["optimizer"])
+        scheduler = self.get_lr_scheduler(
+            optimizer, 
+            max_steps = min(self.max_epochs * (len(train_dataloader) // self.gradient_accumulation_steps), (self.max_steps or float("inf")))
+        )
 
         # Epoch and step bars
         epochs_bar = tqdm(
@@ -148,13 +161,18 @@ class MiniBatchGDTrainer:
                     
                     if not is_accumulating or iter_num == len(train_dataloader) - 1:
 
+                        # Metrics
+                        metrics = {"loss/train": last_train_loss}
+
                         # Update weights
                         optimizer.step()
                         optimizer.zero_grad()
+                        scheduler.step()
 
                         # Validate
                         if global_step_count % self.val_interval == 0:
                             last_val_loss = self._validate(model, validation_dataloader, self.loss)
+                            metrics["loss/validation"] = last_val_loss
                             if last_val_loss < best_val_loss:
                                 best_val_loss = last_val_loss
                                 if global_step_count % self.checkpoint_interval == 0:
@@ -171,10 +189,7 @@ class MiniBatchGDTrainer:
 
                         # Log
                         step_bar.set_description(f"Steps | Train loss: {last_train_loss:.4f} | Val loss: {last_val_loss:.4f}")
-                        logger.log_metrics({
-                            "loss/train": last_train_loss,
-                            "loss/validation": last_val_loss,
-                        }, step=global_step_count)
+                        logger.log_metrics(metrics, step=global_step_count)
 
                         # Save checkpoint
                         if global_step_count % self.checkpoint_interval == 0:

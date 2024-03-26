@@ -11,6 +11,6 @@ model:
 
 train:
   class_name: "MiniBatchGDTrainer"
-  micro_batch_size: 16
+  micro_batch_size: 64
   max_epochs: 0
   random_state: 738

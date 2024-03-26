@@ -35,7 +35,7 @@ class LoRALitGPT(GPT):
         mark_only_lora_as_trainable(self)
 
     def get_trainable_parameters(self):
-        return (param for param in self.parameters() if param.requires_grad)
+        return [p for p in self.parameters() if p.requires_grad]
 
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None) -> torch.Tensor:
         T = idx.size(1)
@@ -73,7 +73,7 @@ class LoRALitGPTLanguageModel(LoRALitGPT):
         outputs = {"last_hidden_state": [], "logits": []}
         for input_ids, attention_mask in zip(prompt_ids, prompt_mask):
             input_ids = input_ids[attention_mask == 1].unsqueeze(0)
-            output = self._forward_single_sample(input_ids)
+            output = super().forward(input_ids)
             outputs["last_hidden_state"].append(
                 torch.cat([torch.zeros(1, (attention_mask == 0).sum(), self.config.n_embd, dtype=output["last_hidden_state"].dtype, device=output["last_hidden_state"].device), output["last_hidden_state"]],dim=1)
             )
@@ -196,7 +196,7 @@ class LoRALitGPTSequenceClassification(LoRALitGPT):
         embeddings = []
         for input_ids, attention_mask in zip(prompt_ids, prompt_mask):
             input_ids = input_ids[attention_mask == 1].unsqueeze(0)
-            output = self._forward_single_sample(input_ids)
+            output = super().forward(input_ids)
             embeddings.append(self._pool_embeddings(output["last_hidden_state"])[0])
         embeddings = torch.stack(embeddings, dim=0)
         logits = self.classifier(embeddings)

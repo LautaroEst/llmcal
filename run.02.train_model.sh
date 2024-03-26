@@ -39,10 +39,16 @@
 
 ## Affine methods:
 python scripts/main.py \
-    --model tinyllama_orig \
-    --task tony_zhao_agnews_orig \
+    --model tinyllama \
+    --task tony_zhao_agnews_mc \
     --splits all
-# python scripts/main.py \
-#     --model affine_vector \
-#     --task glue_sst2_mc \
-#     --splits n=100_rs=7384
+python scripts/main.py \
+    --model affine_vector \
+    --task tony_zhao_agnews_mc_tinyllama_logits \
+    --splits all
+
+# LoRA finetuning
+python scripts/main.py \
+    --model tinyllama_lora \
+    --task tony_zhao_agnews_mc \
+    --splits all

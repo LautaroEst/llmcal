@@ -11,12 +11,12 @@ model:
 
 train:
   class_name: "MiniBatchGDTrainer"
-  batch_size: 6
-  micro_batch_size: 3
-  learning_rate: 0.0001 
+  batch_size: 64
+  micro_batch_size: 4
+  learning_rate: 0.000001
   weight_decay: 0
-  max_epochs: 2
+  max_epochs: 20
   random_state: 738
   loss: cross_entropy
-  val_interval: 2
-  checkpoint_interval: 16
+  val_interval: 10
+  checkpoint_interval: 10

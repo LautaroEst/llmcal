@@ -63,4 +63,4 @@ class AffineCalibrator(nn.Module):
         return self
     
     def get_trainable_parameters(self):
-        return (p for p in self.parameters() if p.requires_grad)
+        return [p for p in self.parameters() if p.requires_grad]

@@ -6,7 +6,7 @@ quantize: null
 
 model:
   class_name: "AffineCalibrator"
-  num_classes: 2
+  num_classes: 4
   alpha: "vector"
   beta: True
 
@@ -15,4 +15,7 @@ train:
   loss: "cross_entropy"
   batch_size: 8
   random_state: 8293
-  max_steps: 20
+  max_epochs: 20
+  max_ls: 40
+  val_interval: 1
+  checkpoint_interval: 1

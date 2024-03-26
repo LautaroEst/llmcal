@@ -93,7 +93,7 @@ def load_trec(split):
                 sentences.append(sentence)
         return {
             'idx': list(range(len(sentences))),
-            'sentence': sentences,
+            'question': sentences,
             'target': labels,
         }
     
@@ -110,8 +110,8 @@ def load_trec(split):
         data = {k: [v[i] for i in idx] for k, v in data.items()}
 
     dataset = Dataset.from_dict(data)
-    dataset = dataset.map(lambda x: {"input": {"premise": x["premise"], "hypothesis": x["hypothesis"]}})
-    dataset = dataset.remove_columns(["premise", "hypothesis"])
+    dataset = dataset.map(lambda x: {"input": {"question": x["question"]}})
+    dataset = dataset.remove_columns(["question"])
     return dataset
 
 def load_sst2(split):
