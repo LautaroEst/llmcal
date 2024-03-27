@@ -62,6 +62,7 @@ class MiniBatchGDTrainer:
             
     def fit(self, model, train_dataset, validation_dataset):
 
+        os.makedirs(self.model_checkpoint_dir, exist_ok=True)
         logger = TBLogger(root_dir=self.model_checkpoint_dir)
 
         if self.max_epochs == 0:
@@ -85,7 +86,6 @@ class MiniBatchGDTrainer:
             "last_train_loss": float("inf"), 
             "last_val_loss": float("inf"), 
         }
-        os.makedirs(self.model_checkpoint_dir, exist_ok=True)
         if os.path.exists(os.path.join(self.model_checkpoint_dir, "training.success")):
             print("Found a successful training. Loading checkpoint...")
             self.fabric.load(os.path.join(self.model_checkpoint_dir, "last_model.ckpt"), state)

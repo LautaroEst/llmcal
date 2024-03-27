@@ -37,18 +37,44 @@
 
 
 
+# ## Affine methods:
+# python scripts/main.py \
+#     --model tinyllama \
+#     --task tony_zhao_agnews_mc \
+#     --splits all
+# python scripts/main.py \
+#     --model affine_matrix \
+#     --task tony_zhao_agnews_mc_tinyllama_logits \
+#     --splits all
+# python scripts/main.py \
+#     --model affine_vector \
+#     --task tony_zhao_agnews_mc_tinyllama_logits \
+#     --splits all
+# python scripts/main.py \
+#     --model affine_bias \
+#     --task tony_zhao_agnews_mc_tinyllama_logits \
+#     --splits all
+
 ## Affine methods:
 python scripts/main.py \
     --model tinyllama \
-    --task tony_zhao_agnews_mc \
+    --task glue_sst2_mc \
+    --splits all
+python scripts/main.py \
+    --model affine_matrix \
+    --task glue_sst2_mc_tinyllama_logits \
     --splits all
 python scripts/main.py \
     --model affine_vector \
-    --task tony_zhao_agnews_mc_tinyllama_logits \
+    --task glue_sst2_mc_tinyllama_logits \
+    --splits all
+python scripts/main.py \
+    --model affine_bias \
+    --task glue_sst2_mc_tinyllama_logits \
     --splits all
 
-# LoRA finetuning
-python scripts/main.py \
-    --model tinyllama_lora \
-    --task tony_zhao_agnews_mc \
-    --splits all
+# # LoRA finetuning
+# python scripts/main.py \
+#     --model tinyllama_lora \
+#     --task tony_zhao_agnews_mc \
+#     --splits all

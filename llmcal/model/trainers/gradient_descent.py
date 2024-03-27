@@ -53,9 +53,18 @@ class GradientDescentTrainer:
             "max_ls": self.max_ls,
         }
 
+    @staticmethod
+    def compute_norm_cross_entropy(logits, labels):
+        logprobs = torch.nn.functional.log_softmax(logits, dim=-1)
+        ce = - torch.mean(logprobs[torch.arange(len(labels)), labels])
+        priors = torch.bincount(labels) / len(labels)
+        naive_ce = -torch.mean(torch.log(priors[labels]))
+        return ce / naive_ce
+
         
     def fit(self, model, train_dataset, validation_dataset):
 
+        os.makedirs(os.path.join(self.model_checkpoint_dir), exist_ok=True)
         logger = TBLogger(root_dir=self.model_checkpoint_dir)
 
         if self.max_epochs == 0:
@@ -122,7 +131,10 @@ class GradientDescentTrainer:
             targets = batch.pop("target")
             output = model(**batch["input"])
             loss = self.loss(output["logits"], targets)
-            logger.log_metrics({"loss/train": loss.item()}, step=step_count)
+            logger.log_metrics({
+                "loss/train": loss.item(),
+                "norm_cross_entropy/train": self.compute_norm_cross_entropy(output["logits"], targets)
+            }, step=step_count)
             self.fabric.backward(loss)
             step_count += 1
             return loss
@@ -142,10 +154,11 @@ class GradientDescentTrainer:
                 
                 # Validate
                 if epoch % self.val_interval == 0:
-                    val_loss = self._validate(model, validation_dataloader, self.loss)
+                    val_metrics = self._validate(model, validation_dataloader)
+                    metrics.update(val_metrics)
+                    val_loss = metrics["loss/validation"]
                     if val_loss < best_val_loss:
                         best_val_loss = val_loss
-                        metrics["loss/validation"] = val_loss
                         if epoch % self.checkpoint_interval == 0:
                             self.fabric.save(os.path.join(self.model_checkpoint_dir, "best_model.ckpt"), {
                                 "model": model,
@@ -195,16 +208,18 @@ class GradientDescentTrainer:
 
         return self
     
-    @staticmethod
     @torch.inference_mode()
-    def _validate(model, dataloader, loss):
+    def _validate(self, model, dataloader):
         model.eval()
         batch = next(iter(dataloader))
         targets = batch.pop("target")
         output = model(**batch["input"])
-        val_loss = loss(output["logits"], targets).item()
+        val_loss = self.loss(output["logits"], targets).item()
         model.train()
-        return val_loss
+        return {
+            "loss/validation": val_loss,
+            "norm_cross_entropy/validation": self.compute_norm_cross_entropy(output["logits"], targets)
+        }
             
 
     def predict(self, model, dataset: Dataset, prefix: str = "") -> Dataset:
@@ -250,7 +265,6 @@ class GradientDescentTrainer:
         except KeyboardInterrupt:
             print("Prediction interrupted. Exiting...")
             outputs = outputs[:self.batch_size * batch_idx]
-            os.makedirs(os.path.join(self.model_checkpoint_dir), exist_ok=True)
             with open(os.path.join(self.model_checkpoint_dir, f"{prefix}_predictions.pkl"), "wb") as f:
                 pickle.dump(outputs, f)
             with open(os.path.join(self.model_checkpoint_dir, f"{prefix}_prediction.interrupted"), "w") as f:
