@@ -42,6 +42,9 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
 
 METHODS = OrderedDict([
     ("glue_sst2_inst_0-shot-AB_prompt/tinyllama/all", {"label": "No adaptation", "color": "black", "marker": "o",  "markersize": 5, "alpha": 0.8}),
+    ("tony_zhao_agnews_mc_tinyllama_logits/affine_matrix", {"label": "Affine matrix", "color": "C0", "marker": "o",  "markersize": 5, "linestyle": "-", "linewidth": 1, "alpha": 1}),
+    ("tony_zhao_agnews_mc_tinyllama_logits/affine_vector", {"label": "Affine vector", "color": "C1", "marker": "o",  "markersize": 5, "linestyle": "-", "linewidth": 1, "alpha": 1}),
+    ("tony_zhao_agnews_mc_tinyllama_logits/affine_bias", {"label": "Affine bias", "color": "C2", "marker": "o",  "markersize": 5, "linestyle": "-", "linewidth": 1, "alpha": 1}),
     ("glue_sst2_inst_0-shot-AB_tinyllama-logits/affine_vector", {"label": "Affine vector", "color": "C0", "marker": "o",  "markersize": 5, "linestyle": "--", "linewidth": 1, "alpha": 1})
 ])
 
@@ -104,7 +107,7 @@ def main(
             yerr = yerr.rename(columns=lambda x: METHODS[x]["label"])
             yerr = yerr.reindex([v["label"] for k, v in METHODS.items() if k != baseline_method], axis=1)
             yerr = yerr.sort_index(ascending=True)
-            dfp.plot(kind="line", ax=ax[i], yerr=yerr, capsize=5, legend=False)
+            dfp.plot(kind="bar", ax=ax[i], yerr=yerr, capsize=5, legend=False)
 
         if baseline_method:
             results = load_from_disk(os.path.join(experiments_dir, baseline_method, split)).flatten().select_columns(["output.logits", "target"]).with_format("numpy")
