@@ -6,7 +6,6 @@ setup(
     packages=['llmcal'],
     install_requires=[
         'fire',
-        'bitsandbytes==0.41.0',
         'lightning',
         'transformers[sentencepiece]',
         'datasets',
@@ -15,6 +14,6 @@ setup(
         'matplotlib',
         'tensorboard',
         'jupyter',
-        'lit_gpt @ git+https://github.com/Lightning-AI/lit-gpt.git',
+        'lit_gpt[all]',
     ],
 )

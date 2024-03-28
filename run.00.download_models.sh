@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Models to be downloaded and converted to dtype
+declare -A MODEL_DTYPE=(
+    ["TinyLlama/TinyLlama-1.1B-intermediate-step-955k-token-2T"]="bfloat16"
+    ["TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"]="bfloat16"
+    ["TinyLlama/TinyLlama-1.1B-Chat-v1.0"]="bfloat16"
+    ["meta-llama/Llama-2-7b-hf"]="bfloat16"
+)
+
 if [ -z "${LIT_CHECKPOINTS}" ]; then
     echo "Select a directory to store the checkpoints:"
     read -p ">>> " LIT_CHECKPOINTS
@@ -8,27 +16,15 @@ if [ -z "${LIT_CHECKPOINTS}" ]; then
     export LIT_CHECKPOINTS=${LIT_CHECKPOINTS}
 fi
 
-python scripts/download_model_and_convert_to_lit.py \
-    --repo_id TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T \
-    --dtype bfloat16
-mv $LIT_CHECKPOINTS/TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T $LIT_CHECKPOINTS/TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T-bf16
 
-python scripts/download_model_and_convert_to_lit.py \
-    --repo_id TinyLlama/TinyLlama-1.1B-intermediate-step-955k-token-2T \
-    --dtype bfloat16
-mv $LIT_CHECKPOINTS/TinyLlama/TinyLlama-1.1B-intermediate-step-955k-token-2T $LIT_CHECKPOINTS/TinyLlama/TinyLlama-1.1B-intermediate-step-955k-token-2T-bf16
-
-python scripts/download_model_and_convert_to_lit.py \
-    --repo_id TinyLlama/TinyLlama-1.1B-intermediate-step-955k-token-2T \
-    --dtype float32
-mv $LIT_CHECKPOINTS/TinyLlama/TinyLlama-1.1B-intermediate-step-955k-token-2T $LIT_CHECKPOINTS/TinyLlama/TinyLlama-1.1B-intermediate-step-955k-token-2T-float32
-
-python scripts/download_model_and_convert_to_lit.py \
-    --repo_id TinyLlama/TinyLlama-1.1B-Chat-v1.0 \
-    --dtype bfloat16
-mv $LIT_CHECKPOINTS/TinyLlama/TinyLlama-1.1B-Chat-v1.0 $LIT_CHECKPOINTS/TinyLlama/TinyLlama-1.1B-Chat-v1.0-bf16
-
-python scripts/download_model_and_convert_to_lit.py \
-    --repo_id meta-llama/Llama-2-7b-hf \
-    --dtype bfloat16
-mv $LIT_CHECKPOINTS/meta-llama/Llama-2-7b-hf $LIT_CHECKPOINTS/meta-llama/Llama-2-7b-hf-bf16
+for MODEL in "${!MODEL_DTYPE[@]}"; do
+    DTYPE=${MODEL_DTYPE[$MODEL]}
+    if [ -d "$LIT_CHECKPOINTS/$MODEL-$DTYPE" ]; then
+        echo "Model $MODEL-$DTYPE already downloaded"
+        continue
+    fi
+    litgpt download --repo_id $MODEL --dtype $DTYPE --checkpoint_dir $LIT_CHECKPOINTS
+    mv $LIT_CHECKPOINTS/$MODEL $LIT_CHECKPOINTS/$MODEL-$DTYPE
+    rm -f $LIT_CHECKPOINTS/$MODEL-$DTYPE/*.bin
+    rm -f $LIT_CHECKPOINTS/$MODEL-$DTYPE/*.safetensors
+done

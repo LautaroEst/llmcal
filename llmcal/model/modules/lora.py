@@ -28,11 +28,11 @@ class LoRALitGPT(GPT):
         self.tokenizer = LitGPTTokenizer(model_name_or_path)
 
     def init_params(self, fabric: L.Fabric):
+        mark_only_lora_as_trainable(self)
         checkpoint_path = Path(self.model_name_or_path) / "lit_model.pth"
         if not checkpoint_path.is_file():
             checkpoint_path = Path(os.getenv("LIT_CHECKPOINTS")) / self.model_name_or_path / "lit_model.pth"
         load_checkpoint(fabric, self, checkpoint_path, strict=False)
-        mark_only_lora_as_trainable(self)
 
     def get_trainable_parameters(self):
         return [p for p in self.parameters() if p.requires_grad]
