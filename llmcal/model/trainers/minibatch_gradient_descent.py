@@ -77,12 +77,12 @@ class MiniBatchGDTrainer:
         self.set_collate_function(model, model.tokenizer)
         train_dataset = train_dataset.select_columns(["input","target"]).with_format("torch")
         validation_dataset = validation_dataset.select_columns(["input","target"]).with_format("torch")
-        train_dataloader = self.create_dataloader(train_dataset, batch_size=self.micro_batch_size, max_seq_length=model.max_seq_length, shuffle=True, random_state=self.random_state)
+        train_dataloader = self.create_dataloader(train_dataset, batch_size=self.micro_batch_size, max_seq_length=model.max_seq_length, shuffle=True)
         validation_dataloader = self.create_dataloader(validation_dataset, batch_size=self.micro_batch_size, max_seq_length=model.max_seq_length, shuffle=False)
         
         # Find checkpoint and resume from there
         trainable_parameters = model.get_trainable_parameters()
-        optimizer = SGD(
+        optimizer = AdamW(
             trainable_parameters,
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
@@ -341,21 +341,13 @@ class MiniBatchGDTrainer:
         else:
             raise ValueError(f"Model class {model.__class__.__name__} not supported")
         
-    def create_dataloader(self, dataset, batch_size, max_seq_length, shuffle=False, random_state=None):
-
-        if shuffle:
-            generator = torch.Generator()
-            if random_state is not None:
-                generator.manual_seed(random_state)
-        else:
-            generator = None
+    def create_dataloader(self, dataset, batch_size, max_seq_length, shuffle=False):
 
         dataloader = DataLoader(
             dataset,
             batch_size=batch_size,
             shuffle=shuffle,
             collate_fn=partial(self._collate_function, max_seq_length=max_seq_length),
-            generator=generator,
         )
         dataloader = self.fabric.setup_dataloaders(dataloader)
         return dataloader

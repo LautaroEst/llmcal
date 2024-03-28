@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Dict, List, Literal, Optional
 
 import torch
-from lit_gpt import Tokenizer as _Tokenizer
-from lit_gpt.utils import check_valid_checkpoint_dir
+from litgpt import Tokenizer as _Tokenizer
+from litgpt.utils import check_valid_checkpoint_dir
 
 class LitGPTTokenizer:
 

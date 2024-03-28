@@ -6,8 +6,8 @@ import torch
 from torch import nn
 import lightning as L
 
-from lit_gpt import GPT, Config
-from lit_gpt.utils import load_checkpoint
+from litgpt import GPT, Config
+from litgpt.utils import load_checkpoint
 from .tokenizer import LitGPTTokenizer
 
 

@@ -4,7 +4,7 @@ from . import modules, trainers
 import torch
 import lightning as L
 from lightning.fabric.plugins import BitsandbytesPrecision
-from lit_gpt.utils import get_default_supported_precision
+from litgpt.utils import get_default_supported_precision
 
 
 MODULES_WITH_FABRIC_INIT = [
@@ -48,6 +48,8 @@ def init_fabric(model_args):
         callbacks=callbacks,
         loggers=loggers,
     )
+
+    fabric.seed_everything(model_args["train"]["random_state"])
 
     return fabric
 

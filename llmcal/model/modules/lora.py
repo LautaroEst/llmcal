@@ -6,8 +6,8 @@ import torch
 from torch import nn
 import lightning as L
 
-from lit_gpt.lora import GPT, Config, mark_only_lora_as_trainable
-from lit_gpt.utils import load_checkpoint
+from litgpt.lora import GPT, Config, mark_only_lora_as_trainable
+from litgpt.utils import load_checkpoint
 from .tokenizer import LitGPTTokenizer
 
 

@@ -1,6 +1,6 @@
 
 
-task: "experiments/tony_zhao_agnews_mc/tinyllama/all/"
+task: "experiments/tony_zhao_agnews_mc/tinyllama_3T_bf16/all/"
 casting:
   class_name: FeaturesSelector
   features:

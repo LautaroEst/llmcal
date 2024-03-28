@@ -10,6 +10,13 @@ def main(
     splits: str,
     **mods,
 ):
+    
+    # Parse arguments:
+    args = {
+        "model": load_yaml(os.path.join("configs/model",f"{model}.yaml")),
+        "task": load_yaml(os.path.join("configs/task",f"{task}.yaml")),
+        "splits": load_yaml(os.path.join("configs/splits",f"{splits}.yaml")),
+    }
 
     model_with_mods_name = model
     for mod in mods:
@@ -32,13 +39,6 @@ def main(
     if os.path.exists(os.path.join(results_dir, "config.yaml")):
         print("Experiment already done.\n" + "=" * 20 + "\n")
         return
-
-    # Parse arguments:
-    args = {
-        "model": load_yaml(os.path.join("configs/model",f"{model}.yaml")),
-        "task": load_yaml(os.path.join("configs/task",f"{task}.yaml")),
-        "splits": load_yaml(os.path.join("configs/splits",f"{splits}.yaml")),
-    }
 
     # Load the datasets and cast to the task
     print("Loading the data...")
