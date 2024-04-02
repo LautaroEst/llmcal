@@ -6,17 +6,17 @@ quantize: null
 
 model:
   class_name: "LitGPTPromptClassification"
-  model_name_or_path: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T-bf16"
+  model_name_or_path: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T-bfloat16"
   embedding_pooling: "last"
 
 train:
   class_name: "MiniBatchGDTrainer"
   batch_size: 64
-  micro_batch_size: 4
+  micro_batch_size: 1
   learning_rate: 0.1
   weight_decay: 0
   max_epochs: 20
-  warmup_steps: 1
+  warmup_steps: null
   random_state: 738
   loss: cross_entropy
   val_interval: 10

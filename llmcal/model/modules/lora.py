@@ -6,9 +6,16 @@ import torch
 from torch import nn
 import lightning as L
 
-from litgpt.lora import GPT, Config, mark_only_lora_as_trainable
+from litgpt.lora import GPT, Config, mark_only_lora_as_trainable, LoRALinear
 from litgpt.utils import load_checkpoint
 from .tokenizer import LitGPTTokenizer
+
+def init_lora_linear_modules(module):
+    if isinstance(module, LoRALinear):
+        module.reset_parameters()
+    else:
+        for child in module.children():
+            init_lora_linear_modules(child)
 
 
 class LoRALitGPT(GPT):
@@ -22,7 +29,7 @@ class LoRALitGPT(GPT):
                 raise ValueError(f"Invalid model_name_or_path {model_name_or_path}")
         config = Config.from_checkpoint(model_name_or_path)
         for k, v in lora_kwargs.items():
-            setattr(config, k.split("lora_")[-1], v)
+            setattr(config, k, v)
         super().__init__(config)
         self.set_kv_cache(batch_size=1)
         self.tokenizer = LitGPTTokenizer(model_name_or_path)
@@ -33,9 +40,7 @@ class LoRALitGPT(GPT):
         if not checkpoint_path.is_file():
             checkpoint_path = Path(os.getenv("LIT_CHECKPOINTS")) / self.model_name_or_path / "lit_model.pth"
         load_checkpoint(fabric, self, checkpoint_path, strict=False)
-
-    def get_trainable_parameters(self):
-        return [p for p in self.parameters() if p.requires_grad]
+        init_lora_linear_modules(self)
 
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None) -> torch.Tensor:
         T = idx.size(1)

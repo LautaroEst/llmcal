@@ -8,21 +8,21 @@ model:
   class_name: "LoRALitGPTPromptClassification"
   model_name_or_path: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T-bfloat16"
   embedding_pooling: "last"
-  lora_r: 16
+  lora_r: 8
   lora_alpha: 16
   lora_dropout: 0.05
-  lora_to_query: True
-  lora_to_key: True
-  lora_to_value: True
-  lora_to_projection: True
-  lora_to_mlp: True
-  lora_to_head: True
+  lora_query: True
+  lora_key: True
+  lora_value: True
+  lora_projection: True
+  lora_mlp: True
+  lora_head: True
 
 train:
   class_name: "MiniBatchGDTrainer"
   batch_size: 64
   micro_batch_size: 4
-  learning_rate: 0.1
+  learning_rate: 0.01
   weight_decay: 0
   max_epochs: 20
   warmup_steps: null

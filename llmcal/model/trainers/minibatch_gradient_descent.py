@@ -79,11 +79,10 @@ class MiniBatchGDTrainer:
         validation_dataset = validation_dataset.select_columns(["input","target"]).with_format("torch")
         train_dataloader = self.create_dataloader(train_dataset, batch_size=self.micro_batch_size, max_seq_length=model.max_seq_length, shuffle=True)
         validation_dataloader = self.create_dataloader(validation_dataset, batch_size=self.micro_batch_size, max_seq_length=model.max_seq_length, shuffle=False)
-        
+
         # Find checkpoint and resume from there
-        trainable_parameters = model.get_trainable_parameters()
         optimizer = AdamW(
-            trainable_parameters,
+            [p for p in model.parameters() if p.requires_grad],
             lr=self.learning_rate,
             weight_decay=self.weight_decay,
         )
@@ -92,15 +91,15 @@ class MiniBatchGDTrainer:
             max_steps = min(self.max_epochs * (len(train_dataloader) // self.gradient_accumulation_steps), (self.max_steps or float("inf")))
         )
         state = {
-            "model": model, 
+            "model": model,
             "optimizer": optimizer, 
             "scheduler": scheduler,
             "epoch": 0,
             "global_step": 0,
             "step_inside_epoch": 0,
             "best_val_loss": float("inf"), 
-            "last_train_loss": float("inf"), 
-            "last_val_loss": float("inf"), 
+            "last_train_loss": 0, 
+            "last_val_loss": 0, 
         }
         if os.path.exists(os.path.join(self.model_checkpoint_dir, "training.success")):
             print("Found a successful training. Loading checkpoint...")
@@ -121,14 +120,6 @@ class MiniBatchGDTrainer:
         scheduler = state["scheduler"]
         
         # Epoch and step bars
-        epochs_bar = tqdm(
-            range(state["epoch"], self.max_epochs), 
-            dynamic_ncols=True,
-            leave=False,
-            initial=state["epoch"],
-            total=self.max_epochs,
-            desc="Epochs"
-        )
         global_step_count = state["global_step"]
         epoch_step_count = state["step_inside_epoch"]
         iter_dataloader = iter(train_dataloader)
@@ -136,23 +127,19 @@ class MiniBatchGDTrainer:
         while iter_num < self.gradient_accumulation_steps * state["step_inside_epoch"]: # Advance to the last step
             next(iter_dataloader)
             iter_num += 1
-        step_bar = tqdm(
-            range(epoch_step_count, ceil(len(train_dataloader) / self.gradient_accumulation_steps)),
-            dynamic_ncols=True,
-            leave=False,
-            initial=epoch_step_count,
-            total=ceil(len(train_dataloader) / self.gradient_accumulation_steps),
-            desc="Steps"
-        )
-
+        first_epoch = state["epoch"]
+        max_steps = ceil(len(train_dataloader) / self.gradient_accumulation_steps)
+        
         # Start training
         last_train_loss = state["last_train_loss"]
         last_val_loss = state["last_val_loss"]
         best_val_loss = state["best_val_loss"]
+        cum_train_loss = 0.
+        cum_num_samples = 0
         model.train()
         start_time = time.time()
         try:
-            for epoch in epochs_bar:
+            for epoch in range(first_epoch, self.max_epochs):
                 while iter_num < len(train_dataloader) and global_step_count < self.max_steps:
                     is_accumulating = (iter_num + 1) % self.gradient_accumulation_steps != 0
                     batch = next(iter_dataloader)
@@ -160,14 +147,17 @@ class MiniBatchGDTrainer:
                     # Forward-backward pass
                     inputs, targets = batch["input"], batch["target"]
                     inputs["labels"] = targets
+                    batch_size = len(targets)
                     with self.fabric.no_backward_sync(model, enabled=is_accumulating):
                         train_loss = model.train_step(**inputs, loss_fn=self.loss)
-                        self.fabric.backward(train_loss / self.gradient_accumulation_steps)
-                    last_train_loss += train_loss.item() / self.gradient_accumulation_steps
+                        self.fabric.backward(train_loss)
+                    cum_train_loss += train_loss.item() * batch_size
+                    cum_num_samples += batch_size
                     
                     if not is_accumulating or iter_num == len(train_dataloader) - 1:
 
                         # Metrics
+                        last_train_loss = cum_train_loss / cum_num_samples
                         metrics = {"loss/train": last_train_loss}
 
                         # Update weights
@@ -196,7 +186,12 @@ class MiniBatchGDTrainer:
                                     })
 
                         # Log
-                        step_bar.set_description(f"Steps | Train loss: {last_train_loss:.4f} | Val loss: {last_val_loss:.4f}")
+                        self.fabric.print(
+                            f"Epoch {epoch:02}/{self.max_epochs-1:02} | "
+                            f"Step {epoch_step_count:02}/{max_steps-1:02} | "
+                            f"Train loss: {last_train_loss:.4f} | "
+                            f"Val loss: {last_val_loss:.4f}"
+                        )
                         logger.log_metrics(metrics, step=global_step_count)
 
                         # Save checkpoint
@@ -206,7 +201,7 @@ class MiniBatchGDTrainer:
                             state["scheduler"] = scheduler
                             state["epoch"] = epoch
                             state["global_step"] = global_step_count + 1
-                            state["step_inside_epoch"] = epoch_step_count + 1 if epoch_step_count + 1 < ceil(len(train_dataloader) / self.gradient_accumulation_steps) else 0
+                            state["step_inside_epoch"] = epoch_step_count + 1 if epoch_step_count + 1 < max_steps else 0
                             state["best_val_loss"] = best_val_loss
                             state["last_train_loss"] = last_train_loss
                             state["last_val_loss"] = last_val_loss
@@ -214,28 +209,17 @@ class MiniBatchGDTrainer:
 
                         global_step_count += 1
                         epoch_step_count += 1
-                        step_bar.update(1)
-                        last_train_loss = 0
+                        cum_train_loss = 0.
+                        cum_num_samples = 0
                     
                     iter_num += 1
 
                 if epoch < self.max_epochs - 1:
                     iter_dataloader = iter(train_dataloader)
-                    step_bar.close()
-                    step_bar = tqdm(
-                        range(0, ceil(len(train_dataloader) / self.gradient_accumulation_steps)),
-                        dynamic_ncols=True,
-                        leave=False,
-                        initial=0,
-                        total=ceil(len(train_dataloader) / self.gradient_accumulation_steps),
-                        desc=f"Steps | Train loss: {last_train_loss:.4f} | Val loss: {last_val_loss:.4f}"
-                    )
                     epoch_step_count = 0
                     iter_num = 0
 
             end_time = time.time()
-            epochs_bar.close()
-            step_bar.close()
             logger.finalize("success", time = offset_time + end_time - start_time)
             state["model"] = model
             state["optimizer"] = optimizer
@@ -251,8 +235,6 @@ class MiniBatchGDTrainer:
         except KeyboardInterrupt:
             print("Training interrupted. Exiting...")
             end_time = time.time()
-            epochs_bar.close()
-            step_bar.close()
             logger.finalize("interrupted", time = offset_time + end_time - start_time)
 
         return self

@@ -108,7 +108,9 @@ def main(
 
 
 if __name__ == "__main__":
+    import torch
     from fire import Fire
+    torch.set_float32_matmul_precision("high")
     Fire(main)
     
     # TODO:

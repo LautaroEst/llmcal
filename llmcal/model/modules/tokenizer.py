@@ -9,7 +9,6 @@ from litgpt.utils import check_valid_checkpoint_dir
 class LitGPTTokenizer:
 
     def __init__(self, model_name_or_path: str):
-        super().__init__()
         model_name_or_path = Path(model_name_or_path)
         if not model_name_or_path.is_dir():
             model_name_or_path = Path(os.getenv("LIT_CHECKPOINTS")) / model_name_or_path

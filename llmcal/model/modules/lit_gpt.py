@@ -33,9 +33,6 @@ class LitGPT(GPT):
         for param in self.parameters():
             param.requires_grad = True
 
-    def get_trainable_parameters(self):
-        return [p for p in self.parameters() if p.requires_grad]
-
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None) -> torch.Tensor:
         T = idx.size(1)
         if self.max_seq_length < T:
