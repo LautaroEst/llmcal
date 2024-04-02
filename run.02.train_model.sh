@@ -15,4 +15,19 @@ python scripts/main.py \
     --model tinyllama_3T_bf16_lora \
     --task tony_zhao_agnews_mc \
     --splits all \
-    --train.learning_rate 0.0001
+    --train.learning_rate 0.001 \
+    --model.lora_r 8
+
+python scripts/main.py \
+    --model tinyllama_3T_bf16_lora \
+    --task tony_zhao_agnews_mc \
+    --splits all \
+    --train.learning_rate 0.0001 \
+    --model.lora_r 8
+
+python scripts/main.py \
+    --model tinyllama_3T_bf16_lora \
+    --task tony_zhao_agnews_mc \
+    --splits all \
+    --train.learning_rate 0.001 \
+    --model.lora_r 64
