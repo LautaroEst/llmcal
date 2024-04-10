@@ -1,0 +1,12 @@
+
+task: "data/tony_zhao_dbpedia"
+
+casting:
+  class_name: "FewShotClassificationPrompt"
+  preface: "Classify the topic of the article below in one of the following categories:\nA. Company\nB. Educational Institution\nC. Artist\nD. Athlete\nE. Office Holder\nF. Mean of Transportation\nG. Building\nH. Natural Place\nI. Village\nJ. Animal\nK. Plant\nL. Album\nM. Film\nN. Written Work\n\n"
+  shots_template: null
+  question: "Article: \"{input.article}\".\nCategory:"
+  label2answer: ["Company", "Educational Institution", "Artist", "Athlete", "Office Holder", "Mean of Transportation", "Building", "Natural Place", "Village", "Animal", "Plant", "Album", "Film", "Written Work"]
+  n_shots: 0
+  random_state: 728
+

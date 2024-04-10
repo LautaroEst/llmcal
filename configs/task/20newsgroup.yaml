@@ -1,0 +1,32 @@
+
+task: "data/20newsgroup"
+
+casting:
+  class_name: "FewShotClassificationPrompt"
+  preface: ""
+  shots_template: null
+  question: "Post document: \"{input.text}\"\nCategory:"
+  label2answer: 
+    - "Atheism"
+    - "Graphics"
+    - "Microsoft"
+    - "IBM Hardware"
+    - "Mac Hardware"
+    - "X Window System"
+    - "Sales"
+    - "Cars"
+    - "Motorcycles"
+    - "Baseball"
+    - "Hockey"
+    - "Cryptography"
+    - "Electronics"
+    - "Medicine"
+    - "Space"
+    - "Christianity"
+    - "Guns"
+    - "Middle East"
+    - "Politics"
+    - "Religion"
+  n_shots: 0
+  random_state: 728
+

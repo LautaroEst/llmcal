@@ -1,0 +1,12 @@
+
+task: "data/tony_zhao_agnews"
+
+casting:
+  class_name: "FewShotClassificationPrompt"
+  preface: ""
+  shots_template: null
+  question: "Article: ```{input.article}```\nThe article in triple backticks belongs to exactly one of the following categories:\n- World\n- Sports\n- Business\n- Science and Technology\nThe article belongs to category"
+  label2answer: ["World", "Sports", "Business", "Science and Technology"]
+  n_shots: 0
+  random_state: 728
+

@@ -1,0 +1,17 @@
+
+task: "data/medical_abstracts"
+
+casting:
+  class_name: "FewShotClassificationPrompt"
+  preface: ""
+  shots_template: null
+  question: "Description: \"{input.abstract}\"\nPathology:"
+  label2answer: 
+    - "Neoplasm"
+    - "Digestive system disease"
+    - "Nervous system disease"
+    - "Cardiovascular disease"
+    - "General pathological condition"
+  n_shots: 0
+  random_state: 728
+

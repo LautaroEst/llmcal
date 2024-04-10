@@ -1,0 +1,12 @@
+
+task: "data/tony_zhao_agnews"
+
+casting:
+  class_name: "FewShotClassificationPrompt"
+  preface: ""
+  shots_template: null
+  question: "Article: ```{input.article}```\nPremise: The article in triple backticks belongs to exactly one of the following categories: \"World\", \"Sports\", \"Business\" and \"Science and Technology\".\nHypothesis: The article above belongs to category"
+  label2answer: ["World.\nThe hypothesis entails the premise.", "Sports.\nThe hypothesis entails the premise.", "Business.\nThe hypothesis entails the premise.", "Science and Technology.\nThe hypothesis entails the premise."]
+  n_shots: 0
+  random_state: 728
+

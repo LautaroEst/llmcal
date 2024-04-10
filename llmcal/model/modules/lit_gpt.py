@@ -131,7 +131,7 @@ class LitGPTPromptClassification(LitGPT):
                 logprobs = torch.cat([output["logits"][:,-1:,:], ans_out["logits"][:,:-1,:]], dim=1).log_softmax(dim=2)
                 index = answer.unsqueeze(2)
                 gather_probs = torch.gather(logprobs, -1, index).squeeze(2)
-                ans_logit = gather_probs.sum()
+                ans_logit = gather_probs.mean() # changed from .sum()
                 answers_logits.append(ans_logit)
             logits.append(torch.stack(answers_logits, dim=0))
             prompt_hidden_states.append(self._pool_embeddings(output["last_hidden_state"])[0])

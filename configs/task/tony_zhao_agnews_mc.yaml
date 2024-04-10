@@ -3,10 +3,10 @@ task: "data/tony_zhao_agnews"
 
 casting:
   class_name: "FewShotClassificationPrompt"
-  preface: "Classify the article below in one of the following categories:\nA. World\nB. Sports\nC. Business\nD. Science and Technology\n"
+  preface: ""
   shots_template: null
-  question: "Article: \"{input.article}\".\nCategory:"
-  label2answer: ["World", "Sports", "Business", "Technology"]
+  question: "Article: ```{input.article}```\nThe article in triple backticks belongs to exactly one of the following categories:\nA. World\nB. Sports\nC. Business\nD. Science and Technology\nThe article belongs to category"
+  label2answer: ["A", "B", "C", "D"]
   n_shots: 0
   random_state: 728
 

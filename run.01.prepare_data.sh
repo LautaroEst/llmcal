@@ -15,4 +15,7 @@ python scripts/prepare_data.py \
     "tony_zhao_sst2" \
     "tony_zhao_agnews" \
     "tony_zhao_dbpedia" \
-    "refind"
+    "refind" \
+    "20newsgroup" \
+    "banking77" \
+    "medical_abstracts"

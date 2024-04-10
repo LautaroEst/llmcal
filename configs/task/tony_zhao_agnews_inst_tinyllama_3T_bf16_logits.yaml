@@ -1,0 +1,9 @@
+
+
+task: "experiments/tony_zhao_agnews_inst/tinyllama_3T_bf16/all/"
+casting:
+  class_name: FeaturesSelector
+  features:
+    idx: idx
+    target: target
+    output.logits: input.logits

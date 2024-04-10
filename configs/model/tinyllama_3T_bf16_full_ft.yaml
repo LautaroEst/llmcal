@@ -13,11 +13,11 @@ train:
   class_name: "MiniBatchGDTrainer"
   batch_size: 64
   micro_batch_size: 1
-  learning_rate: 0.1
+  learning_rate: null
   weight_decay: 0
-  max_epochs: 20
+  max_epochs: 10
   warmup_steps: null
   random_state: 738
   loss: cross_entropy
   val_interval: 10
-  checkpoint_interval: 10
+  checkpoint_interval: 50

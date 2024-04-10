@@ -12,6 +12,15 @@ import lightning as L
 from .utils import TBLogger
 from datasets import Dataset
 
+
+def ce_with_uniform_priors(logits, labels):
+    logprobs = torch.nn.functional.log_softmax(logits, dim=-1)
+    counts = torch.bincount(labels, minlength=logits.size(-1)).float()
+    ce = -torch.sum(logprobs[torch.arange(len(labels)), labels] / counts[labels]) / logprobs.size(-1)
+    return ce
+
+
+
 class GradientDescentTrainer:
 
     def __init__(
@@ -23,7 +32,7 @@ class GradientDescentTrainer:
         max_epochs: int = 100,
         max_ls: int = 40,
         random_state = 0,
-        loss: Literal["cross_entropy"] = "cross_entropy",
+        loss: Literal["cross_entropy", "cross_entropy_uniform_priors"] = "cross_entropy",
         val_interval: int = 1,
         checkpoint_interval: int = 1000,
         model_checkpoint_dir: str = None,
@@ -43,6 +52,8 @@ class GradientDescentTrainer:
 
         if loss == "cross_entropy":
             self.loss = torch.nn.CrossEntropyLoss()
+        elif loss == "cross_entropy_uniform_priors":
+            self.loss = ce_with_uniform_priors
         else:
             raise NotImplementedError(f"Loss function {loss} not implemented")
 

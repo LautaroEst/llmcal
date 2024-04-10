@@ -1,0 +1,12 @@
+
+task: "data/tony_zhao_agnews"
+
+casting:
+  class_name: "FewShotClassificationPrompt"
+  preface: ""
+  shots_template: null
+  question: "Classify the article below in one of the following categories:\nA. World\nB. Sports\nC. Business\nD. Technology\nArticle: \"{input.article}\".\nAnswer:"
+  label2answer: ["A", "B", "C", "D"]
+  n_shots: 0
+  random_state: 728
+

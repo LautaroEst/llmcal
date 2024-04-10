@@ -1,0 +1,12 @@
+
+task: "data/tony_zhao_agnews"
+
+casting:
+  class_name: "FewShotClassificationPrompt"
+  preface: ""
+  shots_template: null
+  question: "Article: ```{input.article}```\nQuestion: Given that the article in triple backticks belongs to exactly one of the categories \"World\", \"Sports\", \"Business\" or \"Science and Technology\", would you say that the article above belongs to category"
+  label2answer: ["World?\nAnswer (Yes or No): Yes", "Sports?\nAnswer (Yes or No): Yes", "Business?\nAnswer (Yes or No): Yes", "Science and Technology?\nAnswer (Yes or No): Yes"]
+  n_shots: 0
+  random_state: 728
+

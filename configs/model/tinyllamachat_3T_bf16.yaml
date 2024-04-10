@@ -1,0 +1,16 @@
+
+accelerator: "gpu"
+devices: 1
+precision: "bf16-true"
+quantize: null
+
+model:
+  class_name: "LitGPTPromptClassification"
+  model_name_or_path: "TinyLlama/TinyLlama-1.1B-Chat-v1.0-bfloat16"
+  embedding_pooling: "last"
+
+train:
+  class_name: "MiniBatchGDTrainer"
+  micro_batch_size: 64
+  max_epochs: 0
+  random_state: 738
