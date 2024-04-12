@@ -1,119 +1,73 @@
+from typing import Any, List, Literal, Optional, Union
+import torch
+import lightning as L
 
-import os
-from llmcal.utils import load_yaml, save_yaml
-from llmcal.model.utils import load_model
-from llmcal.data.utils import load_dataset_and_cast_task
+from llmcal.utils import load_yaml
+from llmcal.models.utils import load_model_from_checkpoint
 
-def main(
-    model: str,
-    task: str,
-    splits: str,
-    **mods,
+def setup(
+    base_model: str,
+    method: str,
+    global_seed: int = 0
 ):
-    
-    # Parse arguments:
-    args = {
-        "model": load_yaml(os.path.join("configs/model",f"{model}.yaml")),
-        "task": load_yaml(os.path.join("configs/task",f"{task}.yaml")),
-        "splits": load_yaml(os.path.join("configs/splits",f"{splits}.yaml")),
+    # Parse config arguments
+    base_model_config = load_yaml(f"configs/base_model/{base_model}.yaml")
+    method_config = load_yaml(f"configs/method/{method}.yaml")
+    kwargs = {
+        "checkpoint_dir": base_model_config["checkpoint_dir"],
+        "model_type": base_model_config["model_type"],
+        "method": method_config.pop("method", "no_adaptation"),
+        "model_kwargs": method_config,
+        "seed": global_seed,
     }
 
-    model_with_mods_name = model
-    for mod in mods:
-        if "." in mod:
-            k_1, k_2 = mod.split(".")
-            args["model"][k_1][k_2] = mods[mod]
-        else:
-            args["model"][mod] = mods[mod]
-        model_with_mods_name += f"_{mod}={mods[mod]}"
-    results_dir = f"experiments/{task}/{model_with_mods_name}/{splits}"
-    os.makedirs(results_dir, exist_ok=True)
-    
-    print("=" * 20)
-    print("Experiment configuration:\n")
-    print(f"Model: {model}")
-    print(f"Task: {task}")
-    print(f"Splits: {splits}")
-    print()
-
-    if os.path.exists(os.path.join(results_dir, "config.yaml")):
-        print("Experiment already done.\n" + "=" * 20 + "\n")
-        return
-
-    # Load the datasets and cast to the task
-    print("Loading the data...")
-    train_dataset, train_cast = load_dataset_and_cast_task(
-        dataset=args["task"]["task"], 
-        split="train",
-        n_samples=args["splits"]["train_samples"],
-        random_state=args["splits"]["random_state"],
-        cast_obj_or_config=args["task"]["casting"],
+    # Init fabric
+    fabric = L.Fabric(
+        accelerator=base_model_config.get("accelerator", "cpu"),
+        strategy=base_model_config.get("strategy", "auto"),
+        devices=base_model_config.get("devices", 1),
+        num_nodes=base_model_config.get("num_nodes", 1),
+        precision=base_model_config.get("precision", 32),
+        plugins=base_model_config.get("plugins", None),
+        callbacks=base_model_config.get("callbacks", None),
+        loggers=base_model_config.get("loggers", None),
     )
-    args["splits"]["train_samples"] = len(train_dataset)
-    val_dataset, _ = load_dataset_and_cast_task(
-        dataset=args["task"]["task"], 
-        split="validation",
-        n_samples=args["splits"]["validation_samples"],
-        random_state=args["splits"]["random_state"],
-        cast_obj_or_config=train_cast,
-    )
-    args["splits"]["validation_samples"] = len(val_dataset)
-    test_dataset, _ = load_dataset_and_cast_task(
-        dataset=args["task"]["task"], 
-        split="test",
-        n_samples=args["splits"]["test_samples"],
-        random_state=args["splits"]["random_state"],
-        cast_obj_or_config=train_cast,
-    )
-    args["splits"]["test_samples"] = len(test_dataset)
+    fabric.launch(main, **kwargs)
 
-    # {split}_dataset is dataset with columns [idx, input, target]
-    # input could be (prompt, anwsers) or numpy array of features
-    # target is the output to predict, could be a string or an int
 
-    # Init model and trainer
-    print("Loading the model...")
-    model, trainer = load_model(args["model"], model_checkpoint_dir=os.path.join(results_dir,".cache"))
-    # model is nn.Module and trainer is a trainer for LM, LMClassification or Classification
-    # or a do-nothing trainer for feature extraction
+def main(
+    fabric: L.Fabric,
+    checkpoint_dir: str,
+    model_type: Literal["language_model", "sequence_classifier"],
+    method: Literal["no_adaptation", "full_ft", "lora", "embeddings_finetuning", "affine_calibration"],
+    model_kwargs: dict,
+    seed: int,
     
-    # Fit the model to the dataset
-    print("Training the model...")
-    trainer.fit(model, train_dataset, val_dataset)
-    if os.path.exists(os.path.join(results_dir,".cache","training.interrupted")):
-        print("=" * 20 + "\n")
-        return
+):
+    fabric.seed_everything(seed)
     
-    # Predict on all data
-    if not os.path.exists(os.path.join(results_dir,".cache","train_prediction.success")):
-        print(f"Predicting on the train set...")
-        results = trainer.predict(model, train_dataset, prefix="train") # results is a dataset with columns [idx, input, target, output]
-        results.save_to_disk(f"{results_dir}/train")
+    # Init the model
+    model = load_model_from_checkpoint(fabric, checkpoint_dir, model_type, method, **model_kwargs)
+
+    # Get the optimizer
+    optimizer = model.configure_optimizers()
+    optimizer.zero_grad()
+
+    # Get the dataloader
+    dataset = DummyDataset()
+    train_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn)
+    val_dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn)
+
+    # Set up objects
+    model, optimizer = fabric.setup(model, optimizer)
+    train_dataloader, val_dataloader = fabric.setup_dataloaders(train_dataloader, val_dataloader)
     
-    if not os.path.exists(os.path.join(results_dir,".cache","validation_prediction.success")):
-        print(f"Predicting on the validation set...")
-        results = trainer.predict(model, val_dataset, prefix="validation")
-        results.save_to_disk(f"{results_dir}/validation")
 
-    if not os.path.exists(os.path.join(results_dir,".cache","test_prediction.success")):
-        print(f"Predicting on the test set...")
-        results = trainer.predict(model, test_dataset, prefix="test")
-        results.save_to_disk(f"{results_dir}/test")
 
-    interrupted_files = [f for f in os.listdir(os.path.join(results_dir,".cache")) if f.endswith(".interrupted")]
-    if not interrupted_files:
-        save_yaml(args, f"{results_dir}/config.yaml")
-
-    print("Done!\n" + "=" * 20 + "\n")
 
 
 if __name__ == "__main__":
-    import torch
     from fire import Fire
     torch.set_float32_matmul_precision("high")
-    Fire(main)
-    
-    # TODO:
-    #   - Add logging with logger
-    #   - Replace datasets for a custom class that reads metadata and doesn't copy all the dataset
-    #   - Replace the configuration to gin-style
+    Fire(setup)
+

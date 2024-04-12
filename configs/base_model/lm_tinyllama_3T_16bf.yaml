@@ -1,0 +1,7 @@
+
+
+checkpoint_dir: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T-bfloat16"
+model_type: "language_model"
+accelerator: "cpu"
+devices: 2
+precision: "bfloat16"
