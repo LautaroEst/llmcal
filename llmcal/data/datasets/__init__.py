@@ -1,1 +1,2 @@
-from .dummy import DummyDataset
+from .newsgroup import TwentyNewsGroupDataset
+from .tensor import TensorDataset

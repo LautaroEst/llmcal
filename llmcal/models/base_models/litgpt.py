@@ -112,8 +112,7 @@ class LitGPT(GPT):
             outputs["last_hidden_state"] = x
             
         return outputs
-        
-
+    
 
 class LoRAGPTForClassification(LoraGPT):
 
