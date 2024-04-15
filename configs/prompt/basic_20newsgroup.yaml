@@ -1,5 +1,7 @@
 
-prompt_template: "Post document: \"{text}\"\nCategory:"
+preshots: ""
+shots: "Post document: \"{text}\"\nCategory: {answer}"
+postshots: "Post document: \"{text}\"\nCategory:"
 answers_templates: 
     - "Atheism"
     - "Graphics"

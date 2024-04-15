@@ -4,6 +4,8 @@ from transformers import AutoModelForSequenceClassification
 from litgpt.lora import mark_only_lora_as_trainable
 from .causal_lm_for_classification import CausalLMForClassification
 from .sequence_classification import SequenceClassificationModel
+from .calibration import CausalLMForClassificationPlusCalibration
+from .base_models.affine_calibration import AffineCalibrator
 
 
 def _is_lit_model(checkpoint_dir):
@@ -62,9 +64,13 @@ def load_model_from_checkpoint(
 
     if model_type == "language_model" and is_lit_model and method in ["no_adaptation", "affine_calibration"]:
         base_model = LitGPT.from_pretrained(fabric, checkpoint_dir)
-        for params in base_model.parameters():
-            params.requires_grad = False
-        calibration_layer = AffineCalibrator(**kwargs) if method == "affine_calibration" else None
+        if method == "affine_calibration":
+            for params in base_model.parameters():
+                params.requires_grad = False
+            calibration_layer = AffineCalibrator(**kwargs)
+            calibration_layer.init_params(fabric)
+        else:
+            calibration_layer = None
         model = CausalLMForClassificationPlusCalibration(base_model, calibration_layer, **kwargs)
     
     elif model_type == "language_model" and is_lit_model and method in ["full_ft", "lora"]:
@@ -110,6 +116,8 @@ def load_model_from_checkpoint(
 
     else:
         raise ValueError(f"Model type {model_type} not recognized")    
+    
+    return model
     
         
 

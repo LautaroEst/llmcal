@@ -78,7 +78,9 @@ class LitGPT(GPT):
             model = cls(config)
         checkpoint_path = checkpoint_dir / "lit_model.pth"
         if not checkpoint_path.is_file():
-            raise ValueError(f"Checkpoint file {checkpoint_path} not found")
+            checkpoint_path = checkpoint_dir / "checkpoint.ckpt"
+            if not checkpoint_path.is_file():
+                raise ValueError(f"Checkpoint file {checkpoint_path} not found")
         load_checkpoint(fabric, model, checkpoint_path, strict=False)
         for param in model.parameters():
             param.requires_grad = True

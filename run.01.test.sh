@@ -2,8 +2,8 @@
 
 python scripts/main.py \
     --base_model lm_tinyllama_3T_16bf \
-    --dataset 20newsgroup \
-    --prompt basic_20newsgroup \
+    --dataset sst2 \
+    --prompt basic_sst2 \
     --method no_adaptation \
-    --fold all
+    --train_list n=100_rs=738
     

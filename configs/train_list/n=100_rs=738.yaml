@@ -1,0 +1,4 @@
+n_shots: 2
+train_samples: 100
+val_samples: 100
+random_state: 738

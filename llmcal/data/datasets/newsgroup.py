@@ -9,11 +9,12 @@ from ..prompt import Prompt
 
 class TwentyNewsGroupDataset:
 
-    def __init__(self, cache_dir, max_seq_len):
+    def __init__(self, cache_dir):
         self.cache_dir = cache_dir
-        self.max_seq_len = max_seq_len
 
     def _prepare_data_per_split(self, datadict, split, prompt):
+        if os.path.exists(os.path.join(self.cache_dir, split)):
+            return
         if split == "test":
             dataset = datadict["test"]
             dataset = dataset.add_column("idx", list(range(len(dataset))))

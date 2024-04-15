@@ -1,4 +1,3 @@
 train_samples: null
 val_samples: null
-test_samples: null
 random_state: 2637

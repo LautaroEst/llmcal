@@ -1,1 +1,1 @@
-from .base import Prompt
+from .base import Prompt, DynamicPaddingCollator
