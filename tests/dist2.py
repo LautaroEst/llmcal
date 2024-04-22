@@ -46,10 +46,9 @@ def main(fabric, arg1):
     state = {"arg1": 1}
     print(fabric.global_rank)
 
-    if fabric.global_rank == 0:
-        print("Hello world", fabric.global_rank)
-        fabric.save("state.ckpt", state)
-        print(arg1, fabric.global_rank)
+    print("Hello world", fabric.global_rank)
+    fabric.save("state.ckpt", state)
+    print(arg1, fabric.global_rank)
 
     x = model(torch.randn(2, 10))
     print(x, fabric.global_rank)
