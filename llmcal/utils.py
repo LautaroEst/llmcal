@@ -2,7 +2,6 @@
 from pathlib import Path
 from typing import Union
 import yaml
-import time
 
 def load_yaml(path: Union[str, Path]) -> dict:
     with open(path, "r") as f:

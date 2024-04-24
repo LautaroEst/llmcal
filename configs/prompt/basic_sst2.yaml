@@ -1,5 +1,0 @@
-
-prompt_template: "Review: \"{sentence}\"\nSentiment:"
-answers_templates: 
-  - "Negative"
-  - "Positive"
