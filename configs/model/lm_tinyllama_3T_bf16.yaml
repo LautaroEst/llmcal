@@ -3,6 +3,6 @@
 checkpoint_dir: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
 task: "language_model"
 
-accelerator: "cpu"
-devices: 2
+accelerator: "gpu"
+devices: 1
 precision: "bf16-true"

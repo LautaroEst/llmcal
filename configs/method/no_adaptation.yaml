@@ -1,3 +1,4 @@
 
 method: "no_adaptation"
 batch_size: 4
+max_epochs: 0

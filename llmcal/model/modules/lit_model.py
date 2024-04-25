@@ -4,31 +4,10 @@ from typing import Optional
 import torch
 import lightning as L
 
-from litgpt import GPT, Config
-from litgpt.utils import load_checkpoint
+from litgpt import GPT
 
 
 class LitGPT(GPT):
-
-    @classmethod
-    def from_pretrained(cls, fabric, checkpoint_dir):
-        checkpoint_dir = Path(checkpoint_dir)
-        if not checkpoint_dir.is_dir():
-            checkpoint_dir = Path(os.getenv("LIT_CHECKPOINTS")) / checkpoint_dir
-            if not checkpoint_dir.is_dir():
-                raise ValueError(f"Invalid model_name_or_path {checkpoint_dir}")
-        config = Config.from_checkpoint(checkpoint_dir)
-        with fabric.init_module():
-            model = cls(config)
-        checkpoint_path = checkpoint_dir / "lit_model.pth"
-        if not checkpoint_path.is_file():
-            checkpoint_path = checkpoint_dir / "checkpoint.ckpt"
-            if not checkpoint_path.is_file():
-                raise ValueError(f"Checkpoint file {checkpoint_path} not found")
-        load_checkpoint(fabric, model, checkpoint_path, strict=False)
-        for param in model.parameters():
-            param.requires_grad = True
-        return model
 
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None, output_last_hidden_state: bool = True) -> torch.Tensor:
         T = idx.size(1)

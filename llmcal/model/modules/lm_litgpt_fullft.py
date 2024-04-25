@@ -38,7 +38,7 @@ class DynamicPaddingCollator:
         }
 
 
-class LanguageModelLitGPTNoAdaptation(L.LightningModule):
+class LanguageModelLitGPTFullFT(L.LightningModule):
 
     def __init__(
         self,
@@ -132,10 +132,7 @@ class LanguageModelLitGPTNoAdaptation(L.LightningModule):
         if self.checkpoint_path is not None:
             load_checkpoint(self.fabric, self.pt_model, self.checkpoint_path, strict=True)
         for name, param in self.pt_model.named_parameters():
-            if "lm_head" in name:
-                param.requires_grad = True
-            else:
-                param.requires_grad = False
+            param.requires_grad = True
     
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None, output_last_hidden_state: bool = True) -> torch.Tensor:
         return self.pt_model(idx, input_pos, output_last_hidden_state)
@@ -148,6 +145,7 @@ class LanguageModelLitGPTNoAdaptation(L.LightningModule):
 
         loss = 0
         num_tokens = 0
+        indices_counts = 0
         for input_ids, attention_mask, answers, label in zip(prompt_ids, prompt_mask, answers_ids, labels):
             input_ids = torch.cat([
                 input_ids[attention_mask == 1].unsqueeze(0),
@@ -158,10 +156,19 @@ class LanguageModelLitGPTNoAdaptation(L.LightningModule):
             gather_logprobs = torch.gather(logprobs, -1, index).squeeze(2)
             loss = loss - gather_logprobs.sum()
             num_tokens = num_tokens + input_ids.shape[1]
-        return {"loss": loss / num_tokens, "cum_loss": loss, "cum_tokens": num_tokens}
+            indices_counts = indices_counts + torch.bincount(index.view(-1), minlength=logprobs.shape[2])
+
+        priors = indices_counts.float() / indices_counts.sum()
+        naive_loss = -torch.sum(priors[priors > 0] * torch.log(priors[priors > 0]))
+        self.fabric.log_dict({
+            "train/cross_entropy_over_unigram": loss / num_tokens / naive_loss,
+            "train/cross_entropy_per_token": loss / num_tokens,
+        }, step=self.global_step)
+        return {"loss": loss / num_tokens}
     
     def configure_optimizers(self):
-        return torch.optim.AdamW([param for param in self.parameters() if param.requires_grad], lr=1e-4)
+        trainable_params = [param for param in self.parameters() if param.requires_grad]
+        return torch.optim.AdamW(trainable_params[:1], lr=1e-4)
     
     def on_validation_model_eval(self) -> None:
         self.eval()
@@ -172,12 +179,40 @@ class LanguageModelLitGPTNoAdaptation(L.LightningModule):
     def on_validation_epoch_start(self) -> None:
         self.cum_val_loss = 0
         self.cum_tokens = 0
+        self.cum_indices_counts = 0
 
     def validation_step(self, batch, batch_idx):
-        out = self.training_step(batch, batch_idx)
-        self.cum_val_loss = self.cum_val_loss + out["cum_loss"]
-        self.cum_tokens = self.cum_tokens + out["cum_tokens"]
-        return {"loss": out["loss"], "num_tokens": out["cum_tokens"]}
+        prompt_ids = batch["prompt_ids"]
+        prompt_mask = batch["prompt_mask"]
+        answers_ids = batch["answers_ids"]
+        labels = batch["label"]
+
+        loss = 0
+        num_tokens = 0
+        indices_counts = 0
+        for input_ids, attention_mask, answers, label in zip(prompt_ids, prompt_mask, answers_ids, labels):
+            input_ids = torch.cat([
+                input_ids[attention_mask == 1].unsqueeze(0),
+                answers[label.item()].unsqueeze(0)
+            ], dim=1)
+            logprobs = self(input_ids)["logits"][:,:-1,:].log_softmax(dim=2)
+            index = input_ids[:,1:].unsqueeze(2)
+            gather_logprobs = torch.gather(logprobs, -1, index).squeeze(2)
+            loss = loss - gather_logprobs.sum()
+            num_tokens = num_tokens + input_ids.shape[1]
+            indices_counts = indices_counts + torch.bincount(index.view(-1), minlength=logprobs.shape[2])
+
+        self.cum_val_loss = self.cum_val_loss + loss
+        self.cum_tokens = self.cum_tokens + num_tokens
+        self.cum_indices_counts = self.cum_indices_counts + indices_counts
+        return {"loss": loss / num_tokens}
     
     def on_validation_epoch_end(self) -> None:
         self.avg_val_loss = self.cum_val_loss / self.cum_tokens
+        priors = self.cum_indices_counts.float() / self.cum_indices_counts.sum()
+        naive_loss = -torch.sum(priors[priors > 0] * torch.log(priors[priors > 0]))
+        self.norm_cross_entropy = self.cum_val_loss / naive_loss
+        self.fabric.log_dict({
+            "val/cross_entropy_over_unigram": self.norm_cross_entropy,
+            "val/cross_entropy_per_token": self.avg_val_loss,
+        }, step=self.global_step)

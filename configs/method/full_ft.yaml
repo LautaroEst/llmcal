@@ -1,0 +1,11 @@
+
+method: "full_ft"
+batch_size: 1
+max_epochs: 5
+max_steps: null
+grad_accum_steps: 8
+limit_train_batches: null
+limit_val_batches: null
+validation_frequency: 10
+checkpoint_frequency: 100
+random_state: 734
