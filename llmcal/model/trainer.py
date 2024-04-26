@@ -40,7 +40,7 @@ class Trainer:
         self,
         accelerator: Union[str, Accelerator] = "auto",
         strategy: Union[str, Strategy] = "auto",
-        devices: Union[List[int], str, int] = "auto",
+        devices: Union[List[int], str, int] = 1,
         num_nodes: int = 1,
         precision: Union[str, int] = None,
         plugins: Optional[Union[str, Any]] = None,
@@ -102,9 +102,8 @@ class Trainer:
         self.fabric.seed_everything(self.random_state)
 
         # Process data and load dataloaders
-        if self.fabric.global_rank == 0:
-            os.makedirs(self.checkpoint_dir, exist_ok=True)
         with self.fabric.rank_zero_first():
+            os.makedirs(self.checkpoint_dir, exist_ok=True)
             model.prepare_data()
         model.setup(stage="fit")
         train_loader = model.train_dataloader()
@@ -115,19 +114,11 @@ class Trainer:
         # Init model's weights
         model.fabric = self.fabric
         model.configure_model()
+        model = self.fabric.setup_module(model)
 
         # setup model and optimizer
-        if isinstance(self.fabric.strategy, L.fabric.strategies.fsdp.FSDPStrategy):
-            # currently, there is no way to support fsdp with model.configure_optimizers in fabric
-            # as it would require fabric to hold a reference to the model, which we don't want to.
-            raise NotImplementedError("BYOT currently does not support FSDP")
-
         optimizer, scheduler_cfg = self._parse_optimizers_schedulers(model.configure_optimizers())
-
-        if optimizer is None:
-            model = self.fabric.setup_module(model)
-        else:
-            model, optimizer = self.fabric.setup(model, optimizer)
+        optimizer = self.fabric.setup_optimizers(optimizer)
 
         # try to load checkpoint
         state = {"model": model, "optim": optimizer, "scheduler": scheduler_cfg}
@@ -136,10 +127,14 @@ class Trainer:
         model, optimizer, scheduler_cfg = state["model"], state["optim"], state["scheduler"]
 
         # check if we even need to train here
-        if self.max_epochs is not None and self.current_epoch >= self.max_epochs:
-            self.should_stop = True
+        if (self.max_epochs is not None and self.current_epoch >= self.max_epochs) or (self.max_steps is not None and self.global_step >= self.max_steps):
+            self.should_stop = False # reset for next fit call
+            self.fabric.print("Found already trained model. Skipping training...")
+            return
 
         while not self.should_stop:
+
+            # Main training loop (1 epoch)
             self.train_loop(
                 model, optimizer, 
                 train_loader=train_loader, limit_batches=self.limit_train_batches, 
@@ -147,8 +142,10 @@ class Trainer:
                 scheduler_cfg=scheduler_cfg
             )
 
+            # Step scheduler on epoch level
             self.step_scheduler(model, scheduler_cfg, level="epoch", current_value=self.current_epoch)
 
+            # increase epoch count
             self.current_epoch += 1
 
             # stopping condition on epoch level
@@ -157,6 +154,12 @@ class Trainer:
 
         # reset for next fit call
         self.should_stop = False
+
+        # Save when finished
+        state = {"model": model, "optim": optimizer, "scheduler": scheduler_cfg}
+        self.save(state, is_best=self.best_state["val_loss"] > model.avg_val_loss)
+
+        self.fabric.call("on_fit_end")
 
     def train_loop(
         self,
@@ -268,20 +271,20 @@ class Trainer:
 
         self.fabric.call("on_validation_epoch_start")
 
-        iterable = self.progbar_wrapper(val_loader, total=min(len(val_loader), limit_batches), desc="Validation")
+        iterable = self.progbar_wrapper(val_loader, total=min(len(val_loader), limit_batches), desc="Validation", leave=False)
 
         for batch_idx, batch in enumerate(iterable):
             # end epoch if stopping training completely or max batches for this epoch reached
             if self.should_stop or batch_idx >= limit_batches:
                 break
 
-            self.fabric.call("on_validation_batch_start", batch, batch_idx)
+            self.fabric.call("on_validation_batch_start", batch, batch_idx, 0)
 
             out = model.validation_step(batch, batch_idx)
             # avoid gradients in stored/accumulated values -> prevents potential OOM
             out = apply_to_collection(out, torch.Tensor, lambda x: x.detach())
 
-            self.fabric.call("on_validation_batch_end", out, batch, batch_idx)
+            self.fabric.call("on_validation_batch_end", out, batch, batch_idx, 0)
             self._current_val_return = out
 
             self._format_iterable(iterable, self._current_val_return, "val")
@@ -368,6 +371,24 @@ class Trainer:
         model.lr_scheduler_step(scheduler_cfg["scheduler"], monitor)
 
     @property
+    def checkpoint_dir(self) -> str:
+        return self._checkpoint_dir
+    
+    @checkpoint_dir.setter
+    def checkpoint_dir(self, value: str):
+        self._checkpoint_dir = value
+        self.fabric.checkpoint_dir = value
+    
+    @property
+    def global_step(self):
+        return self._global_step
+    
+    @global_step.setter
+    def global_step(self, value: int):
+        self._global_step = value
+        self.fabric.global_step = value
+
+    @property
     def should_validate(self) -> bool:
         """Whether to currently run validation."""
         return self.global_step % self.validation_frequency == 0
@@ -399,9 +420,10 @@ class Trainer:
             state = {}
 
         path = os.path.join(self.checkpoint_dir, ckpt_name)
-        remainder = self.fabric.load(path, state["model"])
+        remainder = self.fabric.load(path, state)
         self.global_step = remainder.pop("global_step")
         self.current_epoch = remainder.pop("current_epoch")
+        self.best_state = remainder.pop("best_state")
 
         if remainder:
             raise RuntimeError(f"Unused Checkpoint Values: {remainder}")
@@ -416,17 +438,19 @@ class Trainer:
         if state is None:
             state = {}
 
-        state.update(global_step=self.global_step, current_epoch=self.current_epoch)
-        self.fabric.save(os.path.join(self.checkpoint_dir, f"checkpoint.ckpt"), state)
-
         if is_best:
-            self.fabric.save(os.path.join(self.checkpoint_dir, f"best.ckpt"), state)
             self.best_state = {
                 "val_loss": state["model"].avg_val_loss,
                 "epoch": self.current_epoch,
                 "global_step": self.global_step,
             }
 
+        state.update(global_step=self.global_step, current_epoch=self.current_epoch, best_state=self.best_state)
+        self.fabric.save(os.path.join(self.checkpoint_dir, f"checkpoint.ckpt"), state)
+
+        if is_best:
+            self.fabric.save(os.path.join(self.checkpoint_dir, f"best.ckpt"), state)
+            
     def _parse_optimizers_schedulers(
         self, configure_optim_output
     ) -> Tuple[

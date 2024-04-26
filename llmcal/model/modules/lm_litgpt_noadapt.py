@@ -12,6 +12,7 @@ from litgpt import Config
 from ...prompt import PrefixPrompt
 from .lit_model import LitGPT
 from litgpt.utils import load_checkpoint
+from lightning.pytorch.utilities.types import LRSchedulerTypeUnion
 
 class DynamicPaddingCollator:
 
@@ -67,6 +68,9 @@ class LanguageModelLitGPTNoAdaptation(L.LightningModule):
             raise NotImplementedError(f"Loss function {loss_fn} not implemented")
         self.loss_fn = loss_fn
 
+    # --------------------------------------------------------------------------------------------
+    # Data methods
+    # --------------------------------------------------------------------------------------------
     def prepare_data(self):
 
         if os.path.exists(self.data_cache_dir):
@@ -125,7 +129,10 @@ class LanguageModelLitGPTNoAdaptation(L.LightningModule):
             split: DataLoader(self.predict_data[split], batch_size=self.batch_size, shuffle=False, collate_fn=collator) \
             for split in ["val", "test"]
         }
-    
+
+    # --------------------------------------------------------------------------------------------
+    # Model initialization
+    # --------------------------------------------------------------------------------------------
     def configure_model(self):
         with self.fabric.init_module(empty_init=self.checkpoint_path is not None):
             self.pt_model = LitGPT(self.config)
@@ -137,9 +144,33 @@ class LanguageModelLitGPTNoAdaptation(L.LightningModule):
             else:
                 param.requires_grad = False
     
+    # --------------------------------------------------------------------------------------------
+    # Optimization
+    # --------------------------------------------------------------------------------------------
+    def configure_optimizers(self):
+        return torch.optim.AdamW([param for param in self.parameters() if param.requires_grad], lr=1e-4)
+    
+    def on_before_optimizer_step(self, optimizer: Optimizer) -> None:
+        return
+    
+    def on_before_zero_grad(self, optimizer: Optimizer) -> None:
+        return
+    
+    def lr_scheduler_step(self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]) -> None:
+        return super().lr_scheduler_step(scheduler, metric)
+
+    # --------------------------------------------------------------------------------------------
+    # Training
+    # --------------------------------------------------------------------------------------------
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None, output_last_hidden_state: bool = True) -> torch.Tensor:
         return self.pt_model(idx, input_pos, output_last_hidden_state)
+    
+    def on_train_epoch_start(self) -> None:
+        return super().on_train_epoch_start()
 
+    def on_train_batch_start(self, batch: Any, batch_idx: int) -> int | None:
+        return super().on_train_batch_start(batch, batch_idx)
+    
     def training_step(self, batch, batch_idx):
         prompt_ids = batch["prompt_ids"]
         prompt_mask = batch["prompt_mask"]
@@ -160,18 +191,24 @@ class LanguageModelLitGPTNoAdaptation(L.LightningModule):
             num_tokens = num_tokens + input_ids.shape[1]
         return {"loss": loss / num_tokens, "cum_loss": loss, "cum_tokens": num_tokens}
     
-    def configure_optimizers(self):
-        return torch.optim.AdamW([param for param in self.parameters() if param.requires_grad], lr=1e-4)
+    def on_train_batch_end(self, outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+        return super().on_train_batch_end(outputs, batch, batch_idx, dataloader_idx)
     
+    def on_train_epoch_end(self) -> None:
+        return super().on_train_epoch_end()
+    
+    # --------------------------------------------------------------------------------------------
+    # Validation
+    # --------------------------------------------------------------------------------------------
     def on_validation_model_eval(self) -> None:
         self.eval()
-
-    def on_validation_model_train(self) -> None:
-        self.train()
 
     def on_validation_epoch_start(self) -> None:
         self.cum_val_loss = 0
         self.cum_tokens = 0
+
+    def on_validation_batch_start(self, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+        return super().on_validation_batch_start(batch, batch_idx, dataloader_idx)
 
     def validation_step(self, batch, batch_idx):
         out = self.training_step(batch, batch_idx)
@@ -179,5 +216,11 @@ class LanguageModelLitGPTNoAdaptation(L.LightningModule):
         self.cum_tokens = self.cum_tokens + out["cum_tokens"]
         return {"loss": out["loss"], "num_tokens": out["cum_tokens"]}
     
+    def on_validation_batch_end(self, outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+        return super().on_validation_batch_end(outputs, batch, batch_idx, dataloader_idx)
+
     def on_validation_epoch_end(self) -> None:
         self.avg_val_loss = self.cum_val_loss / self.cum_tokens
+
+    def on_validation_model_train(self) -> None:
+        self.train()

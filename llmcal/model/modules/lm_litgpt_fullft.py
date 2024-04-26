@@ -1,6 +1,7 @@
 
 import os
 from pathlib import Path
+import shutil
 from typing import Any, Callable, Dict, List, Literal, Optional
 import lightning as L
 import torch
@@ -12,6 +13,7 @@ from litgpt import Config
 from ...prompt import PrefixPrompt
 from .lit_model import LitGPT
 from litgpt.utils import load_checkpoint
+from lightning.pytorch.utilities.types import LRSchedulerTypeUnion, OptimizerLRScheduler
 
 class DynamicPaddingCollator:
 
@@ -54,7 +56,12 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
         loss_fn: Literal["cross_entropy"] = "cross_entropy"
     ):
         super().__init__()
-        self.checkpoint_dir = Path(os.getenv("LIT_CHECKPOINTS")) / checkpoint_dir
+        if not os.path.exists(checkpoint_dir):
+            if not os.path.exists(os.path.join(os.getenv("LIT_CHECKPOINTS"), checkpoint_dir)):
+                raise FileNotFoundError(f"Checkpoint directory {checkpoint_dir} not found")
+            self.checkpoint_dir = Path(os.getenv("LIT_CHECKPOINTS")) / checkpoint_dir
+        else:
+            self.checkpoint_dir = Path(checkpoint_dir)
         self.config = Config.from_checkpoint(self.checkpoint_dir)
         self.tokenizer = LitGPTTokenizer(self.checkpoint_dir)
         self.checkpoint_path = self.checkpoint_dir / "lit_model.pth" # Set this to None if you don't want to load the weights from pretrained model
@@ -67,6 +74,9 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
             raise NotImplementedError(f"Loss function {loss_fn} not implemented")
         self.loss_fn = loss_fn
 
+    # --------------------------------------------------------------------------------------------
+    # Data methods
+    # --------------------------------------------------------------------------------------------
     def prepare_data(self):
 
         if os.path.exists(self.data_cache_dir):
@@ -126,16 +136,44 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
             for split in ["val", "test"]
         }
     
-    def configure_model(self):
+    # --------------------------------------------------------------------------------------------
+    # Model initialization
+    # --------------------------------------------------------------------------------------------
+    def configure_model(self) -> None:
         with self.fabric.init_module(empty_init=self.checkpoint_path is not None):
             self.pt_model = LitGPT(self.config)
         if self.checkpoint_path is not None:
             load_checkpoint(self.fabric, self.pt_model, self.checkpoint_path, strict=True)
-        for name, param in self.pt_model.named_parameters():
+        for param in self.pt_model.parameters():
             param.requires_grad = True
     
+    # --------------------------------------------------------------------------------------------
+    # Optimization
+    # --------------------------------------------------------------------------------------------
+    def configure_optimizers(self) -> OptimizerLRScheduler:
+        trainable_params = [param for param in self.parameters() if param.requires_grad]
+        return torch.optim.AdamW(trainable_params[:1], lr=1e-4)
+    
+    def on_before_optimizer_step(self, optimizer: Optimizer) -> None:
+        return
+    
+    def on_before_zero_grad(self, optimizer: Optimizer) -> None:
+        return
+    
+    def lr_scheduler_step(self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]) -> None:
+        return super().lr_scheduler_step(scheduler, metric)
+
+    # --------------------------------------------------------------------------------------------
+    # Training
+    # --------------------------------------------------------------------------------------------
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None, output_last_hidden_state: bool = True) -> torch.Tensor:
         return self.pt_model(idx, input_pos, output_last_hidden_state)
+
+    def on_train_epoch_start(self) -> None:
+        return super().on_train_epoch_start()
+
+    def on_train_batch_start(self, batch: Any, batch_idx: int) -> Optional[int]:
+        return super().on_train_batch_start(batch, batch_idx)
 
     def training_step(self, batch, batch_idx):
         prompt_ids = batch["prompt_ids"]
@@ -163,23 +201,28 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
         self.fabric.log_dict({
             "train/cross_entropy_over_unigram": loss / num_tokens / naive_loss,
             "train/cross_entropy_per_token": loss / num_tokens,
-        }, step=self.global_step)
+        }, step=self.trainer.global_step)
         return {"loss": loss / num_tokens}
     
-    def configure_optimizers(self):
-        trainable_params = [param for param in self.parameters() if param.requires_grad]
-        return torch.optim.AdamW(trainable_params[:1], lr=1e-4)
+    def on_train_batch_end(self, outputs: Any, batch: Any, batch_idx: int) -> None:
+        return super().on_train_batch_end(outputs, batch, batch_idx)
     
+    def on_train_epoch_end(self) -> None:
+        return super().on_train_epoch_end()
+    
+    # --------------------------------------------------------------------------------------------
+    # Validation
+    # --------------------------------------------------------------------------------------------
     def on_validation_model_eval(self) -> None:
         self.eval()
-
-    def on_validation_model_train(self) -> None:
-        self.train()
 
     def on_validation_epoch_start(self) -> None:
         self.cum_val_loss = 0
         self.cum_tokens = 0
         self.cum_indices_counts = 0
+
+    def on_validation_batch_start(self, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+        return super().on_validation_batch_start(batch, batch_idx, dataloader_idx)
 
     def validation_step(self, batch, batch_idx):
         prompt_ids = batch["prompt_ids"]
@@ -206,13 +249,29 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
         self.cum_tokens = self.cum_tokens + num_tokens
         self.cum_indices_counts = self.cum_indices_counts + indices_counts
         return {"loss": loss / num_tokens}
-    
+
+    def on_validation_batch_end(self, outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+        return super().on_validation_batch_end(outputs, batch, batch_idx, dataloader_idx)
+
     def on_validation_epoch_end(self) -> None:
         self.avg_val_loss = self.cum_val_loss / self.cum_tokens
         priors = self.cum_indices_counts.float() / self.cum_indices_counts.sum()
         naive_loss = -torch.sum(priors[priors > 0] * torch.log(priors[priors > 0]))
-        self.norm_cross_entropy = self.cum_val_loss / naive_loss
+        self.norm_cross_entropy = self.avg_val_loss / naive_loss
         self.fabric.log_dict({
             "val/cross_entropy_over_unigram": self.norm_cross_entropy,
             "val/cross_entropy_per_token": self.avg_val_loss,
-        }, step=self.global_step)
+        }, step=self.trainer.global_step)
+
+    def on_validation_model_train(self) -> None:
+        self.train()
+
+    def on_fit_end(self) -> None:
+        self.fabric.save(Path(self.trainer.checkpoint_dir) / "lit_model.pth", self.pt_model.state_dict())
+
+        config_files = ["config.json", "generation_config.json", "model_config.yaml"]
+        tokenizer_files = ["tokenizer.json", "tokenizer.model", "tokenizer_config.json"]
+        for file_name in config_files + tokenizer_files:
+            src_path = self.checkpoint_dir / file_name
+            if src_path.exists():
+                shutil.copy(src_path, self.trainer.checkpoint_dir)

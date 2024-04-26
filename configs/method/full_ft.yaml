@@ -1,7 +1,7 @@
 
 method: "full_ft"
 batch_size: 1
-max_epochs: 5
+max_epochs: 2
 max_steps: null
 grad_accum_steps: 8
 limit_train_batches: null

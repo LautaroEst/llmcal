@@ -49,8 +49,8 @@ def main(
     # Model
     # ---------------------
     task = model_config.pop("task", None)
-    model_type = check_model_type(model_config["checkpoint_dir"])
     method = method_config.pop("method", None)
+    model_type = check_model_type(model_config["checkpoint_dir"], method)
     if task == "language_model" and model_type == "litgpt" and method == "no_adaptation":
         model_cls = LanguageModelLitGPTNoAdaptation
         model_init_args = {
