@@ -33,6 +33,7 @@ class DynamicPaddingCollator:
             prompt_masks.append(torch.cat([torch.zeros(max_prompt_len - sample["prompt_ids"].shape[0], dtype=torch.long), torch.ones(sample["prompt_ids"].shape[0], dtype=torch.long)]))
             answers_ids.append(sample["answers_ids"])
         return {
+            "idx": torch.stack([sample["idx"] for sample in batch]),
             "prompt_ids": torch.stack(prompts_ids),
             "prompt_mask": torch.stack(prompt_masks),
             "answers_ids": answers_ids,
@@ -113,7 +114,7 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
         elif stage == "test":
             self.test_data = datadict["test"].with_format("torch")
         elif stage == "predict":
-            self.predict_data = {"val": datadict["test"].with_format("torch"), "test": datadict["test"].with_format("torch")}
+            self.predict_data = {"val": datadict["validation"].with_format("torch"), "test": datadict["test"].with_format("torch")}
         else:
             raise ValueError(f"Invalid stage: {stage}")
 
@@ -142,6 +143,7 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
     def configure_model(self) -> None:
         with self.fabric.init_module(empty_init=self.checkpoint_path is not None):
             self.pt_model = LitGPT(self.config)
+            self.pt_model.set_kv_cache(batch_size=1)
         if self.checkpoint_path is not None:
             load_checkpoint(self.fabric, self.pt_model, self.checkpoint_path, strict=True)
         for param in self.pt_model.parameters():

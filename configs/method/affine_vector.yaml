@@ -1,0 +1,6 @@
+
+method: "affine_calibration"
+alpha: "vector"
+beta: True
+batch_size: 32
+random_state: 81239

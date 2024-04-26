@@ -14,6 +14,7 @@ from lightning.pytorch.utilities.model_helpers import is_overridden
 from lightning_utilities import apply_to_collection
 from tqdm import tqdm
 from ..utils import save_yaml
+from collections import defaultdict
 
 
 class TBLogger(TensorBoardLogger):
@@ -118,7 +119,12 @@ class Trainer:
 
         # setup model and optimizer
         optimizer, scheduler_cfg = self._parse_optimizers_schedulers(model.configure_optimizers())
-        optimizer = self.fabric.setup_optimizers(optimizer)
+        if optimizer is not None:
+            optimizer = self.fabric.setup_optimizers(optimizer)
+        else:
+            self.should_stop = False # reset for next fit call
+            self.fabric.print("No optimizer provided. Skipping training...")
+            return
 
         # try to load checkpoint
         state = {"model": model, "optim": optimizer, "scheduler": scheduler_cfg}
@@ -203,10 +209,13 @@ class Trainer:
                 self.fabric.call("on_before_optimizer_step", optimizer)
 
                 # optimizer step runs train step internally through closure
-                optimizer.step(partial(self.training_step, model=model, batch=batch, batch_idx=batch_idx))
-                self.fabric.call("on_before_zero_grad", optimizer)
-
-                optimizer.zero_grad()
+                if model.automatic_optimization:
+                    optimizer.step(partial(self.training_step, model=model, batch=batch, batch_idx=batch_idx))
+                    self.fabric.call("on_before_zero_grad", optimizer)
+                    optimizer.zero_grad()
+                else:
+                    outputs = model.training_step(batch, batch_idx=batch_idx)
+                    self._current_train_return = apply_to_collection(outputs, dtype=torch.Tensor, function=lambda x: x.detach())
 
             else:
                 # gradient accumulation -> no optimizer step
@@ -229,7 +238,8 @@ class Trainer:
                 self.save(state, is_best=self.best_state["val_loss"] > model.avg_val_loss)
 
             # only increase global step if optimizer stepped
-            self.global_step += int(should_optim_step)
+            if not model.automatic_optimization:
+                self.global_step += int(should_optim_step)
 
             # stopping criterion on step level
             if self.max_steps is not None and self.global_step >= self.max_steps:
@@ -529,3 +539,41 @@ class Trainer:
 
             if postfix_str:
                 prog_bar.set_postfix_str(postfix_str)
+
+    def predict(self, model):
+
+        model = self.fabric.setup_module(model)
+        model.setup(stage="predict")
+
+        torch.set_grad_enabled(False)
+
+        self.fabric.call("on_predict_start")
+
+        predict_dataloaders = model.predict_dataloader()
+        for dataloader_idx, dataloader in predict_dataloaders.items():
+            dataloader = self.fabric.setup_dataloaders(dataloader, use_distributed_sampler=self.use_distributed_sampler)
+
+            self.fabric.call("on_predict_epoch_start")
+
+            outputs = defaultdict(list)
+            iterable = self.progbar_wrapper(dataloader, total=len(dataloader), desc=f"Predicting {dataloader_idx}")
+            for batch_idx, batch in enumerate(iterable):
+
+                self.fabric.call("on_predict_batch_start", batch, batch_idx, dataloader_idx)
+                out = model.predict_step(batch=batch, batch_idx=batch_idx, dataloader_idx=dataloader_idx)
+                self.fabric.call("on_predict_batch_end", out, batch, batch_idx, dataloader_idx)
+                for k, v in out.items():
+                    outputs[k].append(v.cpu())
+
+            self.fabric.call("on_predict_epoch_end")
+            for k, v in outputs.items():
+                outputs[k] = torch.cat(v, dim=0)
+            torch.save(outputs, os.path.join(self.checkpoint_dir, f"predict_{dataloader_idx}.pt"))
+
+        self.fabric.call("on_predict_end")
+        
+        torch.set_grad_enabled(True)
+        
+
+
+

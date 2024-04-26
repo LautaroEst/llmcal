@@ -60,7 +60,10 @@ def main(
             "postshots_template": prompt_config["postshots_template"],
             "shots_separator": prompt_config["shots_separator"],
             "answers_templates": prompt_config["answers_templates"],
+            "embedding_pooling": model_config["embedding_pooling"],
             "batch_size": method_config["batch_size"],
+            "data_load_fn": data_load_fn,
+            "data_cache_dir": f"experiments/{dataset}/{data_fold}/{prompt}/{model}/.data_cache",
         }
     elif task == "language_model" and model_type == "litgpt" and method == "full_ft":
         model_cls = LanguageModelLitGPTFullFT
@@ -71,12 +74,21 @@ def main(
             "postshots_template": prompt_config["postshots_template"],
             "shots_separator": prompt_config["shots_separator"],
             "answers_templates": prompt_config["answers_templates"],
+            "embedding_pooling": model_config["embedding_pooling"],
+            "batch_size": method_config["batch_size"],
+            "data_load_fn": data_load_fn,
+            "data_cache_dir": f"experiments/{dataset}/{data_fold}/{prompt}/{model}/.data_cache",
+        }
+    elif task == "language_model" and model_type == "litgpt" and method == "affine_calibration":
+        model_cls = LanguageModelLitGPTAffineCalibration
+        model_init_args = {
+            "data_cache_dir": f"experiments/{dataset}/{data_fold}/{prompt}/{model}/no_adaptation/",
+            "alpha": method_config["alpha"],
+            "beta": method_config["beta"],
             "batch_size": method_config["batch_size"],
         }
     else:
         raise ValueError(f"Invalid combination of task ({task}), checkpoint_dir ({model_config['checkpoint_dir']}) and method ({method})")
-    model_init_args["data_load_fn"] = data_load_fn
-    model_init_args["data_cache_dir"] = f"experiments/{dataset}/{data_fold}/{prompt}/{model}/.data_cache"
     model = model_cls(**model_init_args)
 
     # ---------------------
@@ -105,18 +117,11 @@ def main(
     # Fit the model
     # ---------------------
     trainer.fit(model)
-    return
+
     # ---------------------
     # Predict
     # ---------------------
     trainer.predict(model)
-
-    # ---------------------
-    # Save results
-    # ---------------------
-    t_end = perf_counter()
-    with open(os.path.join(results_dir, "done.txt"), "w") as f:
-        f.write(f"Execution time: {t_end - t_start} seconds")
 
 
 if __name__ == "__main__":
