@@ -86,6 +86,7 @@ def main(
             "alpha": method_config["alpha"],
             "beta": method_config["beta"],
             "batch_size": method_config["batch_size"],
+            "max_ls": method_config["max_ls"],
         }
     else:
         raise ValueError(f"Invalid combination of task ({task}), checkpoint_dir ({model_config['checkpoint_dir']}) and method ({method})")

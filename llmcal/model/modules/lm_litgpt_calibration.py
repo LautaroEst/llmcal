@@ -1,4 +1,5 @@
 
+from collections import defaultdict
 import os
 from pathlib import Path
 import shutil
@@ -27,6 +28,7 @@ class LanguageModelLitGPTAffineCalibration(L.LightningModule):
         alpha: Literal["matrix", "vector", "scalar", "none"] = "matrix",
         beta: bool = True,
         batch_size: int = 1,
+        max_ls: int = 40,
     ):
         super().__init__()
         self.data_cache_dir = data_cache_dir
@@ -41,6 +43,7 @@ class LanguageModelLitGPTAffineCalibration(L.LightningModule):
         
         self.automatic_optimization = False
         self.batch_size = batch_size
+        self.max_ls = max_ls
 
     # --------------------------------------------------------------------------------------------
     # Data methods
@@ -83,18 +86,20 @@ class LanguageModelLitGPTAffineCalibration(L.LightningModule):
     # Model initialization
     # --------------------------------------------------------------------------------------------
     def configure_model(self) -> None:
-        with self.fabric.init_module():
-            self.pt_model = AffineCalibrator(self.num_classes, self.alpha, self.beta)
+        self.pt_model = AffineCalibrator(self.num_classes, self.alpha, self.beta)
         for param in self.pt_model.parameters():
             param.requires_grad = True
-        self.pt_model.init_params(self.fabric)
+
+    def init_params(self) -> None:
+        self.pt_model.alpha.data.fill_(1.)
+        self.pt_model.beta.data.fill_(0.)
     
     # --------------------------------------------------------------------------------------------
     # Optimization
     # --------------------------------------------------------------------------------------------
     def configure_optimizers(self) -> OptimizerLRScheduler:
         trainable_params = [param for param in self.parameters() if param.requires_grad]
-        return torch.optim.LBFGS(trainable_params, lr=1.0, max_iter=40)
+        return torch.optim.LBFGS(trainable_params, lr=0.001, max_iter=self.max_ls)
     
     def on_before_optimizer_step(self, optimizer: Optimizer) -> None:
         return
@@ -122,25 +127,20 @@ class LanguageModelLitGPTAffineCalibration(L.LightningModule):
         optimizer = self.optimizers()
         idx, logits, labels = batch
 
-        global step_count
-        step_count = int(self.fabric.global_step)
-
         def closure():
-            global step_count
             optimizer.zero_grad()
             cal_logits = self(logits)
             loss = torch.nn.functional.cross_entropy(cal_logits, labels)
             self.fabric.log_dict({
                 "train/cross_entropy": loss.item(),
                 "train/norm_cross_entropy": norm_cross_entropy(cal_logits, labels).item(),
-            }, step=step_count)
+            }, step=self.fabric.global_step)
             self.fabric.backward(loss)
-            step_count += 1
-            return {"loss": loss}
+            self.fabric.global_step += 1
+            return loss
         
-        outputs = optimizer.step(closure)
-        self.fabric.global_step += step_count
-        return outputs
+        loss = optimizer.step(closure)
+        return {"loss": loss}
     
     def on_train_batch_end(self, outputs: Any, batch: Any, batch_idx: int) -> None:
         return super().on_train_batch_end(outputs, batch, batch_idx)
@@ -168,6 +168,7 @@ class LanguageModelLitGPTAffineCalibration(L.LightningModule):
             "val/cross_entropy": loss.item(),
             "val/norm_cross_entropy": norm_cross_entropy(cal_logits, labels).item(),
         }, step=self.fabric.global_step)
+        self.avg_val_loss = loss
         return {"loss": loss}
 
     def on_validation_batch_end(self, outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
@@ -190,53 +191,24 @@ class LanguageModelLitGPTAffineCalibration(L.LightningModule):
 
     def on_predict_epoch_start(self) -> None:
         self.eval()
+        self.predict_outputs = defaultdict(list)
     
     def on_predict_batch_start(self, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
         return super().on_predict_batch_start(batch, batch_idx, dataloader_idx)
     
     def predict_step(self, batch, batch_idx, dataloader_idx):
-        prompt_ids: torch.Tensor = batch["prompt_ids"]
-        prompt_mask: torch.Tensor = batch["prompt_mask"]
-        answers_ids: List[List[torch.Tensor]] = batch["answers_ids"]
-
-        prompt_hidden_states = []
-        logits = []
-        for input_ids, attention_mask, answers in zip(prompt_ids, prompt_mask, answers_ids):
-            T = torch.sum(attention_mask)
-            input_ids = input_ids[attention_mask == 1].unsqueeze(0)
-            output = self(input_ids)
-            answers_logits = []
-            for answer in answers:
-                answer = answer.unsqueeze(0)
-                input_pos = torch.arange(T, answer.shape[1] + T, device=answer.device, dtype=answer.dtype) 
-                ans_out = self(answer, input_pos)
-                logprobs = torch.cat([output["logits"][:,-1:,:], ans_out["logits"][:,:-1,:]], dim=1).log_softmax(dim=2)
-                index = answer.unsqueeze(2)
-                gather_probs = torch.gather(logprobs, -1, index).squeeze(2)
-                ans_logit = gather_probs.mean() # changed from .sum()
-                answers_logits.append(ans_logit)
-            logits.append(torch.stack(answers_logits, dim=0))
-            prompt_hidden_states.append(self._pool_embeddings(output["last_hidden_state"])[0])
-        logits = torch.stack(logits, dim=0)
-        prompt_hidden_states = torch.stack(prompt_hidden_states, dim=0)
-
-        return {"idx": batch["idx"], "logits": logits, "prompt_hidden_states": prompt_hidden_states, "label": batch["label"]}
+        idx, logits, labels = batch
+        cal_logits = self(logits)
+        self._curr_out = {"idx": idx, "logits": cal_logits, "labels": labels}
+        return self._curr_out
 
     def on_predict_batch_end(self, outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
-        return super().on_predict_batch_end(outputs, batch, batch_idx, dataloader_idx)
+        for k, v in outputs.items():
+            self.predict_outputs[k].append(v.cpu())
     
     def on_predict_epoch_end(self) -> None:
-        return super().on_predict_epoch_end()
+        for k, v in self.predict_outputs.items():
+            self.predict_outputs[k] = torch.cat(v, dim=0)
     
     def on_predict_end(self) -> None:
         self.train()
-    
-    def _pool_embeddings(self, embeddings: torch.Tensor) -> torch.Tensor:
-        if self.embedding_pooling == "mean":
-            return embeddings.mean(dim=1)
-        elif self.embedding_pooling == "max":
-            return embeddings.max(dim=1).values
-        elif self.embedding_pooling == "last":
-            return embeddings[:,-1,:]
-        else:
-            raise ValueError(f"Invalid embedding_pooling {self.embedding_pooling}")

@@ -44,18 +44,43 @@ class Trainer:
         devices: Union[List[int], str, int] = 1,
         num_nodes: int = 1,
         precision: Union[str, int] = None,
-        plugins: Optional[Union[str, Any]] = None,
+        # logger
         callbacks: Optional[Union[List[Any], Any]] = None,
+        # fast_dev_run
         max_epochs: Optional[int] = 1000,
+        # min_epochs
         max_steps: Optional[int] = None,
-        grad_accum_steps: int = 1,
+        # min_steps
+        # max_time
         limit_train_batches: Union[int, float] = float("inf"),
         limit_val_batches: Union[int, float] = float("inf"),
-        validation_frequency: int = 1,
+        # limit_test_batches
+        # limit_predict_batches
+        # overfit_batches
+        validation_frequency: int = 1, # val_check_interval
+        # check_val_every_n_steps
+        # num_sanity_val_steps
+        # log_every_n_steps
+        # enable_checkpointing
+        # enable_progress_bar
+        # enable_model_summary
+        grad_accum_steps: int = 1, # accumulate_grad_batches
+        # gradient_clip_val
+        # gradient_clip_algorithm
+        random_state: int = 0, # deterministic
+        # benchmark
+        # inference_mode
         use_distributed_sampler: bool = True,
-        checkpoint_dir: str = "./checkpoints",
+        # profiler,
+        # detect_anomaly,
+        # barebones
+        plugins: Optional[Union[str, Any]] = None,
+        # sync_batchnorm
+        # reload_dataloaders_every_n_epochs
+        
+        # ---- Esto puede ir a un callback
+        checkpoint_dir: str = "./checkpoints", # default_root_dir
         checkpoint_frequency: int = 1,
-        random_state: int = 0,
     ) -> None:
         
         self.fabric = L.Fabric(
@@ -113,19 +138,20 @@ class Trainer:
         val_loader = self.fabric.setup_dataloaders(val_loader, use_distributed_sampler=self.use_distributed_sampler)
 
         # Init model's weights
-        model.fabric = self.fabric
-        model.configure_model()
-        model = self.fabric.setup_module(model)
-
+        with self.fabric.init_module():
+            model.configure_model()
+        
         # setup model and optimizer
         optimizer, scheduler_cfg = self._parse_optimizers_schedulers(model.configure_optimizers())
         if optimizer is not None:
-            optimizer = self.fabric.setup_optimizers(optimizer)
+            model, optimizer = self.fabric.setup(model, optimizer)
         else:
             self.should_stop = False # reset for next fit call
             self.fabric.print("No optimizer provided. Skipping training...")
             return
-
+        
+        self.fabric.call("init_params") # load parameters and set which are trainables
+        
         # try to load checkpoint
         state = {"model": model, "optim": optimizer, "scheduler": scheduler_cfg}
         if os.path.exists(os.path.join(self.checkpoint_dir, "checkpoint.ckpt")):
@@ -554,21 +580,16 @@ class Trainer:
             dataloader = self.fabric.setup_dataloaders(dataloader, use_distributed_sampler=self.use_distributed_sampler)
 
             self.fabric.call("on_predict_epoch_start")
-
-            outputs = defaultdict(list)
+            
             iterable = self.progbar_wrapper(dataloader, total=len(dataloader), desc=f"Predicting {dataloader_idx}")
             for batch_idx, batch in enumerate(iterable):
 
                 self.fabric.call("on_predict_batch_start", batch, batch_idx, dataloader_idx)
                 out = model.predict_step(batch=batch, batch_idx=batch_idx, dataloader_idx=dataloader_idx)
                 self.fabric.call("on_predict_batch_end", out, batch, batch_idx, dataloader_idx)
-                for k, v in out.items():
-                    outputs[k].append(v.cpu())
 
             self.fabric.call("on_predict_epoch_end")
-            for k, v in outputs.items():
-                outputs[k] = torch.cat(v, dim=0)
-            torch.save(outputs, os.path.join(self.checkpoint_dir, f"predict_{dataloader_idx}.pt"))
+            torch.save(self.predict_outputs, os.path.join(self.checkpoint_dir, f"predict_{dataloader_idx}.pt"))
 
         self.fabric.call("on_predict_end")
         

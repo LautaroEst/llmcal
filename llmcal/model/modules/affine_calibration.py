@@ -56,8 +56,3 @@ class AffineCalibrator(nn.Module):
         output = output + self.beta
 
         return output
-    
-    def init_params(self, fabric: L.Fabric):
-        self.alpha.data.fill_(1.)
-        self.beta.data.fill_(0.)
-        return self

@@ -54,7 +54,8 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
         data_load_fn: Callable,
         data_cache_dir: str,
         batch_size: int,
-        loss_fn: Literal["cross_entropy"] = "cross_entropy"
+        loss_fn: Literal["cross_entropy"] = "cross_entropy",
+        embedding_pooling: Literal["mean", "max", "last"] = "last"
     ):
         super().__init__()
         if not os.path.exists(checkpoint_dir):
@@ -74,6 +75,8 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
         if loss_fn != "cross_entropy":
             raise NotImplementedError(f"Loss function {loss_fn} not implemented")
         self.loss_fn = loss_fn
+
+        self.embedding_pooling = embedding_pooling
 
     # --------------------------------------------------------------------------------------------
     # Data methods
@@ -141,13 +144,14 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
     # Model initialization
     # --------------------------------------------------------------------------------------------
     def configure_model(self) -> None:
-        with self.fabric.init_module(empty_init=self.checkpoint_path is not None):
-            self.pt_model = LitGPT(self.config)
-            self.pt_model.set_kv_cache(batch_size=1)
-        if self.checkpoint_path is not None:
-            load_checkpoint(self.fabric, self.pt_model, self.checkpoint_path, strict=True)
+        self.pt_model = LitGPT(self.config)
+        self.pt_model.set_kv_cache(batch_size=1)
         for param in self.pt_model.parameters():
             param.requires_grad = True
+
+    def init_params(self) -> None:
+        if self.checkpoint_path is not None:
+            load_checkpoint(self.fabric, self.pt_model, self.checkpoint_path, strict=True)
     
     # --------------------------------------------------------------------------------------------
     # Optimization
@@ -277,3 +281,87 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
             src_path = self.checkpoint_dir / file_name
             if src_path.exists():
                 shutil.copy(src_path, self.trainer.checkpoint_dir)
+
+    # --------------------------------------------------------------------------------------------
+    # Prediction
+    # --------------------------------------------------------------------------------------------
+    def on_predict_start(self) -> None:
+        return super().on_predict_start()
+
+    def on_predict_epoch_start(self) -> None:
+        self.eval()
+    
+    def on_predict_batch_start(self, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+        return super().on_predict_batch_start(batch, batch_idx, dataloader_idx)
+    
+    def predict_step(self, batch, batch_idx, dataloader_idx):
+        prompt_ids: torch.Tensor = batch["prompt_ids"]
+        prompt_mask: torch.Tensor = batch["prompt_mask"]
+        answers_ids: List[List[torch.Tensor]] = batch["answers_ids"]
+
+        prompt_hidden_states = []
+        logits = []
+        for input_ids, attention_mask, answers in zip(prompt_ids, prompt_mask, answers_ids):
+            T = torch.sum(attention_mask)
+            input_ids = input_ids[attention_mask == 1].unsqueeze(0)
+            output = self(input_ids)
+            answers_logits = []
+            for answer in answers:
+                answer = answer.unsqueeze(0)
+                input_pos = torch.arange(T, answer.shape[1] + T, device=answer.device, dtype=answer.dtype) 
+                ans_out = self(answer, input_pos)
+                logprobs = torch.cat([output["logits"][:,-1:,:], ans_out["logits"][:,:-1,:]], dim=1).log_softmax(dim=2)
+                index = answer.unsqueeze(2)
+                gather_probs = torch.gather(logprobs, -1, index).squeeze(2)
+                ans_logit = gather_probs.mean() # changed from .sum()
+                answers_logits.append(ans_logit)
+            logits.append(torch.stack(answers_logits, dim=0))
+            prompt_hidden_states.append(self._pool_embeddings(output["last_hidden_state"])[0])
+        logits = torch.stack(logits, dim=0)
+        prompt_hidden_states = torch.stack(prompt_hidden_states, dim=0)
+
+        return {"idx": batch["idx"], "logits": logits, "prompt_hidden_states": prompt_hidden_states, "label": batch["label"]}
+
+    def on_predict_batch_end(self, outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+        return super().on_predict_batch_end(outputs, batch, batch_idx, dataloader_idx)
+    
+    def on_predict_epoch_end(self) -> None:
+        return super().on_predict_epoch_end()
+    
+    def on_predict_end(self) -> None:
+        self.train()
+    
+    def _pool_embeddings(self, embeddings: torch.Tensor) -> torch.Tensor:
+        if self.embedding_pooling == "mean":
+            return embeddings.mean(dim=1)
+        elif self.embedding_pooling == "max":
+            return embeddings.max(dim=1).values
+        elif self.embedding_pooling == "last":
+            return embeddings[:,-1,:]
+        else:
+            raise ValueError(f"Invalid embedding_pooling {self.embedding_pooling}")
+
+if __name__ == "__main__":
+    from functools import partial
+    from ...data.datasets import load_sst2
+    model = LanguageModelLitGPTFullFT(
+        checkpoint_dir = "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T",
+        preshots_template = "",
+        shots_template = "Review: \"{sentence}\"\nSentiment: {answer}",
+        postshots_template = "Review: \"{sentence}\"\nSentiment:",
+        shots_separator = "\n",
+        answers_templates = ["Negative", "Positive"],
+        data_load_fn = partial(
+            load_sst2, 
+            data_dir=f"experiments/sst2/.cache", 
+            num_train_samples=100, 
+            num_val_samples=100, 
+            num_shots=2, 
+            random_state=738
+        ),
+        data_cache_dir = f"experiments/sst2/n=100_rs=738/prefix_basic_sst2/lm_tinyllama_3T_bf16/.data_cache",
+        batch_size = 32,
+        loss_fn = "cross_entropy"
+    )
+    trainer = L.Trainer(accelerator="gpu", devices=1, precision="bf16-true", max_epochs=1)
+    trainer.fit(model)
