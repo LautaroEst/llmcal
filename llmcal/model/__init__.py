@@ -1,2 +1,1 @@
-from .modules import *
-from .trainers import *
+from .trainer import Trainer

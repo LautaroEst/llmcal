@@ -1,0 +1,4 @@
+
+method: "no_adaptation"
+batch_size: 4
+random_state: 81239

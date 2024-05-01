@@ -1,4 +1,4 @@
-from .lit_gpt import LitGPTLanguageModel, LitGPTPromptClassification, LitGPTSequenceClassification
-from .lora import LoRALitGPTLanguageModel, LoRALitGPTPromptClassification, LoRALitGPTSequenceClassification
-from .affine_calibrator import AffineCalibrator
-from .linear import Linear
+from .lm_litgpt_noadapt import LanguageModelLitGPTNoAdaptation
+from .lm_litgpt_fullft import LanguageModelLitGPTFullFT
+from .lm_litgpt_calibration import LanguageModelLitGPTAffineCalibration
+from .lm_litgpt_lora import LanguageModelLitGPTLoRA
