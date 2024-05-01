@@ -144,7 +144,7 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
     # Optimization
     # --------------------------------------------------------------------------------------------
     def configure_optimizers(self):
-        trainable_params = [param for param in self.parameters() if param.requires_grad][:1]
+        trainable_params = [param for param in self.parameters() if param.requires_grad]
         if self._optimizer_name == "adamw":
             optimizer = torch.optim.AdamW(trainable_params, lr=self._learning_rate, weight_decay=self._weight_decay)
         elif self._optimizer_name == "sgd":
