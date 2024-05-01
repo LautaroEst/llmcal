@@ -14,10 +14,10 @@ def check_model_type(checkpoint_dir: str, method: Literal["no_adaptation", "full
             except:
                 raise ValueError(f"Invalid checkpoint directory: {checkpoint_dir}")
         else:
-            check_valid_checkpoint_dir(Path(os.getenv("LIT_CHECKPOINTS")) / checkpoint_dir, lora = method == "lora")
+            check_valid_checkpoint_dir(Path(os.getenv("LIT_CHECKPOINTS")) / checkpoint_dir, lora = False)
             model_type = "litgpt"
     else:
-        check_valid_checkpoint_dir(Path(checkpoint_dir), lora = method == "lora")
+        check_valid_checkpoint_dir(Path(checkpoint_dir), lora = False)
         model_type = "litgpt"
 
     return model_type

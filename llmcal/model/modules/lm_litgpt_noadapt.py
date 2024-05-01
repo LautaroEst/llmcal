@@ -153,7 +153,7 @@ class LanguageModelLitGPTNoAdaptation(L.LightningModule):
     # --------------------------------------------------------------------------------------------
     # Optimization
     # --------------------------------------------------------------------------------------------
-    def configure_optimizers(self) -> OptimizerLRScheduler:
+    def configure_optimizers(self):
         return
     
     def on_before_optimizer_step(self, optimizer: Optimizer) -> None:

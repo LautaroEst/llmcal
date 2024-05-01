@@ -180,8 +180,8 @@ class Trainer:
             # increase epoch count
             self.current_epoch += 1
 
-            # stopping condition on epoch level
-            if self.max_epochs is not None and self.current_epoch >= self.max_epochs:
+            # stopping condition
+            if (self.max_epochs is not None and self.current_epoch >= self.max_epochs) or (self.max_steps is not None and self.global_step >= self.max_steps):
                 self.should_stop = True
 
         # reset for next fit call
@@ -231,17 +231,13 @@ class Trainer:
             # check if optimizer should step in gradient accumulation
             should_optim_step = (batch_idx + 1) % self.grad_accum_steps == 0 or batch_idx == len(train_loader) - 1
             if should_optim_step:
-                # currently only supports a single optimizer
-                self.fabric.call("on_before_optimizer_step", optimizer)
 
                 # optimizer step runs train step internally through closure
-                if model.automatic_optimization:
-                    optimizer.step(partial(self.training_step, model=model, batch=batch, batch_idx=batch_idx))
-                    self.fabric.call("on_before_zero_grad", optimizer)
-                    optimizer.zero_grad()
-                else:
-                    outputs = model.training_step(batch, batch_idx=batch_idx)
-                    self._current_train_return = apply_to_collection(outputs, dtype=torch.Tensor, function=lambda x: x.detach())
+                self.fabric.call("on_before_optimizer_step", optimizer)
+                optimizer.step(partial(self.training_step, model=model, batch=batch, batch_idx=batch_idx))
+
+                self.fabric.call("on_before_zero_grad", optimizer)
+                optimizer.zero_grad()
 
             else:
                 # gradient accumulation -> no optimizer step
@@ -264,8 +260,7 @@ class Trainer:
                 self.save(state, is_best=self.best_state["val_loss"] > model.avg_val_loss)
 
             # only increase global step if optimizer stepped
-            if not model.automatic_optimization:
-                self.global_step += int(should_optim_step)
+            self.global_step += int(should_optim_step)
 
             # stopping criterion on step level
             if self.max_steps is not None and self.global_step >= self.max_steps:
@@ -589,7 +584,7 @@ class Trainer:
                 self.fabric.call("on_predict_batch_end", out, batch, batch_idx, dataloader_idx)
 
             self.fabric.call("on_predict_epoch_end")
-            torch.save(self.predict_outputs, os.path.join(self.checkpoint_dir, f"predict_{dataloader_idx}.pt"))
+            torch.save(model.predict_outputs, os.path.join(self.checkpoint_dir, f"predict_{dataloader_idx}.pt"))
 
         self.fabric.call("on_predict_end")
         

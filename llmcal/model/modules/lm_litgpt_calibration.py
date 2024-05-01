@@ -17,7 +17,7 @@ from litgpt.utils import load_checkpoint
 from lightning.pytorch.utilities.types import LRSchedulerTypeUnion, OptimizerLRScheduler
 from torch.utils.data import TensorDataset
 from .affine_calibration import AffineCalibrator
-from ..losses import norm_cross_entropy
+from ..metrics import norm_cross_entropy
 
 
 class LanguageModelLitGPTAffineCalibration(L.LightningModule):
@@ -41,7 +41,6 @@ class LanguageModelLitGPTAffineCalibration(L.LightningModule):
         else:
             raise ValueError(f"Model with no adaptation needs to be run first.")
         
-        self.automatic_optimization = False
         self.batch_size = batch_size
         self.max_ls = max_ls
 
@@ -124,22 +123,17 @@ class LanguageModelLitGPTAffineCalibration(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
 
-        optimizer = self.optimizers()
         idx, logits, labels = batch
 
-        def closure():
-            optimizer.zero_grad()
-            cal_logits = self(logits)
-            loss = torch.nn.functional.cross_entropy(cal_logits, labels)
-            self.fabric.log_dict({
-                "train/cross_entropy": loss.item(),
-                "train/norm_cross_entropy": norm_cross_entropy(cal_logits, labels).item(),
-            }, step=self.fabric.global_step)
-            self.fabric.backward(loss)
-            self.fabric.global_step += 1
-            return loss
+        self.optimizers().zero_grad()
+
+        cal_logits = self(logits)
+        loss = torch.nn.functional.cross_entropy(cal_logits, labels)
+        self.fabric.log_dict({
+            "train/cross_entropy": loss.item(),
+            "train/norm_cross_entropy": norm_cross_entropy(cal_logits, labels).item(),
+        }, step=self.trainer.global_step)
         
-        loss = optimizer.step(closure)
         return {"loss": loss}
     
     def on_train_batch_end(self, outputs: Any, batch: Any, batch_idx: int) -> None:

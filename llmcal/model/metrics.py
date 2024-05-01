@@ -1,5 +1,6 @@
 
 import torch
+import torchmetrics
 
 def norm_cross_entropy(logits, labels):
     ce = torch.nn.functional.cross_entropy(logits, labels)

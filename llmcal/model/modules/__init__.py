@@ -1,3 +1,4 @@
 from .lm_litgpt_noadapt import LanguageModelLitGPTNoAdaptation
 from .lm_litgpt_fullft import LanguageModelLitGPTFullFT
 from .lm_litgpt_calibration import LanguageModelLitGPTAffineCalibration
+from .lm_litgpt_lora import LanguageModelLitGPTLoRA

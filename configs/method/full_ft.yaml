@@ -1,11 +1,15 @@
 
 method: "full_ft"
+loss_fn: "cross_entropy"
+optimizer: "adamw"
+learning_rate: 0.0001
+weight_decay: 0.0
 batch_size: 1
 max_epochs: 2
-max_steps: null
-grad_accum_steps: 8
+max_steps: -1
+accumulate_grad_batches: 8
 limit_train_batches: null
 limit_val_batches: null
-validation_frequency: 10
-checkpoint_frequency: 100
+val_check_interval: 16
+checkpoint_frequency: 4 # Every n global_steps = batch_size * accumulate_grad_batches = 32
 random_state: 734
