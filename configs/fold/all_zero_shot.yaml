@@ -1,3 +1,4 @@
 train_samples: null
 val_samples: null
-random_state: 2637
+shots_samples: 0
+random_state: 0
