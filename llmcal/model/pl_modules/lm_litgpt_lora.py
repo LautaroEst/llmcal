@@ -1,52 +1,20 @@
-
-from collections import defaultdict
 import os
 from pathlib import Path
 import shutil
-from typing import Any, Callable, Dict, List, Literal, Optional
+from typing import Any, Callable, List, Literal, Optional
+from collections import defaultdict
+
 import lightning as L
 import torch
-from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 from datasets import load_from_disk
-from ..base_classes import LitGPTTokenizer, LitGPTLoRA
-from litgpt.lora import Config, mark_only_lora_as_trainable, LoRALinear
+from litgpt.lora import Config, mark_only_lora_as_trainable, lora_filter, merge_lora_weights
+from lightning.fabric.utilities.load import _lazy_load as lazy_load
+from torchmetrics.aggregation import MeanMetric
+
+from .utils import DynamicPaddingCollator, init_lora_linear_modules
+from ..base_classes import LitGPTLoRA, LitGPTTokenizer
 from ..prompt import PrefixPrompt
-from litgpt.utils import load_checkpoint
-from lightning.pytorch.utilities.types import LRSchedulerTypeUnion, OptimizerLRScheduler
-
-class DynamicPaddingCollator:
-
-    def __init__(self, pad_token_id, max_seq_len):
-        # batch = {"idx": ..., "prompt_ids": ..., "answers_ids": ...}
-        self.pad_token_id = pad_token_id
-        self.max_seq_len = max_seq_len
-
-    def __call__(self, batch):
-        prompts_ids = []
-        prompt_masks = []
-        answers_ids = []
-        max_ans_len = max([max([ans.shape[0] for ans in sample["answers_ids"]]) for sample in batch])
-        max_prompt_len = min(self.max_seq_len - max_ans_len, max([sample["prompt_ids"].shape[0] for sample in batch]))
-        for sample in batch:
-            prompts_ids.append(torch.cat([torch.ones(max_prompt_len - sample["prompt_ids"].shape[0], dtype=torch.long) * self.pad_token_id, sample["prompt_ids"]]))
-            prompt_masks.append(torch.cat([torch.zeros(max_prompt_len - sample["prompt_ids"].shape[0], dtype=torch.long), torch.ones(sample["prompt_ids"].shape[0], dtype=torch.long)]))
-            answers_ids.append(sample["answers_ids"])
-        return {
-            "idx": torch.stack([sample["idx"] for sample in batch]),
-            "prompt_ids": torch.stack(prompts_ids),
-            "prompt_mask": torch.stack(prompt_masks),
-            "answers_ids": answers_ids,
-            "label": torch.stack([sample["label"] for sample in batch])
-        }
-
-
-def init_lora_linear_modules(module):
-    if isinstance(module, LoRALinear):
-        module.reset_parameters()
-    else:
-        for child in module.children():
-            init_lora_linear_modules(child)
 
 
 class LanguageModelLitGPTLoRA(L.LightningModule):
@@ -54,6 +22,7 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
     def __init__(
         self,
         checkpoint_dir: str,
+        embedding_pooling: Literal["mean", "max", "last"],
         preshots_template: str, 
         shots_template: str,
         postshots_template: str,
@@ -61,8 +30,7 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
         answers_templates: List[str],
         data_load_fn: Callable,
         data_cache_dir: str,
-        batch_size: int,
-        loss_fn: Literal["cross_entropy"] = "cross_entropy",
+        use_lora_checkpoint: bool = False,
         lora_r: int = 8,
         lora_alpha: int = 16,
         lora_dropout: float = 0.05,
@@ -72,19 +40,21 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
         lora_projection: bool = False,
         lora_mlp: bool = False,
         lora_head: bool = False,
-        embedding_pooling: Literal["mean", "max", "last"] = "last",
+        batch_size: int = 32,
+        loss_fn: Literal["cross_entropy"] = "cross_entropy",
         optimizer: Literal["adamw", "sgd"] = "adamw",
         learning_rate: float = 1e-4,
         weight_decay: float = 0.0,
     ):
         super().__init__()
+
+        # Init config and tokenizer
         if not os.path.exists(checkpoint_dir):
             if not os.path.exists(os.path.join(os.getenv("LIT_CHECKPOINTS"), checkpoint_dir)):
                 raise FileNotFoundError(f"Checkpoint directory {checkpoint_dir} not found")
             self.checkpoint_dir = Path(os.getenv("LIT_CHECKPOINTS")) / checkpoint_dir
         else:
             self.checkpoint_dir = Path(checkpoint_dir)
-
         lora_kwargs = dict(
             lora_r = lora_r,
             lora_alpha = lora_alpha,
@@ -96,26 +66,51 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
             lora_mlp = lora_mlp,
             lora_head = lora_head,
         )
-
         self.config = Config.from_checkpoint(self.checkpoint_dir, **lora_kwargs)
         self.tokenizer = LitGPTTokenizer(self.checkpoint_dir)
         self.checkpoint_path = self.checkpoint_dir / "lit_model.pth" # Set this to None if you don't want to load the weights from pretrained model
+        if use_lora_checkpoint:
+            self.checkpoint_path_lora = self.checkpoint_dir / "lit_model.pth.lora" 
+        else:
+            self.checkpoint_path_lora = None
+        
+        # Init model
+        self.gpt = LitGPTLoRA(self.config)
+        self.gpt.set_kv_cache(batch_size=1)
+        mark_only_lora_as_trainable(self.gpt)
+
+        if self.checkpoint_path is not None:
+            checkpoint = lazy_load(self.checkpoint_path)
+            checkpoint = {"gpt." + k: v for k, v in checkpoint.items()}
+            self.load_state_dict(checkpoint, strict=False)
+            if self.checkpoint_path_lora is not None:
+                checkpoint = lazy_load(self.checkpoint_path_lora)
+                checkpoint = {"gpt." + k: v for k, v in checkpoint.items()}
+                self.load_state_dict(checkpoint, strict=False)
+            else:
+                init_lora_linear_modules(self.gpt)
+
+        self.embedding_pooling = embedding_pooling
+        
+        # Init prompt
         self.prompt = PrefixPrompt(preshots_template, shots_template, postshots_template, shots_separator, answers_templates)
         self.data_load_fn = data_load_fn
         self.data_cache_dir = data_cache_dir
         self.batch_size = batch_size
 
+        # Training args
         if loss_fn != "cross_entropy":
             raise NotImplementedError(f"Loss function {loss_fn} not implemented")
         self.loss_fn = loss_fn
-
-        self.embedding_pooling = embedding_pooling
-
         self._optimizer_name = optimizer
         self._learning_rate = learning_rate
         self._weight_decay = weight_decay
 
-        
+        # Metrics
+        self.val_ce_per_token = MeanMetric()
+        self.train_ce_per_token = MeanMetric()
+        self.last_global_step = 0
+
     # --------------------------------------------------------------------------------------------
     # Data methods
     # --------------------------------------------------------------------------------------------
@@ -179,23 +174,9 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
         }
     
     # --------------------------------------------------------------------------------------------
-    # Model initialization
-    # --------------------------------------------------------------------------------------------
-    def configure_model(self) -> None:
-        self.pt_model = LitGPTLoRA(self.config)
-        self.pt_model.set_kv_cache(batch_size=1)
-        mark_only_lora_as_trainable(self)
-        
-
-    def init_params(self) -> None:
-        if self.checkpoint_path is not None:
-            load_checkpoint(self.fabric, self.pt_model, self.checkpoint_path, strict=False)
-        init_lora_linear_modules(self)
-    
-    # --------------------------------------------------------------------------------------------
     # Optimization
     # --------------------------------------------------------------------------------------------
-    def configure_optimizers(self) -> OptimizerLRScheduler:
+    def configure_optimizers(self):
         trainable_params = [param for param in self.parameters() if param.requires_grad]
         if self._optimizer_name == "adamw":
             optimizer = torch.optim.AdamW(trainable_params, lr=self._learning_rate, weight_decay=self._weight_decay)
@@ -203,30 +184,13 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
             optimizer = torch.optim.SGD(trainable_params, lr=self._learning_rate, weight_decay=self._weight_decay)
         else:
             raise ValueError(f"Invalid optimizer {self._optimizer_name}")
-        
         return optimizer
-
-    
-    def on_before_optimizer_step(self, optimizer: Optimizer) -> None:
-        return
-    
-    def on_before_zero_grad(self, optimizer: Optimizer) -> None:
-        return
-    
-    def lr_scheduler_step(self, scheduler: LRSchedulerTypeUnion, metric: Optional[Any]) -> None:
-        return super().lr_scheduler_step(scheduler, metric)
 
     # --------------------------------------------------------------------------------------------
     # Training
     # --------------------------------------------------------------------------------------------
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None, output_last_hidden_state: bool = True) -> torch.Tensor:
-        return self.pt_model(idx, input_pos, output_last_hidden_state)
-
-    def on_train_epoch_start(self) -> None:
-        return super().on_train_epoch_start()
-
-    def on_train_batch_start(self, batch: Any, batch_idx: int) -> Optional[int]:
-        return super().on_train_batch_start(batch, batch_idx)
+        return self.gpt(idx, input_pos, output_last_hidden_state)
 
     def training_step(self, batch, batch_idx):
         prompt_ids = batch["prompt_ids"]
@@ -246,23 +210,31 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
             index = input_ids[:,1:].unsqueeze(2)
             gather_logprobs = torch.gather(logprobs, -1, index).squeeze(2)
             loss = loss - gather_logprobs.sum()
-            num_tokens = num_tokens + input_ids.shape[1]
+            num_tokens = num_tokens + index.shape[1]
             indices_counts = indices_counts + torch.bincount(index.view(-1), minlength=logprobs.shape[2])
 
-        priors = indices_counts.float() / indices_counts.sum()
-        naive_loss = -torch.sum(priors[priors > 0] * torch.log(priors[priors > 0]))
-        self.fabric.log_dict({
-            "train/cross_entropy_over_unigram": loss / num_tokens / naive_loss,
-            "train/cross_entropy_per_token": loss / num_tokens,
-        }, step=self.trainer.global_step)
-        return {"loss": loss / num_tokens}
+        self.train_ce_per_token.update(loss / num_tokens, num_tokens)
+        self.cum_indices_counts = self.cum_indices_counts + indices_counts
+        return {"loss": loss / num_tokens, "num_tokens": num_tokens, "indices_counts": indices_counts}
     
     def on_train_batch_end(self, outputs: Any, batch: Any, batch_idx: int) -> None:
-        return super().on_train_batch_end(outputs, batch, batch_idx)
-    
-    def on_train_epoch_end(self) -> None:
-        return super().on_train_epoch_end()
-    
+        if self.last_global_step == self.global_step:
+            return
+
+        ce_per_token = self.train_ce_per_token.compute()
+
+        priors = self.cum_indices_counts.float() / self.cum_indices_counts.sum()
+        naive_ce_per_token = -torch.sum(priors[priors > 0] * torch.log(priors[priors > 0]))
+
+        self.logger.log_metrics({
+            "train/norm_ce_per_token": ce_per_token / naive_ce_per_token,
+            "train/ce_per_token": ce_per_token,
+        }, step=self.global_step)
+
+        self.cum_indices_counts = 0
+        self.train_ce_per_token.reset()
+        self.last_global_step = self.global_step
+
     # --------------------------------------------------------------------------------------------
     # Validation
     # --------------------------------------------------------------------------------------------
@@ -270,12 +242,11 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
         self.eval()
 
     def on_validation_epoch_start(self) -> None:
-        self.cum_val_loss = 0
-        self.cum_tokens = 0
         self.cum_indices_counts = 0
+        self.val_ce_per_token.reset()
 
-    def on_validation_batch_start(self, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
-        return super().on_validation_batch_start(batch, batch_idx, dataloader_idx)
+    def on_validation_batch_start(self, batch: Any, batch_idx: int) -> None:
+        return super().on_validation_batch_start(batch, batch_idx)
 
     def validation_step(self, batch, batch_idx):
         prompt_ids = batch["prompt_ids"]
@@ -295,52 +266,55 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
             index = input_ids[:,1:].unsqueeze(2)
             gather_logprobs = torch.gather(logprobs, -1, index).squeeze(2)
             loss = loss - gather_logprobs.sum()
-            num_tokens = num_tokens + input_ids.shape[1]
+            num_tokens = num_tokens + index.shape[1]
             indices_counts = indices_counts + torch.bincount(index.view(-1), minlength=logprobs.shape[2])
 
-        self.cum_val_loss = self.cum_val_loss + loss
-        self.cum_tokens = self.cum_tokens + num_tokens
         self.cum_indices_counts = self.cum_indices_counts + indices_counts
-        return {"loss": loss / num_tokens}
+        self.val_ce_per_token.update(loss / num_tokens, num_tokens)
+        val_ce_per_token = self.val_ce_per_token.compute()
+        return {"val/ce_per_token": val_ce_per_token}
 
-    def on_validation_batch_end(self, outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
-        return super().on_validation_batch_end(outputs, batch, batch_idx, dataloader_idx)
+    def on_validation_batch_end(self, outputs: Any, batch: Any, batch_idx: int) -> None:
+        return super().on_validation_batch_end(outputs, batch, batch_idx)
 
     def on_validation_epoch_end(self) -> None:
-        self.avg_val_loss = self.cum_val_loss / self.cum_tokens
+        val_ce_per_token = self.val_ce_per_token.compute()
         priors = self.cum_indices_counts.float() / self.cum_indices_counts.sum()
-        naive_loss = -torch.sum(priors[priors > 0] * torch.log(priors[priors > 0]))
-        self.norm_cross_entropy = self.avg_val_loss / naive_loss
-        self.fabric.log_dict({
-            "val/cross_entropy_over_unigram": self.norm_cross_entropy,
-            "val/cross_entropy_per_token": self.avg_val_loss,
-        }, step=self.trainer.global_step)
+        naive_ce_per_token = -torch.sum(priors[priors > 0] * torch.log(priors[priors > 0]))
+        val_norm_ce_per_token = val_ce_per_token / naive_ce_per_token
+        self.logger.log_metrics({
+            "val/norm_ce_per_token": val_norm_ce_per_token,
+            "val/ce_per_token": val_ce_per_token,
+        }, step=self.global_step)
+        self.log("val_loss", val_ce_per_token, logger=False, on_epoch=True, batch_size=1)
 
     def on_validation_model_train(self) -> None:
         self.train()
 
     def on_fit_end(self) -> None:
-        self.fabric.save(Path(self.trainer.checkpoint_dir) / "lit_model.pth", self.pt_model.state_dict())
+        torch.save({k: v for k, v in self.gpt.state_dict().items() if lora_filter(k,v)}, Path(self.trainer.default_root_dir) / "lit_model.pth.lora")
+        if self.checkpoint_path is not None:
+            os.symlink(self.checkpoint_path, os.path.join(self.trainer.default_root_dir,"lit_model.pth")) # symlink to the "lit_model.pth" file
+        else:
+            torch.save({k: v for k, v in self.gpt.state_dict().items() if not lora_filter(k,v)}, Path(self.trainer.default_root_dir) / "lit_model.pth")
 
         config_files = ["config.json", "generation_config.json", "model_config.yaml"]
         tokenizer_files = ["tokenizer.json", "tokenizer.model", "tokenizer_config.json"]
         for file_name in config_files + tokenizer_files:
             src_path = self.checkpoint_dir / file_name
             if src_path.exists():
-                shutil.copy(src_path, self.trainer.checkpoint_dir)
+                shutil.copy(src_path, self.trainer.default_root_dir)
+        
+        # Merge lora weights for predictions after saving them
+        merge_lora_weights(self.gpt)
+        
 
     # --------------------------------------------------------------------------------------------
     # Prediction
     # --------------------------------------------------------------------------------------------
-    def on_predict_start(self) -> None:
-        return super().on_predict_start()
-
     def on_predict_epoch_start(self) -> None:
         self.eval()
         self.predict_outputs = defaultdict(list)
-    
-    def on_predict_batch_start(self, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
-        return super().on_predict_batch_start(batch, batch_idx, dataloader_idx)
     
     def predict_step(self, batch, batch_idx, dataloader_idx):
         prompt_ids: torch.Tensor = batch["prompt_ids"]
@@ -368,8 +342,7 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
         logits = torch.stack(logits, dim=0)
         prompt_hidden_states = torch.stack(prompt_hidden_states, dim=0)
 
-        self._curr_out = {"idx": batch["idx"], "logits": logits, "prompt_hidden_states": prompt_hidden_states, "label": batch["label"]}
-        return self._curr_out
+        return {"idx": batch["idx"], "logits": logits, "prompt_hidden_states": prompt_hidden_states, "label": batch["label"]}
 
     def on_predict_batch_end(self, outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
         for k, v in outputs.items():
@@ -391,4 +364,3 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
             return embeddings[:,-1,:]
         else:
             raise ValueError(f"Invalid embedding_pooling {self.embedding_pooling}")
-

@@ -1,4 +1,5 @@
 import torch
+from litgpt.lora import LoRALinear
 
 class DynamicPaddingCollator:
 
@@ -24,3 +25,10 @@ class DynamicPaddingCollator:
             "answers_ids": answers_ids,
             "label": torch.stack([sample["label"] for sample in batch])
         }
+    
+def init_lora_linear_modules(module):
+    if isinstance(module, LoRALinear):
+        module.reset_parameters()
+    else:
+        for child in module.children():
+            init_lora_linear_modules(child)

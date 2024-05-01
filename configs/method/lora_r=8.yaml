@@ -1,17 +1,17 @@
 
 method: "lora"
+loss_fn: "cross_entropy"
 optimizer: "adamw"
-batch_size: 1
+learning_rate: 0.0001
 weight_decay: 0.0
-learning_rate: 0.001
-max_epochs: 2
-max_steps: null
-grad_accum_steps: 8
-limit_train_batches: null
-limit_val_batches: null
-validation_frequency: 10
-checkpoint_frequency: 100
+batch_size: 1
+max_epochs: 1
+max_steps: -1
+accumulate_grad_batches: 8
+val_check_interval: 16
+checkpoint_frequency: 4
 random_state: 734
+
 lora_r: 8
 lora_alpha: 16
 lora_dropout: 0.05
