@@ -15,5 +15,6 @@ setup(
         'tensorboard',
         'jupyter',
         'lit_gpt[all]',
+        'deepspeed'
     ],
 )

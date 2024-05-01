@@ -1,8 +1,0 @@
-
-task: "experiments/glue_sst2_mc/tinyllama/all/"
-casting:
-  class_name: FeaturesSelector
-  features:
-    idx: idx
-    target: target
-    output.logits: input.logits
