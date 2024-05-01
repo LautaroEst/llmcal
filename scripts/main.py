@@ -1,18 +1,13 @@
 
 import os
-from pathlib import Path
-from typing import Literal
 import lightning as L
 from llmcal.utils import load_yaml
 from llmcal.model.utils import check_model_type
-from llmcal.model.modules import *
+from llmcal.model.pl_modules import *
 from llmcal.data.datasets import *
-from time import perf_counter
 from functools import partial
-from llmcal.model import Trainer
 from llmcal.model.loggers import TBLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
-from llmcal.data.datasets.base import SUPPORTED_DATASETS
 
 
 def main(

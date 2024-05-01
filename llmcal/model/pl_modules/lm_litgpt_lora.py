@@ -9,10 +9,9 @@ import torch
 from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 from datasets import load_from_disk
-from .lit_tokenizer import LitGPTTokenizer
+from ..base_classes import LitGPTTokenizer, LitGPTLoRA
 from litgpt.lora import Config, mark_only_lora_as_trainable, LoRALinear
-from ...prompt import PrefixPrompt
-from .lit_lora_model import LitGPTLoRA
+from ..prompt import PrefixPrompt
 from litgpt.utils import load_checkpoint
 from lightning.pytorch.utilities.types import LRSchedulerTypeUnion, OptimizerLRScheduler
 

@@ -9,14 +9,12 @@ import torch
 from torch.optim.optimizer import Optimizer
 from torch.utils.data import DataLoader
 from datasets import load_from_disk
-from .lit_tokenizer import LitGPTTokenizer
+from ..base_classes import LitGPTTokenizer, AffineCalibrator
 from litgpt import Config
-from ...prompt import PrefixPrompt
-from .lit_model import LitGPT
+from ..prompt import PrefixPrompt
 from litgpt.utils import load_checkpoint
 from lightning.pytorch.utilities.types import LRSchedulerTypeUnion, OptimizerLRScheduler
 from torch.utils.data import TensorDataset
-from .affine_calibration import AffineCalibrator
 from ..metrics import norm_cross_entropy
 
 

@@ -2,7 +2,6 @@
 from typing import Literal
 from torch import nn
 import torch
-import lightning as L
 
 class AffineCalibrator(nn.Module):
     """

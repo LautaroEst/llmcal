@@ -1,13 +1,9 @@
-import os
-from pathlib import Path
 from typing import Optional
 import torch
-import lightning as L
-
-from litgpt import GPT
+from litgpt.lora import GPT
 
 
-class LitGPT(GPT):
+class LitGPTLoRA(GPT):
 
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None, output_last_hidden_state: bool = True) -> torch.Tensor:
         T = idx.size(1)
