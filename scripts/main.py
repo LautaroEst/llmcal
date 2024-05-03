@@ -1,14 +1,15 @@
 
 import os
+import logging
 import lightning as L
-from llmcal.utils import load_yaml
+from llmcal.utils import load_yaml, setup_logger
 from llmcal.model.utils import check_model_type
 from llmcal.model.pl_modules import *
-from llmcal.data.datasets import *
-from functools import partial
+from llmcal.data.data_modules import *
+from llmcal.data.datasets.utils import SUPPORTED_DATASETS
 from llmcal.model.loggers import TBLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
-
+from lightning.pytorch import seed_everything
 
 def main(
     dataset: SUPPORTED_DATASETS,
@@ -22,26 +23,45 @@ def main(
     data_fold_config = load_yaml(f"configs/fold/{data_fold}.yaml")
     method_config = load_yaml(f"configs/method/{method}.yaml")
     results_dir = f"experiments/{dataset}/{data_fold}/{prompt}/{model}/{method}"
+    os.makedirs(results_dir, exist_ok=True)
+    setup_logger(results_dir)
+    seed_everything(method_config.get("random_state", 0))
 
-    # ---------------------
-    # Dataset
-    # ---------------------
-    data_dir = f"experiments/{dataset}/.cache"
-    if dataset == "sst2":
-        data_load_fn = partial(
-            load_sst2, 
-            data_dir=data_dir, 
-            num_train_samples=data_fold_config["train_samples"], 
-            num_val_samples=data_fold_config["val_samples"], 
-            num_shots=data_fold_config["shots_samples"], 
-            random_state=data_fold_config["random_state"]
-        )
+    checkpoint_freq = method_config.get("checkpoint_frequency", 1)
+    if checkpoint_freq is not None:
+        checkpoint_callbacks = [
+            ModelCheckpoint(
+                dirpath=results_dir,
+                filename="best",
+                monitor="val_loss",
+                save_last=False,
+                save_top_k=1,
+                save_weights_only=False,
+                mode="min",
+                every_n_train_steps=checkpoint_freq,
+                enable_version_counter=False,
+                save_on_train_epoch_end=False,
+            )
+        ]
     else:
-        raise ValueError(f"Invalid dataset: {dataset}")
-    
-    # ---------------------
-    # Trainer
-    # ---------------------
+        checkpoint_callbacks = []
+
+    checkpoint_callbacks.append(
+        ModelCheckpoint(
+            dirpath=results_dir,
+            filename="last",
+            monitor="epoch",
+            save_last=False,
+            save_top_k=1,
+            save_weights_only=False,
+            mode="max",
+            every_n_epochs=1,
+            enable_version_counter=False,
+            save_on_train_epoch_end=True,
+        )
+    )
+
+    # Init trainer
     trainer = L.Trainer(
         accelerator = model_config.get("accelerator", "auto"),
         strategy = model_config.get("strategy", "auto"),
@@ -49,18 +69,7 @@ def main(
         num_nodes = model_config.get("num_nodes", 1),
         precision = model_config.get("precision", "32-true"),
         logger = TBLogger(save_dir=results_dir),
-        callbacks = [
-            ModelCheckpoint(
-                dirpath=results_dir,
-                filename="checkpoint",
-                monitor="val_loss",
-                save_last=False,
-                save_top_k=1,
-                save_weights_only=False,
-                mode="min",
-                every_n_train_steps=method_config.get("checkpoint_frequency", 1),
-            )
-        ],
+        callbacks = checkpoint_callbacks,
         fast_dev_run = method_config.get("fast_dev_run", False),
         max_epochs = method_config.get("max_epochs", 1000),
         min_epochs = method_config.get("min_epochs", 1),
@@ -85,7 +94,7 @@ def main(
         deterministic = True,
         benchmark = None,
         use_distributed_sampler = True,
-        profiler = None,
+        profiler = "simple",
         detect_anomaly = False,
         barebones = False,
         plugins = None,
@@ -94,84 +103,129 @@ def main(
         default_root_dir = results_dir,
     )
 
-    # ---------------------
-    # Model
-    # ---------------------
+    # Init datamodule and model
     task = model_config.pop("task", None)
     method = method_config.pop("method", None)
     model_type = check_model_type(model_config["checkpoint_dir"], method)
     if task == "language_model" and model_type == "litgpt" and method == "full_ft":
+        data_dir = f"experiments/{dataset}/.cache"
+        data_cache_dir = f"experiments/{dataset}/{data_fold}/{prompt}/{model}/.data_cache"
+        datamodule = LanguageModelLitGPTFineTuningDataModule(
+            dataset = dataset,
+            data_dir = data_dir,
+            data_cache_dir = data_cache_dir,
+            tokenizer_dir = model_config["checkpoint_dir"],
+            num_train_samples = data_fold_config["train_samples"],
+            num_val_samples = data_fold_config["val_samples"], 
+            num_shots = data_fold_config["shots_samples"], 
+            preshots_template = prompt_config["preshots_template"],
+            shots_template = prompt_config["shots_template"],
+            postshots_template = prompt_config["postshots_template"],
+            shots_separator = prompt_config["shots_separator"],
+            answers_templates = prompt_config["answers_templates"],
+            batch_size = method_config["batch_size"],
+            random_state = data_fold_config["random_state"],
+        )
         model_cls = LanguageModelLitGPTFullFT
-        model_init_args = {
-            "checkpoint_dir": model_config["checkpoint_dir"],
-            "embedding_pooling": model_config["embedding_pooling"],
-            "preshots_template": prompt_config["preshots_template"],
-            "shots_template": prompt_config["shots_template"],
-            "postshots_template": prompt_config["postshots_template"],
-            "shots_separator": prompt_config["shots_separator"],
-            "answers_templates": prompt_config["answers_templates"],
-            "data_load_fn": data_load_fn,
-            "data_cache_dir": f"experiments/{dataset}/{data_fold}/{prompt}/{model}/.data_cache",
-            "batch_size": method_config["batch_size"],
-            "loss_fn": method_config["loss_fn"],
-            "optimizer": method_config["optimizer"],
-            "learning_rate": method_config["learning_rate"],
-            "weight_decay": method_config["weight_decay"],
-        }
-    elif task == "language_model" and model_type == "litgpt" and method == "no_adaptation":
-        model_cls = LanguageModelLitGPTNoAdaptation
-        model_init_args = {
-            "checkpoint_dir": model_config["checkpoint_dir"],
-            "preshots_template": prompt_config["preshots_template"],
-            "shots_template": prompt_config["shots_template"],
-            "postshots_template": prompt_config["postshots_template"],
-            "shots_separator": prompt_config["shots_separator"],
-            "answers_templates": prompt_config["answers_templates"],
-            "embedding_pooling": model_config["embedding_pooling"],
-            "batch_size": method_config["batch_size"],
-            "data_load_fn": data_load_fn,
-            "data_cache_dir": f"experiments/{dataset}/{data_fold}/{prompt}/{model}/.data_cache",
-        }
+        model_init_args = dict(
+            checkpoint_dir = model_config["checkpoint_dir"],
+            embedding_pooling = model_config["embedding_pooling"],
+            loss_fn = method_config["loss_fn"],
+            optimizer = method_config["optimizer"],
+            learning_rate = method_config["learning_rate"],
+            weight_decay = method_config["weight_decay"],
+        )
     elif task == "language_model" and model_type == "litgpt" and method == "lora":
+        data_dir = f"experiments/{dataset}/.cache"
+        data_cache_dir = f"experiments/{dataset}/{data_fold}/{prompt}/{model}/.data_cache"
+        datamodule = LanguageModelLitGPTFineTuningDataModule(
+            dataset = dataset,
+            data_dir = data_dir,
+            data_cache_dir = data_cache_dir,
+            tokenizer_dir = model_config["checkpoint_dir"],
+            num_train_samples = data_fold_config["train_samples"],
+            num_val_samples = data_fold_config["val_samples"], 
+            num_shots = data_fold_config["shots_samples"], 
+            preshots_template = prompt_config["preshots_template"],
+            shots_template = prompt_config["shots_template"],
+            postshots_template = prompt_config["postshots_template"],
+            shots_separator = prompt_config["shots_separator"],
+            answers_templates = prompt_config["answers_templates"],
+            batch_size = method_config["batch_size"],
+            random_state = data_fold_config["random_state"],
+        )
         model_cls = LanguageModelLitGPTLoRA
-        model_init_args = {
-            "checkpoint_dir": model_config["checkpoint_dir"],
-            "preshots_template": prompt_config["preshots_template"],
-            "shots_template": prompt_config["shots_template"],
-            "postshots_template": prompt_config["postshots_template"],
-            "shots_separator": prompt_config["shots_separator"],
-            "answers_templates": prompt_config["answers_templates"],
-            "embedding_pooling": model_config["embedding_pooling"],
-            "batch_size": method_config["batch_size"],
-            "data_load_fn": data_load_fn,
-            "data_cache_dir": f"experiments/{dataset}/{data_fold}/{prompt}/{model}/.data_cache",
-        }
+        model_init_args = dict(
+            checkpoint_dir = model_config["checkpoint_dir"],
+            embedding_pooling = model_config["embedding_pooling"],
+            loss_fn = method_config["loss_fn"],
+            optimizer = method_config["optimizer"],
+            learning_rate = method_config["learning_rate"],
+            weight_decay = method_config["weight_decay"],
+        )
+    elif task == "language_model" and model_type == "litgpt" and method == "no_adaptation":
+        data_dir = f"experiments/{dataset}/.cache"
+        data_cache_dir = f"experiments/{dataset}/{data_fold}/{prompt}/{model}/.data_cache"
+        datamodule = LanguageModelLitGPTFineTuningDataModule(
+            dataset = dataset,
+            data_dir = data_dir,
+            data_cache_dir = data_cache_dir,
+            tokenizer_dir = model_config["checkpoint_dir"],
+            num_train_samples = data_fold_config["train_samples"],
+            num_val_samples = data_fold_config["val_samples"], 
+            num_shots = data_fold_config["shots_samples"], 
+            preshots_template = prompt_config["preshots_template"],
+            shots_template = prompt_config["shots_template"],
+            postshots_template = prompt_config["postshots_template"],
+            shots_separator = prompt_config["shots_separator"],
+            answers_templates = prompt_config["answers_templates"],
+            batch_size = method_config["batch_size"],
+            random_state = data_fold_config["random_state"],
+        )
+        model_cls = LanguageModelLitGPTNoAdaptation
+        model_init_args = dict(
+            checkpoint_dir = model_config["checkpoint_dir"],
+            embedding_pooling = model_config["embedding_pooling"],
+        )
     elif task == "language_model" and model_type == "litgpt" and method == "affine_calibration":
-        model_cls = LanguageModelLitGPTAffineCalibration
-        model_init_args = {
-            "data_cache_dir": f"experiments/{dataset}/{data_fold}/{prompt}/{model}/no_adaptation/",
-            "alpha": method_config["alpha"],
-            "beta": method_config["beta"],
-            "batch_size": method_config["batch_size"],
-            "max_ls": method_config["max_ls"],
-        }
+        data_dir = f"experiments/{dataset}/{data_fold}/{prompt}/{model}/no_adaptation/"
+        data_cache_dir = f"experiments/{dataset}/{data_fold}/{prompt}/{model}/.data_cache"
+        if os.path.exists(data_dir):
+            data = torch.load(os.path.join(data_dir, "train--logits--predict.pt"))
+            num_classes = data.shape[1]
+        else:
+            raise ValueError(f"Model with no adaptation needs to be run first.")
+        datamodule = TensorDataModule(
+            data_dir = data_dir,
+            data_cache_dir = data_cache_dir,
+            num_train_samples = data_fold_config["train_samples"],
+            num_val_samples = data_fold_config["val_samples"], 
+            random_state = data_fold_config["random_state"],
+        )
+        model_cls = AffineCalibration
+        model_init_args = dict(
+            num_classes = num_classes,
+            alpha = method_config["alpha"],
+            beta = method_config["beta"],
+            max_ls = method_config["max_ls"],
+        )
     else:
         raise ValueError(f"Invalid combination of task ({task}), checkpoint_dir ({model_config['checkpoint_dir']}) and method ({method})")
     with trainer.init_module():
         model = model_cls(**model_init_args)
 
-    # ---------------------
     # Fit the model
-    # ---------------------
-    if os.path.exists(os.path.join(results_dir, "checkpoint.ckpt")):
-        trainer.fit(model, ckpt_path=os.path.join(results_dir, "checkpoint.ckpt"))
-    else:
-        trainer.fit(model)
+    last_checkpoint_path = os.path.join(results_dir, "last.ckpt") if os.path.exists(os.path.join(results_dir, "last.ckpt")) else None
+    trainer.fit(model, datamodule=datamodule, ckpt_path=last_checkpoint_path)
 
-    # ---------------------
-    # Predict
-    # ---------------------
-    trainer.predict(model)
+    # Predict with the model
+    datamodule.setup("predict")
+    predict_dataloaders = datamodule.predict_dataloader()
+    for i, dataloader in enumerate(predict_dataloaders):
+        trainer.predict(model, dataloaders=dataloader)
+        for k, result in model.predict_outputs.items():
+            torch.save(result, os.path.join(results_dir, f"{datamodule.idx2split[i]}--{k}--predict.pt"))
+
 
 
 if __name__ == "__main__":

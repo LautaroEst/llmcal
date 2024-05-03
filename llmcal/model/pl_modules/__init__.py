@@ -1,4 +1,2 @@
-from .lm_litgpt_noadapt import LanguageModelLitGPTNoAdaptation
-from .lm_litgpt_fullft import LanguageModelLitGPTFullFT
-from .lm_litgpt_calibration import LanguageModelLitGPTAffineCalibration
-from .lm_litgpt_lora import LanguageModelLitGPTLoRA
+from .lm_litgpt import LanguageModelLitGPTFullFT, LanguageModelLitGPTLoRA, LanguageModelLitGPTNoAdaptation
+from .affine_calibration import AffineCalibration

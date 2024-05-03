@@ -9,5 +9,5 @@ max_epochs: 2
 max_steps: -1
 accumulate_grad_batches: 8
 val_check_interval: 16
-checkpoint_frequency: 4 # Every n global_steps = batch_size * accumulate_grad_batches = 32
+checkpoint_frequency: 8 # Every n global_steps = n * batch_size * accumulate_grad_batches = 32
 random_state: 734

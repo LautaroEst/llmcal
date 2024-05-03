@@ -1,4 +1,9 @@
 
 method: "no_adaptation"
-batch_size: 4
+batch_size: 1
+max_epochs: 0
+max_steps: 1
+accumulate_grad_batches: 32
+val_check_interval: null
+checkpoint_frequency: null
 random_state: 81239

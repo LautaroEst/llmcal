@@ -1,4 +1,0 @@
-train_samples: null
-val_samples: null
-shots_samples: 0
-random_state: 0

@@ -1,5 +1,4 @@
-from typing import Literal
-from .sst2 import load_sst2
+from .utils import load_dataset
 
-SUPPORTED_DATASETS = Literal["sst2", "20newsgroup", "medical_abstracts", "dbpedia", "banking77"]
+
 
