@@ -1,7 +1,7 @@
-
-preshots: ""
-shots: "Post document: \"{text}\"\nCategory: {answer}"
-postshots: "Post document: \"{text}\"\nCategory:"
+preshots_template: ""
+shots_template: "Post document: \"{text}\"\nCategory: {answer}"
+shots_separator: "\n"
+postshots_template: "Post document: \"{text}\"\nCategory:"
 answers_templates: 
     - "Atheism"
     - "Graphics"
