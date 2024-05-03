@@ -10,6 +10,7 @@ from llmcal.data.datasets.utils import SUPPORTED_DATASETS
 from llmcal.model.loggers import TBLogger
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch import seed_everything
+from lightning.pytorch.trainer.states import TrainerStatus
 
 def main(
     dataset: SUPPORTED_DATASETS,
@@ -18,11 +19,27 @@ def main(
     model: str,
     method: str,
 ):
+    
     model_config = load_yaml(f"configs/model/{model}.yaml")
     prompt_config = load_yaml(f"configs/prompt/{prompt}.yaml")
     data_fold_config = load_yaml(f"configs/fold/{data_fold}.yaml")
     method_config = load_yaml(f"configs/method/{method}.yaml")
     results_dir = f"experiments/{dataset}/{data_fold}/{prompt}/{model}/{method}"
+
+    if os.path.exists(os.path.join(results_dir, "done.txt")):
+        print(f"Experiment {results_dir} already done. Skipping.")
+        return
+    
+    logger = logging.getLogger(__name__)
+    logger.info(
+        "Running experiment with the following configuration:"
+        f"Dataset: {dataset}"
+        f"prompt: {prompt}"
+        f"data_fold: {data_fold},"
+        f"model: {model}"
+        f"method: {method}"
+    )
+
     os.makedirs(results_dir, exist_ok=True)
     setup_logger(results_dir)
     seed_everything(method_config.get("random_state", 0))
@@ -218,15 +235,21 @@ def main(
     last_checkpoint_path = os.path.join(results_dir, "last.ckpt") if os.path.exists(os.path.join(results_dir, "last.ckpt")) else None
     trainer.fit(model, datamodule=datamodule, ckpt_path=last_checkpoint_path)
 
+    if trainer.state.status == TrainerStatus.INTERRUPTED:
+        return
+
     # Predict with the model
     datamodule.setup("predict")
     predict_dataloaders = datamodule.predict_dataloader()
     for i, dataloader in enumerate(predict_dataloaders):
         trainer.predict(model, dataloaders=dataloader)
+        if trainer.state.status == TrainerStatus.INTERRUPTED:
+            return
         for k, result in model.predict_outputs.items():
             torch.save(result, os.path.join(results_dir, f"{datamodule.idx2split[i]}--{k}--predict.pt"))
-
-
+    
+    with open(os.path.join(results_dir, "done.txt"), "w") as f:
+        f.write(results_dir)
 
 if __name__ == "__main__":
     from fire import Fire
