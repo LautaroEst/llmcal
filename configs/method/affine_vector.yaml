@@ -1,7 +1,9 @@
 
 method: "affine_calibration"
+precision: 32
 alpha: "vector"
 beta: True
-max_epochs: 20
+max_epochs: 80
 max_ls: 40
+learning_rate: 0.005
 random_state: 81239

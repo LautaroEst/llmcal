@@ -188,6 +188,7 @@ class _LanguageModelLitGPT(L.LightningModule):
         for k, v in self.predict_outputs.items():
             predict_outputs[k] = torch.cat(v, dim=0)
         self.predict_outputs = predict_outputs
+        self.train()
     
     def _pool_embeddings(self, embeddings: torch.Tensor) -> torch.Tensor:
         if self.embedding_pooling == "mean":

@@ -1,6 +1,10 @@
 
 import numpy as np
 from .sst2 import load_sst2
+from .banking77 import load_banking
+from .dbpedia import load_dbpedia
+from .medical_abstracts import load_medical_abstracts
+from .newsgroup import load_newsgroup
 from .tensor import load_tensor_dataset
 from typing import Literal
 from datasets import Dataset
@@ -9,6 +13,10 @@ SUPPORTED_DATASETS = Literal["sst2", "20newsgroup", "medical_abstracts", "dbpedi
 dataset2load_fn = {
     "tensor": load_tensor_dataset,
     "sst2": load_sst2,
+    "20newsgroup": load_newsgroup,
+    "medical_abstracts": load_medical_abstracts,
+    "dbpedia": load_dbpedia,
+    "banking77": load_banking
 }
 
 def sample_and_shuffle(dataset, num_samples, random_state):

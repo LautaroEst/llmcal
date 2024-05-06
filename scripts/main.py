@@ -18,6 +18,7 @@ def main(
     data_fold: str,
     model: str,
     method: str,
+    **mods,
 ):
     
     model_config = load_yaml(f"configs/model/{model}.yaml")
@@ -25,6 +26,18 @@ def main(
     data_fold_config = load_yaml(f"configs/fold/{data_fold}.yaml")
     method_config = load_yaml(f"configs/method/{method}.yaml")
     results_dir = f"experiments/{dataset}/{data_fold}/{prompt}/{model}/{method}"
+    for m in mods:
+        m_config, m_mod = m.split(".")
+        if m_config == "model":
+            model_config[m_mod] = mods[m]
+        elif m_config == "prompt":
+            prompt_config[m_mod] = mods[m]
+        elif m_config == "data_fold":
+            data_fold_config[m_mod] = mods[m]
+        elif m_config == "method":
+            method_config[m_mod] = mods[m]
+        else:
+            raise ValueError(f"Invalid mod: {m}")
 
     if os.path.exists(os.path.join(results_dir, "done.txt")):
         print(f"Experiment {results_dir} already done. Skipping.")
@@ -79,12 +92,13 @@ def main(
     )
 
     # Init trainer
+    precision = model_config.get("precision", "32-true") if method_config.get("precision", None) is None else method_config.get("precision")
     trainer = L.Trainer(
         accelerator = model_config.get("accelerator", "auto"),
         strategy = model_config.get("strategy", "auto"),
         devices = model_config.get("devices", "auto"),
         num_nodes = model_config.get("num_nodes", 1),
-        precision = model_config.get("precision", "32-true"),
+        precision = precision,
         logger = TBLogger(save_dir=results_dir),
         callbacks = checkpoint_callbacks,
         fast_dev_run = method_config.get("fast_dev_run", False),
@@ -225,6 +239,7 @@ def main(
             alpha = method_config["alpha"],
             beta = method_config["beta"],
             max_ls = method_config["max_ls"],
+            learning_rate = method_config["learning_rate"],
         )
     else:
         raise ValueError(f"Invalid combination of task ({task}), checkpoint_dir ({model_config['checkpoint_dir']}) and method ({method})")
