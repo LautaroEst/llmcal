@@ -58,8 +58,9 @@ class DynamicPaddingCollator:
         max_ans_len = max([max([ans.shape[0] for ans in sample["answers_ids"]]) for sample in batch])
         max_prompt_len = min(self.max_seq_len - max_ans_len, max([sample["prompt_ids"].shape[0] for sample in batch]))
         for sample in batch:
-            prompts_ids.append(torch.cat([torch.ones(max_prompt_len - sample["prompt_ids"].shape[0], dtype=torch.long) * self.pad_token_id, sample["prompt_ids"]]))
-            prompt_masks.append(torch.cat([torch.zeros(max_prompt_len - sample["prompt_ids"].shape[0], dtype=torch.long), torch.ones(sample["prompt_ids"].shape[0], dtype=torch.long)]))
+            seq = sample["prompt_ids"][-max_prompt_len:]
+            prompts_ids.append(torch.cat([torch.ones(max_prompt_len - seq.shape[0], dtype=torch.long) * self.pad_token_id, seq]))
+            prompt_masks.append(torch.cat([torch.zeros(max_prompt_len - seq.shape[0], dtype=torch.long), torch.ones(seq.shape[0], dtype=torch.long)]))
             answers_ids.append(sample["answers_ids"])
         return {
             "idx": torch.stack([sample["idx"] for sample in batch]),
