@@ -9,7 +9,7 @@ import torch
 from litgpt.lora import Config as LoraConfig, mark_only_lora_as_trainable, lora_filter, merge_lora_weights
 from litgpt import Config
 from lightning.fabric.utilities.load import _lazy_load as lazy_load
-from torchmetrics.aggregation import MeanMetric
+from lightning.pytorch.trainer.states import RunningStage
 
 from .utils import init_lora_linear_modules
 from ..base_classes import LitGPTLoRA, LitGPT
@@ -21,8 +21,6 @@ class _LanguageModelLitGPT(L.LightningModule):
 
     def __init__(self):
         super().__init__()
-        self.val_ce_per_token = MeanMetric()
-        self.train_ce_per_token = MeanMetric()
         self.last_global_step = 0
 
     # --------------------------------------------------------------------------------------------
@@ -46,7 +44,8 @@ class _LanguageModelLitGPT(L.LightningModule):
 
     def on_train_epoch_start(self) -> None:
         self.cum_indices_counts = 0
-        self.train_ce_per_token.reset()
+        self.cum_train_ce = 0.
+        self.cum_num_tokens = 0
     
     def training_step(self, batch, batch_idx):
         prompt_ids = batch["prompt_ids"]
@@ -69,7 +68,8 @@ class _LanguageModelLitGPT(L.LightningModule):
             num_tokens = num_tokens + index.shape[1]
             indices_counts = indices_counts + torch.bincount(index.view(-1), minlength=logprobs.shape[2])
 
-        self.train_ce_per_token.update(loss / num_tokens, num_tokens)
+        self.cum_train_ce += loss.item()
+        self.cum_num_tokens += num_tokens
         self.cum_indices_counts = self.cum_indices_counts + indices_counts
         return {"loss": loss / num_tokens, "num_tokens": num_tokens, "indices_counts": indices_counts}
     
@@ -78,18 +78,17 @@ class _LanguageModelLitGPT(L.LightningModule):
         if self.last_global_step == self.global_step:
             return
 
-        ce_per_token = self.train_ce_per_token.compute()
-
         priors = self.cum_indices_counts.float() / self.cum_indices_counts.sum()
         naive_ce_per_token = -torch.sum(priors[priors > 0] * torch.log(priors[priors > 0]))
 
         self.logger.log_metrics({
-            "train/norm_ce_per_token": ce_per_token / naive_ce_per_token,
-            "train/ce_per_token": ce_per_token,
+            "train/norm_ce_per_token": self.cum_train_ce / self.cum_num_tokens / naive_ce_per_token,
+            "train/ce_per_token": self.cum_train_ce / self.cum_num_tokens,
         }, step=self.global_step)
 
         self.cum_indices_counts = 0
-        self.train_ce_per_token.reset()
+        self.cum_train_ce = 0.
+        self.cum_num_tokens = 0
         self.last_global_step = self.global_step
 
     # --------------------------------------------------------------------------------------------
@@ -100,7 +99,8 @@ class _LanguageModelLitGPT(L.LightningModule):
 
     def on_validation_epoch_start(self) -> None:
         self.cum_indices_counts = 0
-        self.val_ce_per_token.reset()
+        self.cum_val_ce = 0.
+        self.cum_val_tokens = 0
 
     def validation_step(self, batch, batch_idx):
         prompt_ids = batch["prompt_ids"]
@@ -124,19 +124,20 @@ class _LanguageModelLitGPT(L.LightningModule):
             indices_counts = indices_counts + torch.bincount(index.view(-1), minlength=logprobs.shape[2])
 
         self.cum_indices_counts = self.cum_indices_counts + indices_counts
-        self.val_ce_per_token.update(loss / num_tokens, num_tokens)
-        val_ce_per_token = self.val_ce_per_token.compute()
-        return {"val/ce_per_token": val_ce_per_token}
+        self.cum_val_ce += loss.item()
+        self.cum_val_tokens += num_tokens
+        return {"val/ce_per_token": loss / num_tokens}
 
     def on_validation_epoch_end(self) -> None:
-        val_ce_per_token = self.val_ce_per_token.compute()
+        val_ce_per_token = self.cum_val_ce / self.cum_val_tokens
         priors = self.cum_indices_counts.float() / self.cum_indices_counts.sum()
-        naive_ce_per_token = -torch.sum(priors[priors > 0] * torch.log(priors[priors > 0]))
+        naive_ce_per_token = -torch.sum(priors[priors > 0] * torch.log(priors[priors > 0])).item()
         val_norm_ce_per_token = val_ce_per_token / naive_ce_per_token
-        self.logger.log_metrics({
-            "val/norm_ce_per_token": val_norm_ce_per_token,
-            "val/ce_per_token": val_ce_per_token,
-        }, step=self.global_step)
+        if self.trainer.state.stage != RunningStage.SANITY_CHECKING:
+            self.logger.log_metrics({
+                "val/norm_ce_per_token": val_norm_ce_per_token,
+                "val/ce_per_token": val_ce_per_token,
+            }, step=self.global_step)
         self.log("val_loss", val_ce_per_token, logger=False, on_epoch=True, batch_size=1)
 
     def on_validation_model_train(self) -> None:
@@ -331,8 +332,6 @@ class LanguageModelLitGPTLoRA(_LanguageModelLitGPT):
         self._weight_decay = weight_decay
 
         # Metrics
-        self.val_ce_per_token = MeanMetric()
-        self.train_ce_per_token = MeanMetric()
         self.last_global_step = 0
 
     def on_fit_end(self) -> None:
@@ -426,6 +425,22 @@ class LanguageModelLitGPTNoAdaptation(_LanguageModelLitGPT):
             src_path = self.checkpoint_dir / file_name
             if src_path.exists():
                 shutil.copy(src_path, self.trainer.default_root_dir)
+
+    def on_predict_start(self) -> None:
+        maybe_computed_outputs = self.checkpoint_dir.glob("*--predict.pt")
+        if not maybe_computed_outputs:
+            self.eval()
+            return
+        
+        for path in maybe_computed_outputs:
+            os.symlink(path, os.path.join(self.trainer.default_root_dir, path.name))
+
+        with open(os.path.join(self.trainer.default_root_dir, "done.txt"), "w") as f:
+            f.write(self.trainer.default_root_dir)
+
+        raise KeyboardInterrupt("Predictions already computed, exiting...")
+
+
 
 
 

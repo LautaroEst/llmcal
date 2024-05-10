@@ -1,8 +1,0 @@
-
-
-checkpoint_dir: "/home/lestienne/Documents/llmcal/experiments/sst2/n=100_rs=738/prefix_basic_sst2/lm_tinyllama_3T_bf16/full_ft"
-task: "language_model"
-
-accelerator: "gpu"
-devices: 1
-precision: "bf16-true"

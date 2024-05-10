@@ -1,0 +1,11 @@
+
+preshots_template: ""
+shots_template: "Patient description: \"{abstract}\"\nPathology:"
+shots_separator: "\n"
+postshots_template: "Patient description: \"{abstract}\"\nPathology:"
+answers_templates: 
+  - "Neoplasm"
+  - "Digestive system disease"
+  - "Nervous system disease"
+  - "Cardiovascular disease"
+  - "General pathological condition"

@@ -5,9 +5,11 @@ import pandas as pd
 
 def load_medical_abstracts(data_dir):
     if not os.path.exists(data_dir):
+        train_df = pd.read_csv("data/Medical-Abstracts-TC-Corpus/medical_tc_train.csv").rename(columns={"condition_label": "label", "medical_abstract": "abstract"})
+        test_df = pd.read_csv("data/Medical-Abstracts-TC-Corpus/medical_tc_test.csv").rename(columns={"condition_label": "label", "medical_abstract": "abstract"})
         datadict = DatasetDict({
-            "train": Dataset.from_pandas(pd.read_csv("data/Medical-Abstracts-TC-Corpus/medical_tc_train.csv")),
-            "test": Dataset.from_pandas(pd.read_csv("data/Medical-Abstracts-TC-Corpus/medical_tc_test.csv"))
+            "train": Dataset.from_pandas(train_df),
+            "test": Dataset.from_pandas(test_df)
         })
         datadict["train"] = datadict["train"].add_column("idx", np.arange(len(datadict["train"])))
         datadict["test"] = datadict["test"].add_column("idx", np.arange(len(datadict["test"])))

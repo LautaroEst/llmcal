@@ -1,0 +1,8 @@
+
+
+checkpoint_dir: "/home/lestienne/Documents/llmcal/experiments/sst2/n=100_rs=738/prefix_basic_sst2/lm_tinyllama/lora_r=8"
+task: "language_model"
+
+accelerator: "gpu"
+devices: 1
+precision: "bf16-true"
