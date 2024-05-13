@@ -12,8 +12,7 @@ val_check_interval: 128
 checkpoint_frequency: 2048 # Every n global_steps = n * batch_size * accumulate_grad_batches = 32
 random_state: 734
 
-use_lora_checkpoint: False
-lora_r: 8
+lora_r: 64
 lora_alpha: 16
 lora_dropout: 0.05
 lora_query: True

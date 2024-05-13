@@ -6,7 +6,9 @@ import pandas as pd
 def load_medical_abstracts(data_dir):
     if not os.path.exists(data_dir):
         train_df = pd.read_csv("data/Medical-Abstracts-TC-Corpus/medical_tc_train.csv").rename(columns={"condition_label": "label", "medical_abstract": "abstract"})
+        train_df["label"] = train_df["label"] - 1
         test_df = pd.read_csv("data/Medical-Abstracts-TC-Corpus/medical_tc_test.csv").rename(columns={"condition_label": "label", "medical_abstract": "abstract"})
+        test_df["label"] = test_df["label"] - 1
         datadict = DatasetDict({
             "train": Dataset.from_pandas(train_df),
             "test": Dataset.from_pandas(test_df)

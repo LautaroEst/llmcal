@@ -7,7 +7,7 @@ def load_banking(data_dir):
     if not os.path.exists(data_dir):
         datadict = load_dataset("PolyAI/banking77")
         datadict["train"] = datadict["train"].add_column("idx", np.arange(len(datadict["train"])))
-        datadict["test"] = datadict["test"].add_column("idx", np.arange(len(datadict["train"])), len(datadict["train"])+len(datadict["test"]))
+        datadict["test"] = datadict["test"].add_column("idx", np.arange(len(datadict["train"]), len(datadict["train"])+len(datadict["test"])))
         all_data = concatenate_datasets([datadict["train"], datadict["test"]])
         rs = np.random.RandomState(7348)
         idx = rs.permutation(len(all_data))

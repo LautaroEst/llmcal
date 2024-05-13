@@ -427,7 +427,7 @@ class LanguageModelLitGPTNoAdaptation(_LanguageModelLitGPT):
                 shutil.copy(src_path, self.trainer.default_root_dir)
 
     def on_predict_start(self) -> None:
-        maybe_computed_outputs = self.checkpoint_dir.glob("*--predict.pt")
+        maybe_computed_outputs = list(self.checkpoint_dir.glob("*--predict.pt"))
         if not maybe_computed_outputs:
             self.eval()
             return

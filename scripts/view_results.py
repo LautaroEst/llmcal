@@ -64,7 +64,8 @@ def main(
                     methods = [d for d in os.listdir(os.path.join("experiments", dataset, fold, prompt, model)) if not d.startswith(".")]
                     for method in methods:
                         for split in splits:
-                            if not os.path.exists(os.path.join("experiments", dataset, fold, prompt, model, method, f"{split}--logits--predict.pt")):
+                            path = os.path.join("experiments", dataset, fold, prompt, model, method, f"{split}--logits--predict.pt")
+                            if not os.path.exists(path) or ".old" in path:
                                 continue
                             logits = torch.load(os.path.join("experiments", dataset, fold, prompt, model, method, f"{split}--logits--predict.pt"))
                             labels = torch.load(os.path.join("experiments", dataset, fold, prompt, model, method, f"{split}--label--predict.pt"))
@@ -101,7 +102,7 @@ def main(
     ).reset_index()
     results = results.sort_values(["dataset", "prompt", "model", "split", metrics[0]])
 
-    print(results)
+    print(results.loc[:,["dataset","split","method","error_rate","norm_cross_entropy"]])
 
 
 
