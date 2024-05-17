@@ -1,9 +1,0 @@
-
-
-checkpoint_dir: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
-task: "language_model"
-embedding_pooling: "last"
-
-accelerator: "gpu"
-devices: 1
-precision: "bf16-true"

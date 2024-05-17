@@ -1,5 +1,0 @@
-- Buscar referencias de entrenamiento con LoRA y Full FT para las bases de datos que usamos
-- Determinar los prompts a usar
-- Correr No adaptation y calibration (defaults hiperparámetros) con toda la base de datos
-- Finetunear LoRA y FullFT (búsqueda de hiperparámetros) con toda la base de datos
-- Repetir para todas las bases de datos
