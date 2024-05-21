@@ -3,6 +3,7 @@ preshots_template: ""
 shots_template: "Article: \"{content}\"\nCategory: {answer}"
 shots_separator: "\n"
 postshots_template: "\nArticle: \"{content}\"\nCategory:"
+num_shots: 0
 answers_templates: 
   - "Company"
   - "Educational Institution"

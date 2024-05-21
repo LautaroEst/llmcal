@@ -1,4 +1,5 @@
 
+import os
 import numpy as np
 from .sst2 import load_sst2
 # from .banking77 import load_banking
@@ -6,7 +7,7 @@ from .dbpedia import load_dbpedia
 # from .medical_abstracts import load_medical_abstracts
 # from .newsgroup import load_newsgroup
 from typing import Literal
-from datasets import Dataset
+from datasets import Dataset, load_from_disk
 
 
 SUPPORTED_DATASETS = Literal["sst2", "20newsgroup", "medical_abstracts", "dbpedia", "banking77"]
@@ -37,7 +38,10 @@ def sample_and_shuffle(dataset, num_samples, random_state):
 
 
 def load_dataset(dataset_name, num_train_samples, num_val_samples, num_shots, random_state = 0):
-    load_fn = dataset2load_fn[dataset_name]
+    if dataset_name in dataset2load_fn:
+        load_fn = dataset2load_fn[dataset_name]
+    else:
+        load_fn = lambda: {split: load_from_disk(os.path.join(dataset_name, split)) for split in ["train", "validation", "test"]}
     train_datadict = load_fn()
     train_datadict["train"] = sample_and_shuffle(train_datadict["train"], num_train_samples, random_state)
     train_datadict["validation"] = sample_and_shuffle(train_datadict["validation"], num_val_samples, random_state)

@@ -1,4 +1,0 @@
-train_samples: 9200
-val_samples: 800
-num_shots: 0
-random_state: 6273

@@ -1,16 +1,16 @@
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from pathlib import Path
 from typing import List, Literal, Optional
 from datasets import Dataset
 
 import torch
 import lightning as L
-from litgpt.lora import GPT, LoRALinear, lora_filter
+from litgpt import GPT
 from lightning.pytorch.trainer.states import RunningStage
     
 
-class LitGPTLoRA(GPT):
+class LitGPTFullFT(GPT):
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None, output_last_hidden_state: bool = True) -> torch.Tensor:
         T = idx.size(1)
         if self.max_seq_length < T:
@@ -44,20 +44,12 @@ class LitGPTLoRA(GPT):
 
 
 
-def init_lora_linear_modules(module):
-    if isinstance(module, LoRALinear):
-        module.reset_parameters()
-    else:
-        for child in module.children():
-            init_lora_linear_modules(child)
 
-
-
-class LanguageModelLitGPTLoRA(L.LightningModule):
+class LanguageModelLitGPTFullFT(L.LightningModule):
 
     def __init__(
         self,
-        gpt: LitGPTLoRA,
+        gpt: LitGPTFullFT,
         optimizer: Literal["adamw", "sgd"] = "adamw",
         learning_rate: float = 1e-4,
         weight_decay: float = 0.0,
@@ -130,6 +122,7 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
     def on_validation_epoch_start(self) -> None:
         self.val_cum_loss = 0.
         self.val_cum_num_tokens = 0
+        self.eval()
 
     def validation_step(self, batch, batch_idx):
         return self._shared_train_val_step(batch, batch_idx)
@@ -151,18 +144,12 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
                 self.trainer.save_checkpoint(
                     Path(self.trainer.default_root_dir) / "best.ckpt"
                 )
+        self.train()
 
     def on_save_checkpoint(self, checkpoint: dict) -> None:
-        checkpoint["state_dict"] = OrderedDict([
-            (k, v) for k, v in checkpoint["state_dict"].items() if lora_filter(k,v)
-        ])
         checkpoint["best_val_loss"] = self.best_val_loss
 
     def on_load_checkpoint(self, checkpoint: dict) -> None:
-        # Add all parameters to state_dict
-        for k, v in self.state_dict().items():
-            if k not in checkpoint["state_dict"]:
-                checkpoint["state_dict"][k] = v
         self.best_val_loss = checkpoint["best_val_loss"]
 
     def on_predict_start(self) -> None:
@@ -219,6 +206,7 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
         for k, v in self.predict_outputs.items():
             predict_outputs[k] = torch.cat(v, dim=0)
         self.predict_outputs = Dataset.from_dict(predict_outputs)
+        self.train()    
         
         
         

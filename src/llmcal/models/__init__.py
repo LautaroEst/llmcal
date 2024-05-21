@@ -1,0 +1,1 @@
+SUPPORTED_LITGPT_MODELS = ["lm_tinyllama"]
