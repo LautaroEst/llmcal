@@ -2,21 +2,23 @@
 import os
 import numpy as np
 from .sst2 import load_sst2
-# from .banking77 import load_banking
+from .banking77 import load_banking
 from .dbpedia import load_dbpedia
-# from .medical_abstracts import load_medical_abstracts
-# from .newsgroup import load_newsgroup
+from .medical_abstracts import load_medical_abstracts
+from .newsgroup import load_newsgroup
+from .agnews import load_agnews
 from typing import Literal
 from datasets import Dataset, load_from_disk
 
 
-SUPPORTED_DATASETS = Literal["sst2", "20newsgroup", "medical_abstracts", "dbpedia", "banking77"]
+SUPPORTED_DATASETS = Literal["sst2", "dbpedia", "agnews", "20newsgroup", "medical_abstracts", "banking77"]
 dataset2load_fn = {
     "sst2": load_sst2,
-    # "20newsgroup": load_newsgroup,
-    # "medical_abstracts": load_medical_abstracts,
     "dbpedia": load_dbpedia,
-    # "banking77": load_banking
+    "agnews": load_agnews,
+    "20newsgroup": load_newsgroup,
+    "medical_abstracts": load_medical_abstracts,
+    "banking77": load_banking
 }
 
 def sample_and_shuffle(dataset, num_samples, random_state):
