@@ -84,7 +84,8 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
         for input_ids, attention_mask in zip(prompt_ids, prompt_mask):
             input_ids = input_ids[attention_mask == 1].unsqueeze(0)
             T = input_ids.size(1)
-            logprobs = self(input_ids, torch.arange(0, T), False)["logits"][:,:-1,:].log_softmax(dim=2)
+            input_pos = torch.arange(0, T, device=input_ids.device, dtype=input_ids.dtype)
+            logprobs = self(input_ids, input_pos, False)["logits"][:,:-1,:].log_softmax(dim=2)
             index = input_ids[:,1:].unsqueeze(2)
             gather_logprobs = torch.gather(logprobs, -1, index).squeeze(2)
             loss = loss - gather_logprobs.sum()
@@ -167,9 +168,10 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
         last_emb, mean_emb, max_emb = [], [], []
         logits = []
         for input_ids, attention_mask, answers in zip(prompt_ids, prompt_mask, answers_ids):
-            T = torch.sum(attention_mask)
             input_ids = input_ids[attention_mask == 1].unsqueeze(0)
-            output = self(input_ids, torch.arange(0, T), True)
+            T = torch.sum(attention_mask)
+            input_pos = torch.arange(0, T, device=input_ids.device, dtype=input_ids.dtype)
+            output = self(input_ids, input_pos, True)
             answers_logits = []
             for answer in answers:
                 answer = answer.unsqueeze(0)
