@@ -15,7 +15,8 @@ precision: "bf16-true"
 batch_size: 1
 accumulate_grad_batches: 64
 val_check_interval: 512
-max_epochs: 8
+# max_epochs: 8
+max_epochs: 1
 max_steps: -1
 optimizer: "adamw"
 learning_rate: 0.0001

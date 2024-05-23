@@ -42,7 +42,6 @@ def main(
     preshots_template: str, 
     shots_template: str,
     postshots_template: str,
-    shots_separator: str,
     answers_templates: List[str],
     checkpoint_dir: str,
     batch_size: int = 32,
@@ -61,7 +60,7 @@ def main(
     _, prediction_datadict, shots = load_dataset(dataset, train_samples, val_samples, num_shots, random_state)
 
     # Load and train prompt
-    prompt = LitGPTPrompt(preshots_template, shots_template, postshots_template, shots_separator, answers_templates)
+    prompt = LitGPTPrompt(preshots_template, shots_template, postshots_template, answers_templates)
     prompt.fit(shots)
     
     # Load tokenizer and config
@@ -88,7 +87,7 @@ def main(
     # Init base model
     with trainer.init_module(empty_init=True):
         gpt = LitGPTFullFT(config)
-        gpt.set_kv_cache(batch_size=1)
+        gpt.set_kv_cache(batch_size=batch_size)
     
     checkpoint_path = checkpoint_dir / "lit_model.pth"
     checkpoint = lazy_load(checkpoint_path)
@@ -101,8 +100,7 @@ def main(
     def transform(sample):
         """Transform a sample from the dataset to a format that can be processed by the model."""
         filled_prompt = prompt.transform(**sample)
-        prompt_with_answer = f"{filled_prompt['prompt']} {filled_prompt['answers'][sample['label']]}"
-        prompt_ids = tokenizer.encode(prompt_with_answer, bos=True)
+        prompt_ids = tokenizer.encode(filled_prompt["prompt"], bos=True)
         answers_ids = [tokenizer.encode(ans, bos=True)[1:] for ans in filled_prompt["answers"]]
         return {"idx": sample["idx"], "prompt_ids": prompt_ids, "answers_ids": answers_ids, "label": sample["label"]}
     

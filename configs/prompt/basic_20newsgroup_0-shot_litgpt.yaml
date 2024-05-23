@@ -1,7 +1,6 @@
 preshots_template: ""
-shots_template: "Post document: \"{text}\"\nCategory: {answer}"
-shots_separator: "\n"
-postshots_template: "\nPost document: \"{text}\"\nCategory:"
+shots_template: "Post document: \"{text}\"\nCategory: {answer}\n"
+postshots_template: "Post document: \"{text}\"\nCategory:"
 num_shots: 0
 answers_templates: 
     - "Atheism"

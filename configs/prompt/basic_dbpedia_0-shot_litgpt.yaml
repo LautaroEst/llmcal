@@ -1,8 +1,7 @@
 
 preshots_template: ""
-shots_template: "Article: \"{content}\"\nCategory: {answer}"
-shots_separator: "\n"
-postshots_template: "\nArticle: \"{content}\"\nCategory:"
+shots_template: "Article: \"{content}\"\nCategory: {answer}\n"
+postshots_template: "Article: \"{content}\"\nCategory:"
 num_shots: 0
 answers_templates: 
   - "Company"

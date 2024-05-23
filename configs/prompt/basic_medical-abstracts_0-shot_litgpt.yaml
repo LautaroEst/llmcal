@@ -1,8 +1,7 @@
 
 preshots_template: ""
-shots_template: "Description of medical condition: \"{abstract}\"\nCondition type:"
-shots_separator: "\n"
-postshots_template: "\nDescription of medical condition: \"{abstract}\"\nCondition type:"
+shots_template: "Description of medical condition: \"{abstract}\"\nCondition type: {answer}\n"
+postshots_template: "Description of medical condition: \"{abstract}\"\nCondition type:"
 num_shots: 0
 answers_templates: 
   - "Neoplasm"

@@ -2,11 +2,10 @@ import re
 
 class LitGPTPrompt:
 
-    def __init__(self, preshots_template, shots_template, postshots_template, shots_separator, answers_templates):
+    def __init__(self, preshots_template, shots_template, postshots_template, answers_templates):
         self.preshots_template = preshots_template
         self.shots_template = shots_template
         self.postshots_template = postshots_template
-        self.shots_separator = shots_separator
         self.answers_templates = answers_templates
 
     def fit(self, dataset):
@@ -21,10 +20,7 @@ class LitGPTPrompt:
             shot["answer"] = self.answers_templates[shot["label"]].format(**{feature: shot[feature] for feature in self.answers_features[shot["label"]]})
             shots_features = {feature: shot[feature] for feature in self.shots_features}
             filled_shot = self.shots_template.format(**shots_features)
-            if i == len(dataset) - 1:
-                shot_prompt += filled_shot
-            else:
-                shot_prompt += filled_shot + self.shots_separator
+            shot_prompt += filled_shot
         self.shot_prompt = shot_prompt
         return self
 
@@ -52,7 +48,6 @@ if __name__ == "__main__":
         preshots_template="What is the color of the {animal}?\n",
         shots_template="The color of the {animal} is {answer}.",
         postshots_template="\nWhat is the color of the {animal}? ",
-        shots_separator="\n",
         answers_templates=["Black and {size}", "White"]
     )
     prompt.fit(dataset[:3])

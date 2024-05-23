@@ -83,6 +83,22 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
     def forward(self, idx: torch.Tensor, input_pos: Optional[torch.Tensor] = None, output_last_hidden_state: bool = True) -> torch.Tensor:
         return self.gpt(idx, input_pos, output_last_hidden_state)
 
+    # def _shared_train_val_step(self, batch, batch_idx):
+    #     prompt_ids = batch["prompt_ids"]
+    #     prompt_mask = batch["prompt_mask"]
+        
+    #     loss = 0
+    #     num_tokens = 0
+    #     for input_ids, attention_mask in zip(prompt_ids, prompt_mask):
+    #         input_ids = input_ids[attention_mask == 1].unsqueeze(0)
+    #         logprobs = self(input_ids, None, False)["logits"][:,:-1,:].log_softmax(dim=2)
+    #         index = input_ids[:,1:].unsqueeze(2)
+    #         gather_logprobs = torch.gather(logprobs, -1, index).squeeze(2)
+    #         loss = loss - gather_logprobs.sum()
+    #         num_tokens = num_tokens + index.size(1)
+
+    #     return {f"loss": loss / num_tokens, "cum_loss": loss, "num_tokens": num_tokens}
+
     def _shared_train_val_step(self, batch, batch_idx):
         prompt_ids = batch["prompt_ids"]
         prompt_mask = batch["prompt_mask"]
@@ -91,9 +107,7 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
         num_tokens = 0
         for input_ids, attention_mask in zip(prompt_ids, prompt_mask):
             input_ids = input_ids[attention_mask == 1].unsqueeze(0)
-            T = input_ids.size(1)
-            input_pos = torch.arange(0, T, device=input_ids.device, dtype=input_ids.dtype)
-            logprobs = self(input_ids, input_pos, False)["logits"][:,:-1,:].log_softmax(dim=2)
+            logprobs = self(input_ids, None, False)["logits"][:,:-1,:].log_softmax(dim=2)
             index = input_ids[:,1:].unsqueeze(2)
             gather_logprobs = torch.gather(logprobs, -1, index).squeeze(2)
             loss = loss - gather_logprobs.sum()

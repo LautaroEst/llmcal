@@ -7,6 +7,9 @@ from .scripts.litgpt_full_ft import main as litgpt_full_ft
 from .scripts.affine_calibration import main as affine_calibration, AFFINE_METHODS
 from .models import SUPPORTED_LITGPT_MODELS
 
+import datasets
+datasets.disable_caching()
+
 def main(
     dataset: str,
     prompt: str,
