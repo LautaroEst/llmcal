@@ -11,13 +11,13 @@ from typing import Literal
 from datasets import Dataset, load_from_disk
 
 
-SUPPORTED_DATASETS = Literal["sst2", "dbpedia", "agnews", "20newsgroup", "medical_abstracts", "banking77"]
+SUPPORTED_DATASETS = Literal["sst2", "dbpedia", "agnews", "20newsgroup", "medical-abstracts", "banking77"]
 dataset2load_fn = {
     "sst2": load_sst2,
     "dbpedia": load_dbpedia,
     "agnews": load_agnews,
     "20newsgroup": load_newsgroup,
-    "medical_abstracts": load_medical_abstracts,
+    "medical-abstracts": load_medical_abstracts,
     "banking77": load_banking
 }
 

@@ -83,7 +83,8 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
         num_tokens = 0
         for input_ids, attention_mask in zip(prompt_ids, prompt_mask):
             input_ids = input_ids[attention_mask == 1].unsqueeze(0)
-            logprobs = self(input_ids, None, False)["logits"][:,:-1,:].log_softmax(dim=2)
+            T = input_ids.size(1)
+            logprobs = self(input_ids, torch.arange(0, T), False)["logits"][:,:-1,:].log_softmax(dim=2)
             index = input_ids[:,1:].unsqueeze(2)
             gather_logprobs = torch.gather(logprobs, -1, index).squeeze(2)
             loss = loss - gather_logprobs.sum()
@@ -168,7 +169,7 @@ class LanguageModelLitGPTFullFT(L.LightningModule):
         for input_ids, attention_mask, answers in zip(prompt_ids, prompt_mask, answers_ids):
             T = torch.sum(attention_mask)
             input_ids = input_ids[attention_mask == 1].unsqueeze(0)
-            output = self(input_ids, None, True)
+            output = self(input_ids, torch.arange(0, T), True)
             answers_logits = []
             for answer in answers:
                 answer = answer.unsqueeze(0)

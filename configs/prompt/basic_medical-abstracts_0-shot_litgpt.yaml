@@ -1,8 +1,8 @@
 
 preshots_template: ""
-shots_template: "Patient description: \"{abstract}\"\nPathology:"
+shots_template: "Description of medical condition: \"{abstract}\"\nCondition type:"
 shots_separator: "\n"
-postshots_template: "\nPatient description: \"{abstract}\"\nPathology:"
+postshots_template: "\nDescription of medical condition: \"{abstract}\"\nCondition type:"
 num_shots: 0
 answers_templates: 
   - "Neoplasm"

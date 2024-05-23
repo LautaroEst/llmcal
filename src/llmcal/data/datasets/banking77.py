@@ -16,3 +16,11 @@ def load_banking():
     datadict["validation"] = all_data.select(val_idx)
     datadict["test"] = all_data.select(test_idx)
     return datadict
+
+
+if __name__ == "__main__":
+    dataset = load_banking()
+    for split in ["train", "validation", "test"]:
+        print(f"Split: {split}")
+        for i, n in dataset[split].to_pandas()["label"].value_counts().sort_index().items():
+            print(f"Class {i}: {n} samples")
