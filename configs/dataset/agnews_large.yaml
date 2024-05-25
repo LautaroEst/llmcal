@@ -1,0 +1,4 @@
+dataset: "agnews"
+train_samples: 1800
+val_samples: 200
+random_state: 738

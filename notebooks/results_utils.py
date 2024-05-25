@@ -31,7 +31,7 @@ dataset_short2name = {
     "dbpedia": "DBPedia",
     "agnews": "AGNews",
     "banking77": "Banking77",
-    "20newsgroup": "20NewsGroup",
+    "20newsgroups": "20NewsGroups",
     "medical-abstracts": "Medical Abstracts",
 }
 
@@ -98,25 +98,37 @@ def _compute_metric(logits, targets, metric):
 
 
 def compute_metric(logits, targets, metric, bootstrap, random_state):
+
     if metric.startswith("norm_"):
         metric = metric[5:]
         priors = np.tile(np.bincount(targets, minlength=logits.shape[1]) / len(targets), (len(targets), 1))
         logpriors = np.log(priors)
-        naive_metric = _compute_metric(logpriors, targets, metric)
-    else:
-        naive_metric = 1
-
+        
+        if bootstrap == 0:
+            return [
+                _compute_metric(logits, targets, metric) /
+                _compute_metric(logpriors, targets, metric)
+            ]
+        
+        rs = np.random.RandomState(random_state)
+        values = []
+        for _ in range(bootstrap):
+            idx = rs.choice(len(targets), len(targets), replace=True)
+            values.append(
+                _compute_metric(logits[idx], targets[idx], metric) /
+                _compute_metric(logpriors[idx], targets[idx], metric)
+            )
+        return values
+    
     if bootstrap == 0:
-        return [_compute_metric(logits, targets, metric) / naive_metric]
+        return [_compute_metric(logits, targets, metric)]
     
     rs = np.random.RandomState(random_state)
     values = []
     for _ in range(bootstrap):
         idx = rs.choice(len(targets), len(targets), replace=True)
-        values.append(
-            _compute_metric(logits[idx], targets[idx], metric) /
-            _compute_metric(logpriors[idx], targets[idx], metric)
-        )
+        values.append(_compute_metric(logits[idx], targets[idx], metric))
+        
     return values
 
 

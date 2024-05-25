@@ -1,0 +1,4 @@
+dataset: "20newsgroups"
+train_samples: 7700
+val_samples: 300
+random_state: 738

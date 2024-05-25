@@ -3,7 +3,7 @@ from datasets import load_dataset, load_from_disk
 import numpy as np
 
 
-def load_newsgroup():
+def load_newsgroups():
     datadict = load_dataset("SetFit/20_newsgroups")
     datadict["train"] = datadict["train"].add_column("idx", np.arange(len(datadict["train"])))
     datadict["test"] = datadict["test"].add_column("idx", np.arange(len(datadict["test"])))
