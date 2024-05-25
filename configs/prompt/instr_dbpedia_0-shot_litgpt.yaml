@@ -1,0 +1,20 @@
+
+preshots_template: "<|system|>\nProvide the correct category for the following article provided by the user.</s>\n"
+shots_template: ""
+postshots_template: "<|user|>\nArticle: \"{content}\"\nCategory:</s>\n<|assistant|>\n"
+num_shots: 0
+answers_templates: 
+  - "Company"
+  - "Educational Institution"
+  - "Artist"
+  - "Athlete"
+  - "Office Holder"
+  - "Mean Of Transportation"
+  - "Building"
+  - "Natural Place"
+  - "Village"
+  - "Animal"
+  - "Plant"
+  - "Album"
+  - "Film"
+  - "Written Work"

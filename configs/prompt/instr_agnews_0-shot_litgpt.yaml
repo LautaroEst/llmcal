@@ -1,0 +1,10 @@
+
+preshots_template: "<|system|>\nProvide the correct category for the following article provided by the user.</s>\n"
+shots_template: ""
+postshots_template: "<|user|>\nArticle: \"{text}\"\nCategory:</s>\n<|assistant|>\n"
+num_shots: 0
+answers_templates: 
+  - "World"
+  - "Sports"
+  - "Business"
+  - "Science and Technology"

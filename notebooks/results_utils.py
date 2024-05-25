@@ -101,7 +101,11 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
 
     if metric.startswith("norm_"):
         metric = metric[5:]
-        priors = np.tile(np.bincount(targets, minlength=logits.shape[1]) / len(targets), (len(targets), 1))
+        minlength = logits.shape[1]
+        num_samples = len(targets)
+        counts = np.bincount(targets, minlength=minlength)
+        priors = counts / num_samples
+        priors = np.tile(priors, (num_samples, 1))
         logpriors = np.log(priors)
         
         if bootstrap == 0:
@@ -134,6 +138,8 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
 
 def compute_results(metrics, bootstrap, random_state, show_test=False):
     df_results = load_results_paths()
+    if not show_test:
+        df_results = df_results[df_results["split"] != "test"]
     
     for metric in metrics:
         df_results[metric] = ""
@@ -154,8 +160,6 @@ def compute_results(metrics, bootstrap, random_state, show_test=False):
     
     df_results.drop(columns=["results"], inplace=True)
 
-    if not show_test:
-        df_results = df_results[df_results["split"] != "test"]
     return df_results
 
 

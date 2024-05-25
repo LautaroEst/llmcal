@@ -1,0 +1,11 @@
+
+preshots_template: "<|system|>\nProvide the correct condition type for the following description of medical condition provided by the user.</s>\n"
+shots_template: ""
+postshots_template: "<|user|>\nDescription of medical condition: \"{abstract}\"\nCondition type:</s>\n<|assistant|>\n"
+num_shots: 0
+answers_templates: 
+  - "Neoplasm"
+  - "Digestive system disease"
+  - "Nervous system disease"
+  - "Cardiovascular disease"
+  - "General pathological condition"

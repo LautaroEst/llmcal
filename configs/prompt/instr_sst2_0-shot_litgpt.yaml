@@ -1,0 +1,8 @@
+
+preshots_template: "<|system|>\nProvide the correct sentiment for the following review provided by the user.</s>\n"
+shots_template: ""
+postshots_template: "<|user|>\nReview: \"{sentence}\"\nSentiment:</s>\n<|assistant|>\n"
+num_shots: 0
+answers_templates: 
+  - "Negative"
+  - "Positive"
