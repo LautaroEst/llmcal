@@ -193,8 +193,11 @@ def plot_results(df, metrics, width=.8, test=False):
             ax = ax[:, np.newaxis]
         for i, dataset in enumerate(datasets):
             for j, metric in enumerate(metrics):
-                for s, size in enumerate(sizes):
-                    for m, method in enumerate(methods):
+                for m, method in enumerate(methods):
+                    x = []
+                    means = []
+                    stds = []
+                    for s, size in enumerate(sizes):
                         mask = \
                             (df["model"] == model) & \
                             (df["prompt"] == prompt) & \
@@ -203,20 +206,22 @@ def plot_results(df, metrics, width=.8, test=False):
                             (df["method"] == method)
                         if mask.sum() == 0:
                             continue
-                        mean = df[mask][f"{metric}:mean"].values
-                        std = df[mask][f"{metric}:std"].values
-                        # centered errorbar
-                        ax[j, i].errorbar(
-                            s - width / 2 + width / (len(methods) - 1) * m, 
-                            mean, 
-                            yerr=std, 
-                            fmt='o', 
-                            label=method,
-                            capsize=5,
-                            capthick=2,
-                            elinewidth=2,
-                            color=f"C{m}"
-                        )
+                        mean = df[mask][f"{metric}:mean"].values[0]
+                        std = df[mask][f"{metric}:std"].values[0]
+                        x.append(s - width / 2 + width / (len(methods) - 1) * m)
+                        means.append(mean)
+                        stds.append(std)
+                    ax[j, i].errorbar(
+                        np.array(x),
+                        np.array(means), 
+                        yerr=np.array(stds), 
+                        ls = "dotted",
+                        label=method,
+                        capsize=5,
+                        capthick=1,
+                        elinewidth=1,
+                        color=f"C{m}"
+                    )
                 ax[j,i].grid(True)
             
 

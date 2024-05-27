@@ -1,0 +1,7 @@
+- Esperar a que termine bankin77.sh
+- Esperar a que termine dbpedia.sh y chequear que se haya corrido todo sin errores por más que los affines no hayan entrenado bien
+- Corregir los .sh de todas las bases de datos para que queden como dbpedia
+- Correr todos los .sh de tinyllama
+- Implementar FT con embeddings
+- agregar a .sh y correr todos los .sh de tinyllama de nuevo
+- Escribir
