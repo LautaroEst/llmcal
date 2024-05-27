@@ -1,1 +1,1 @@
-SUPPORTED_LITGPT_MODELS = ["lm_tinyllama"]
+SUPPORTED_LITGPT_MODELS = ["lm_tinyllama", "lm_tinyllama_chat"]

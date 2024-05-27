@@ -13,6 +13,7 @@ from llmcal.models.affine_calibration import AffineCalibration
 from litgpt.utils import check_valid_checkpoint_dir as check_valid_checkpoint_dir
 from torch.utils.data import DataLoader
 import lightning as L
+from lightning.fabric.utilities.load import _lazy_load as lazy_load
 from lightning.pytorch.trainer.states import TrainerStatus
 
 AFFINE_METHODS = ["affine_matrix", "affine_vector", "affine_scalar", "temp_scaling", "bias_only"]
@@ -110,6 +111,8 @@ def main(
             version += 1
         os.rename(os.path.join(output_dir, "predictions"), predictions_dir)
     os.makedirs(os.path.join(output_dir, "predictions"), exist_ok=True)
+    checkpoint = lazy_load(os.path.join(output_dir, "best.ckpt"))
+    model.load_state_dict(checkpoint["state_dict"], strict=True)
         
     for split, dataset in prediction_datadict.items():
         if os.path.exists(os.path.join(output_dir, f"predictions/{split}")):

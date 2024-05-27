@@ -12,18 +12,23 @@ from datasets import load_from_disk
 from llmcal.utils import load_yaml
 
 method_short2name = {
-    "no_adaptation": "No Adaptation",
-    "no_calibration": "No Calibration",
-    "lora": "LoRA",
-    "affine_matrix": "Affine Matrix",
-    "affine_vector": "Affine Vector",
-    "affine_scalar": "Affine Scalar",
-    "temperature_scaling": "Temperature Scaling",
-    "bias_only": "Bias Only",
+    "no_adaptation+no_calibration": "No adaptation",
+    "lora+no_calibration": "LoRA",
+    "no_adaptation+affine_matrix": "Affine Matrix",
+    "no_adaptation+affine_vector": "Affine Vector",
+    "no_adaptation+affine_scalar": "Affine Scalar",
+    "no_adaptation+temperature_scaling": "Temperature Scaling",
+    "no_adaptation+bias_only": "Bias Only",
+    "lora+affine_matrix": "LoRA + Affine Matrix",
+    "lora+affine_vector": "LoRA + Affine Vector",
+    "lora+affine_scalar": "LoRA + Affine Scalar",
+    "lora+temperature_scaling": "LoRA + Temperature Scaling",
+    "lora+bias_only": "LoRA + Bias Only",
 }
 
 model_short2name = {
     "lm_tinyllama": "TinyLLAMA",
+    "lm_tinyllama_chat": "TinyLLAMA-Chat",
 }
 
 dataset_short2name = {
@@ -60,8 +65,13 @@ def load_results_paths():
                             continue
                         for path in (cal_method / "predictions").glob("*"):
                             dataset_name, size = dataset.name.split("_")
-                            prompt_name = prompt.name
-                            n_shots = load_yaml(f"../configs/prompt/{prompt_name}.yaml")["num_shots"]
+                            if "basic_" in prompt.name:
+                                prompt_name = "Basic"
+                            elif "instr_" in prompt.name:
+                                prompt_name = "Instruction"
+                            else:
+                                prompt_name = prompt.name
+                            n_shots = load_yaml(f"../configs/prompt/{prompt.name}.yaml")["num_shots"]
                             data_config = load_yaml(f"../configs/dataset/{dataset.name}.yaml")
                             num_samples = data_config["train_samples"] + data_config["val_samples"]
                             model_name = model.name
@@ -76,8 +86,7 @@ def load_results_paths():
                                 "prompt": prompt_name,
                                 "n_shots": n_shots,
                                 "model": model_short2name[model_name],
-                                "base_method": method_short2name[base_method_name],
-                                "cal_method": method_short2name[cal_method_name],
+                                "method": method_short2name[base_method_name + "+" + cal_method_name],
                                 "split": split_name,
                                 "results": results_path
                             })
@@ -167,31 +176,31 @@ def plot_results(df, metrics, width=.8, test=False):
 
     df = df.copy()
     df = df[df["split"] == "test"] if test else df[df["split"] == "validation"]
-    df["dataset+prompt"] = df["dataset"] + "\n(" + df["prompt"] + ")"
-    df["full_method"] = df["base_method"] + " - " + df["cal_method"]
-
-    models = df["model"].unique()
-    datasets_with_prompt = df["dataset+prompt"].unique()
+    
+    models_with_prompts = (df["model"]  + "---" + df["prompt"]).unique()
+    datasets = df["dataset"].unique()
     sizes = sizes_short2name.values()
-    methods = df["full_method"].unique()
+    methods = df["method"].unique()
 
-    for model in models:
-        fig, ax = plt.subplots(len(metrics),len(datasets_with_prompt), figsize=(14, 5), sharex="col")
-        if len(metrics) == 1 and len(datasets_with_prompt) == 1:
+    for model_with_prompt in models_with_prompts:
+        model, prompt = model_with_prompt.split("---")
+        fig, ax = plt.subplots(len(metrics),len(datasets), figsize=(14, 5), sharex="col")
+        if len(metrics) == 1 and len(datasets) == 1:
             ax = np.array([[ax]])
         elif len(metrics) == 1:
             ax = ax[np.newaxis, :]
-        elif len(datasets_with_prompt) == 1:
+        elif len(datasets) == 1:
             ax = ax[:, np.newaxis]
-        for i, dataset in enumerate(datasets_with_prompt):
+        for i, dataset in enumerate(datasets):
             for j, metric in enumerate(metrics):
                 for s, size in enumerate(sizes):
                     for m, method in enumerate(methods):
                         mask = \
                             (df["model"] == model) & \
-                            (df["dataset+prompt"] == dataset) & \
+                            (df["prompt"] == prompt) & \
+                            (df["dataset"] == dataset) & \
                             (df["size"] == size) & \
-                            (df["full_method"] == method)
+                            (df["method"] == method)
                         if mask.sum() == 0:
                             continue
                         mean = df[mask][f"{metric}:mean"].values
@@ -214,24 +223,23 @@ def plot_results(df, metrics, width=.8, test=False):
             
             sizes_with_samples_num = []
             for size in sizes:
-                mask = (df["size"] == size) & (df["model"] == model) & (df["dataset+prompt"] == dataset)
+                mask = (df["size"] == size) & (df["model"] == model) & (df["prompt"] == prompt) & (df["dataset"] == dataset)
                 if mask.sum() == 0:
                     sizes_with_samples_num.append(size)
                 else:
                     sizes_with_samples_num.append(
-                        (df[mask]["size"] + "\n(" + df[mask]["num_samples"].astype(str) + " samples)").unique()[0]
+                        df[mask]["num_samples"].astype(str).unique()[0]
                     )
             ax[-1, i].set_xticks(range(len(sizes)))
-            ax[-1, i].set_xticklabels(sizes_with_samples_num)
+            ax[-1, i].set_xticklabels(sizes_with_samples_num, rotation=45, ha="right")
             ax[-1, i].set_xlim(-width, len(sizes) - (1 - width))
         
-        for i, dataset in enumerate(datasets_with_prompt):
+        for i, dataset in enumerate(datasets):
             ax[0, i].set_title(dataset)
         for j, metric in enumerate(metrics):
             if "norm_" in metric:
                 metric_name = "Normalized\n" + metrics_short2name[metric[5:]]
-                for i, dataset in enumerate(datasets_with_prompt):
-                    # get current y limits and set y limits to (0, max)
+                for i, dataset in enumerate(datasets):
                     ylim = ax[j, i].get_ylim()
                     ax[j, i].set_ylim(0, max(1.2,ylim[1]))
                     ax[j, i].axhline(1, color='black', linestyle='--', linewidth=1, label="Naive")
@@ -240,6 +248,7 @@ def plot_results(df, metrics, width=.8, test=False):
             ax[j, 0].set_ylabel(metric_name)
 
         fig.suptitle(model)
+        fig.text(0.5, 0.0, 'Number of training samples', ha='center')
 
         handles, labels = [], []
 
