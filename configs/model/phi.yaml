@@ -1,0 +1,2 @@
+model: "phi"
+checkpoint_dir: "microsoft/phi-2"

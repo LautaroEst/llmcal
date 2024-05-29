@@ -1,0 +1,20 @@
+
+preshots_template: ""
+shots_template: ""
+postshots_template: "Instruct: Determine the category of the following article: \"{content}\"\nOutput: The article belongs to the category"
+num_shots: 0
+answers_templates: 
+  - "Company"
+  - "Educational Institution"
+  - "Artist"
+  - "Athlete"
+  - "Office Holder"
+  - "Mean Of Transportation"
+  - "Building"
+  - "Natural Place"
+  - "Village"
+  - "Animal"
+  - "Plant"
+  - "Album"
+  - "Film"
+  - "Written Work"

@@ -1,0 +1,8 @@
+
+preshots_template: ""
+shots_template: ""
+postshots_template: "Instruct: Determine the sentiment of the following review: \"{sentence}\"\nOutput: The review is"
+num_shots: 0
+answers_templates: 
+  - "negative"
+  - "positive"

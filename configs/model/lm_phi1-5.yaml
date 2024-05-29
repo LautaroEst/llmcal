@@ -1,2 +1,0 @@
-model: "lm_tinyllama"
-checkpoint_dir: "microsoft/phi-1_5"

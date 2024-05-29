@@ -1,7 +1,7 @@
 
 bash scripts/lm_tinyllama/sst2.sh
-# bash scripts/lm_tinyllama/agnews.sh
-# bash scripts/lm_tinyllama/dbpedia.sh
-bash scripts/lm_tinyllama/20newsgroups.sh
+# bash scripts/phi/agnews.sh
+# bash scripts/phi/dbpedia.sh
+bash scripts/phi/20newsgroups.sh
 # bash scripts/lm_tinyllama/medical_abstracts.sh
 # bash scripts/lm_tinyllama/banking77.sh

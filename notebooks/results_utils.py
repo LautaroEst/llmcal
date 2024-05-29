@@ -5,40 +5,41 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-from scipy.special import log_softmax
+from sklearn.metrics import f1_score as _f1_score
+from scipy.special import log_softmax, softmax
 from datasets import load_from_disk
 
 from llmcal.utils import load_yaml
 
-method_short2name = {
-    "no_adaptation+no_calibration": "No adaptation",
-    "lora+no_calibration": "LoRA",
-    "no_adaptation+affine_matrix": "Affine Matrix",
-    "no_adaptation+affine_vector": "Affine Vector",
-    "no_adaptation+affine_scalar": "Affine Scalar",
-    "no_adaptation+temperature_scaling": "Temperature Scaling",
-    "no_adaptation+bias_only": "Bias Only",
-    "lora+affine_matrix": "LoRA + Affine Matrix",
-    "lora+affine_vector": "LoRA + Affine Vector",
-    "lora+affine_scalar": "LoRA + Affine Scalar",
-    "lora+temperature_scaling": "LoRA + Temperature Scaling",
-    "lora+bias_only": "LoRA + Bias Only",
-}
+method_short2name = OrderedDict([
+    ("no_adaptation+no_calibration", "Zero-shot"),
+    ("no_adaptation+affine_matrix", "Affine Matrix"),
+    ("no_adaptation+affine_vector", "Affine Calibration"),
+    ("no_adaptation+affine_scalar", "Affine Scalar"),
+    ("no_adaptation+temperature_scaling", "Temperature Scaling"),
+    ("no_adaptation+bias_only", "Bias Only"),
+    ("lora+no_calibration", "LoRA"),
+    # ("lora+affine_matrix", "LoRA + Affine Matrix"),
+    # ("lora+affine_vector", "LoRA + Affine Vector"),
+    # ("lora+affine_scalar", "LoRA + Affine Scalar"),
+    # ("lora+temperature_scaling", "LoRA + Temperature Scaling"),
+    # ("lora+bias_only", "LoRA + Bias Only"),
+])
 
 model_short2name = {
     "lm_tinyllama": "TinyLLAMA",
-    "lm_tinyllama_chat": "TinyLLAMA-Chat",
+    "phi": "Phi-2",
+    # "lm_tinyllama_chat": "TinyLLAMA-Chat",
 }
 
-dataset_short2name = {
-    "sst2": "SST-2",
-    "dbpedia": "DBPedia",
-    "agnews": "AGNews",
-    "banking77": "Banking77",
-    "20newsgroups": "20NewsGroups",
-    "medical-abstracts": "Medical Abstracts",
-}
+dataset_short2name = OrderedDict([
+    ("sst2", "SST-2"),
+    ("agnews", "AGNews"),
+    # ("medical-abstracts", "Medical Abstracts"),
+    ("dbpedia", "DBPedia"),
+    ("20newsgroups", "20NewsGroups"),
+    # ("banking77", "Banking77"),
+])
 
 sizes_short2name = OrderedDict([
     ("small", "Small"),
@@ -51,6 +52,7 @@ metrics_short2name = {
     "error_rate": "Error Rate",
     "f1_score": "F1 Score",
     "cross_entropy": "Cross Entropy",
+    "ece": "ECE",
 }
 
 def load_results_paths():
@@ -65,9 +67,10 @@ def load_results_paths():
                             continue
                         for path in (cal_method / "predictions").glob("*"):
                             dataset_name, size = dataset.name.split("_")
+                            size = size.split("-")[0]
                             if "basic_" in prompt.name:
                                 prompt_name = "Basic"
-                            elif "instr_" in prompt.name:
+                            elif "instr_" in prompt.name or "qa_" in prompt.name:
                                 prompt_name = "Instruction"
                             else:
                                 prompt_name = prompt.name
@@ -79,6 +82,11 @@ def load_results_paths():
                             cal_method_name = load_yaml(f"../configs/calibration_method/{cal_method.name}.yaml")["method"]
                             split_name = path.name
                             results_path = str(path)
+                            if dataset_name not in dataset_short2name or \
+                                size not in sizes_short2name or \
+                                model_name not in model_short2name or \
+                                base_method_name + "+" + cal_method_name not in method_short2name:
+                                continue
                             results.append({
                                 "dataset": dataset_short2name[dataset_name],
                                 "size": sizes_short2name[size],
@@ -92,16 +100,51 @@ def load_results_paths():
                             })
     return pd.DataFrame(results)
 
+def accuracy(logits, targets):
+    return (targets == logits.argmax(axis=1)).mean()
+
+def error_rate(logits, targets):
+    return (targets != logits.argmax(axis=1)).mean()
+
+def f1_score(logits, targets):
+    return _f1_score(targets, logits.argmax(axis=1), average="macro")
+
+def cross_entropy(logits, targets):
+    logprobs = log_softmax(logits, axis=1)
+    return - np.mean(logprobs[np.arange(len(targets)), targets])
+
+def ece(logits, targets):
+    n_bins = 10
+    bin_boundaries = np.linspace(0, 1, n_bins + 1)
+    bin_lowers = bin_boundaries[:-1]
+    bin_uppers = bin_boundaries[1:]
+
+    softmaxes = softmax(logits, axis=1)
+    confidences = softmaxes.max(axis=1)
+    predictions = softmaxes.argmax(axis=1)
+    accuracies = predictions == targets
+
+    ece = 0
+    for bin_lower, bin_upper in zip(bin_lowers, bin_uppers):
+        in_bin = (confidences > bin_lower) * (confidences < bin_upper)
+        prop_in_bin = in_bin.mean()
+        if prop_in_bin > 0:
+            accuracy_in_bin = accuracies[in_bin].mean()
+            avg_confidence_in_bin = confidences[in_bin].mean()
+            ece += np.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
+    return ece
+
 def _compute_metric(logits, targets, metric):
     if metric == "accuracy":
-        return (logits.argmax(axis=1) == targets).mean()
+        return accuracy(logits, targets)
     elif metric == "error_rate":
-        return (logits.argmax(axis=1) != targets).mean()
+        return error_rate(logits, targets)
     elif metric == "f1_score":
-        return f1_score(targets, logits.argmax(axis=1), average="macro")
+        return f1_score(logits, targets)
     elif metric == "cross_entropy":
-        logprobs = log_softmax(logits, axis=1)
-        return - np.mean(logprobs[np.arange(len(targets)), targets])
+        return cross_entropy(logits, targets)
+    elif metric == "ece":
+        return ece(logits, targets)
     else:
         raise ValueError(f"Metric {metric} is not supported")
 
@@ -178,13 +221,15 @@ def plot_results(df, metrics, width=.8, test=False):
     df = df[df["split"] == "test"] if test else df[df["split"] == "validation"]
     
     models_with_prompts = (df["model"]  + "---" + df["prompt"]).unique()
-    datasets = df["dataset"].unique()
+    datasets = [dataset for dataset in dataset_short2name.values() if dataset in df["dataset"].unique()]
     sizes = sizes_short2name.values()
-    methods = df["method"].unique()
+    methods = [method for method in method_short2name.values() if method in df["method"].unique()]
 
     for model_with_prompt in models_with_prompts:
         model, prompt = model_with_prompt.split("---")
-        fig, ax = plt.subplots(len(metrics),len(datasets), figsize=(14, 5), sharex="col")
+        if model not in model_short2name.values():
+            continue
+        fig, ax = plt.subplots(len(metrics),len(datasets), figsize=(len(datasets)*3, len(metrics)*2), sharex="col")
         if len(metrics) == 1 and len(datasets) == 1:
             ax = np.array([[ax]])
         elif len(metrics) == 1:
@@ -208,7 +253,8 @@ def plot_results(df, metrics, width=.8, test=False):
                             continue
                         mean = df[mask][f"{metric}:mean"].values[0]
                         std = df[mask][f"{metric}:std"].values[0]
-                        x.append(s - width / 2 + width / (len(methods) - 1) * m)
+                        # x.append(s - width / 2 + width / (len(methods) - 1) * m)
+                        x.append(s)
                         means.append(mean)
                         stds.append(std)
                     ax[j, i].errorbar(
@@ -217,10 +263,11 @@ def plot_results(df, metrics, width=.8, test=False):
                         yerr=np.array(stds), 
                         ls = "dotted",
                         label=method,
-                        capsize=5,
-                        capthick=1,
-                        elinewidth=1,
-                        color=f"C{m}"
+                        capsize= width / (len(methods) - 1) * 20,
+                        capthick=2,
+                        elinewidth=2,
+                        color=f"C{m}",
+                        alpha=0.8
                     )
                 ax[j,i].grid(True)
             
@@ -245,9 +292,10 @@ def plot_results(df, metrics, width=.8, test=False):
             if "norm_" in metric:
                 metric_name = "Normalized\n" + metrics_short2name[metric[5:]]
                 for i, dataset in enumerate(datasets):
-                    ylim = ax[j, i].get_ylim()
-                    ax[j, i].set_ylim(0, max(1.2,ylim[1]))
-                    ax[j, i].axhline(1, color='black', linestyle='--', linewidth=1, label="Naive")
+                    # ylim = ax[j, i].get_ylim()
+                    # ax[j, i].set_ylim(0, max(1.2,ylim[1]))
+                    # ax[j, i].axhline(1, color='black', linestyle='--', linewidth=1, label="Naive")
+                    pass
             else:
                 metric_name = metrics_short2name[metric]
             ax[j, 0].set_ylabel(metric_name)
