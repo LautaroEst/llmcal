@@ -1,3 +1,4 @@
+from copy import deepcopy
 from pathlib import Path
 from typing import OrderedDict
 from tqdm import tqdm
@@ -14,9 +15,9 @@ from llmcal.utils import load_yaml
 method_short2name = OrderedDict([
     ("no_adaptation+no_calibration", "Zero-shot"),
     ("no_adaptation+affine_matrix", "Affine Matrix"),
-    ("no_adaptation+affine_vector", "Affine Calibration"),
+    # ("no_adaptation+affine_vector", "Affine Calibration"),
     ("no_adaptation+affine_scalar", "Affine Scalar"),
-    ("no_adaptation+temperature_scaling", "Temperature Scaling"),
+    ("no_adaptation+temp_scaling", "Temperature Scaling"),
     ("no_adaptation+bias_only", "Bias Only"),
     ("lora+no_calibration", "LoRA"),
     # ("lora+affine_matrix", "LoRA + Affine Matrix"),
@@ -42,6 +43,7 @@ dataset_short2name = OrderedDict([
 ])
 
 sizes_short2name = OrderedDict([
+    ("mini", "Mini"),
     ("small", "Small"),
     ("medium", "Medium"),
     ("large", "Large"),
@@ -66,6 +68,8 @@ def load_results_paths():
                         if cal_method.name == ".cache":
                             continue
                         for path in (cal_method / "predictions").glob("*"):
+                            if not path.exists():
+                                continue
                             dataset_name, size = dataset.name.split("_")
                             size = size.split("-")[0]
                             if "basic_" in prompt.name:
@@ -224,6 +228,32 @@ def plot_results(df, metrics, width=.8, test=False):
     datasets = [dataset for dataset in dataset_short2name.values() if dataset in df["dataset"].unique()]
     sizes = sizes_short2name.values()
     methods = [method for method in method_short2name.values() if method in df["method"].unique()]
+    # for i, row in df.iterrows():
+    #     if row["method"] == "Zero-shot" and row["n_shots"] > 0:
+    #         df.loc[df.index == i, "method"] = "Few-shot"
+    #         # print(df.loc[df.index == i])
+    #         add_few_shot = True
+    # if add_few_shot:
+    #     methods.append("Few-shot")
+    for method in ["Zero-shot", "Affine Scalar", "Temperature Scaling", "Bias Only"]:
+        s = "Few-shot" if method == "Zero-shot" else "Few-shot + " + method
+        df.loc[(df["method"] == method) & (df["n_shots"] > 0), "method"] = s
+        if s in df["method"].unique():
+            methods.append(s)
+    num_shots = df["n_shots"].unique()
+
+    alpha = 0.6
+    methods_kwargs = {
+        "Zero-shot": {"ls": "-", "color": "black", "alpha": alpha},
+        "Few-shot": {"ls": "--", "color": "black", "alpha": alpha},
+        "Affine Scalar": {"ls": "-", "color": "tab:blue", "alpha": alpha},
+        "Temperature Scaling": {"ls": "-", "color": "tab:orange", "alpha": alpha},
+        "Bias Only": {"ls": "-", "color": "tab:green", "alpha": alpha},
+        "Few-shot + Affine Scalar": {"ls": "--", "color": "tab:blue", "alpha": alpha},
+        "Few-shot + Temperature Scaling": {"ls": "--", "color": "tab:orange", "alpha": alpha},
+        "Few-shot + Bias Only": {"ls": "--", "color": "tab:green", "alpha": alpha},
+        "LoRA": {"ls": "-", "color": "tab:red", "alpha": alpha},
+    }
 
     for model_with_prompt in models_with_prompts:
         model, prompt = model_with_prompt.split("---")
@@ -238,40 +268,40 @@ def plot_results(df, metrics, width=.8, test=False):
             ax = ax[:, np.newaxis]
         for i, dataset in enumerate(datasets):
             for j, metric in enumerate(metrics):
-                for m, method in enumerate(methods):
-                    x = []
-                    means = []
-                    stds = []
-                    for s, size in enumerate(sizes):
-                        mask = \
-                            (df["model"] == model) & \
-                            (df["prompt"] == prompt) & \
-                            (df["dataset"] == dataset) & \
-                            (df["size"] == size) & \
-                            (df["method"] == method)
-                        if mask.sum() == 0:
-                            continue
-                        mean = df[mask][f"{metric}:mean"].values[0]
-                        std = df[mask][f"{metric}:std"].values[0]
-                        # x.append(s - width / 2 + width / (len(methods) - 1) * m)
-                        x.append(s)
-                        means.append(mean)
-                        stds.append(std)
-                    ax[j, i].errorbar(
-                        np.array(x),
-                        np.array(means), 
-                        yerr=np.array(stds), 
-                        ls = "dotted",
-                        label=method,
-                        capsize= width / (len(methods) - 1) * 20,
-                        capthick=2,
-                        elinewidth=2,
-                        color=f"C{m}",
-                        alpha=0.8
-                    )
+                for n in num_shots:
+                    for m, method in enumerate(methods):
+                        x = []
+                        means = []
+                        stds = []
+                        for s, size in enumerate(sizes):
+                            mask = \
+                                (df["n_shots"] == n) & \
+                                (df["model"] == model) & \
+                                (df["prompt"] == prompt) & \
+                                (df["dataset"] == dataset) & \
+                                (df["size"] == size) & \
+                                (df["method"] == method)
+                            if mask.sum() == 0:
+                                continue
+                            mean = df[mask][f"{metric}:mean"].values[0]
+                            std = df[mask][f"{metric}:std"].values[0]
+                            # x.append(s - width / 2 + width / (len(methods) - 1) * m)
+                            x.append(s)
+                            means.append(mean)
+                            stds.append(std)
+                        ax[j, i].errorbar(
+                            np.array(x),
+                            np.array(means), 
+                            yerr=np.array(stds), 
+                            ls = methods_kwargs[method]["ls"],
+                            label=method,
+                            capsize= width / (len(methods) - 1) * 20,
+                            capthick=2,
+                            elinewidth=2,
+                            color=methods_kwargs[method]["color"],
+                            alpha=methods_kwargs[method]["alpha"],
+                        )
                 ax[j,i].grid(True)
-            
-
             
             sizes_with_samples_num = []
             for size in sizes:
@@ -312,6 +342,6 @@ def plot_results(df, metrics, width=.8, test=False):
                     handles.append(h)
                     labels.append(l)
 
-        fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods), fancybox=True, shadow=True)
+        fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods)//2, fancybox=True, shadow=True)
         fig.tight_layout()
 

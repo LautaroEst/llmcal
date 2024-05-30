@@ -1,0 +1,22 @@
+method: "lora"
+
+use_lora_checkpoint: False
+lora_r: 8
+lora_alpha: 16
+lora_dropout: 0.05
+lora_query: True
+lora_key: True
+lora_value: True
+lora_projection: True
+lora_mlp: True
+lora_head: True
+
+precision: "bf16-true"
+batch_size: 1
+accumulate_grad_batches: 16
+val_check_interval: 16
+max_epochs: 40
+max_steps: -1
+optimizer: "adamw"
+learning_rate: 0.0001
+weight_decay: 0.0

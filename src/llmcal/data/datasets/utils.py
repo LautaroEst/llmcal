@@ -49,6 +49,11 @@ def load_dataset(dataset_name, num_train_samples, num_val_samples, num_shots, ra
     train_datadict["validation"] = sample_and_shuffle(train_datadict["validation"], num_val_samples, random_state)
     if num_shots > 0:
         shots = sample_and_shuffle(train_datadict["train"], num_shots, random_state + 1)
+        all_ids = np.asarray(train_datadict["train"]["idx"])
+        shot_ids = np.asarray(shots["idx"])
+        new_train_ids = np.setdiff1d(all_ids, shot_ids)
+        new_train_ids = [i for i in range(len(all_ids)) if train_datadict["train"][i]["idx"] in new_train_ids]
+        train_datadict["train"] = train_datadict["train"].select(new_train_ids)
     else:
         shots = []
 

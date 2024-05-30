@@ -1,4 +1,4 @@
-dataset: "agnews"
+dataset: "sst2"
 train_samples: 22
-val_samples: 8
+val_samples: 10
 random_state: 738

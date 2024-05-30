@@ -1,82 +1,56 @@
 #!/bin/bash
 
 ### No adaptation + no calibration
-python -m llmcal agnews_large basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration \
+python -m llmcal agnews_16_738 basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
+
+mkdir -p experiments/agnews_256_493/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
+ln -sf ../../../../../agnews_16_738/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/agnews_256_493/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+
+### No adaptation + affine scalar
+python -m llmcal agnews_16_738 basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 affine_scalar \
     --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
-    --batch_size 1
-
-mkdir -p experiments/agnews_small/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../agnews_large/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/agnews_small/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
-
-python -m llmcal agnews_small basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
-    --batch_size 1
-
-mkdir -p experiments/agnews_medium/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
-ln -sf ../../../../../agnews_large/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/agnews_medium/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
-
-python -m llmcal agnews_medium basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
-    --batch_size 1
-
-mkdir -p experiments/agnews_mini/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
-ln -sf ../../../../../agnews_large/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/agnews_mini/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
-
-python -m llmcal agnews_mini basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
-    --batch_size 1
-
-### No adaptation + affine vector
-python -m llmcal agnews_large basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 affine_vector \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-4 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 400
-
-python -m llmcal agnews_small basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 affine_vector \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
     --batch_size 1 \
     --calibration.max_ls 40 \
     --calibration.learning_rate 1e-2 \
     --calibration.accelerator "cpu" \
     --calibration.max_epochs 30
 
-python -m llmcal agnews_medium basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 affine_vector \
+python -m llmcal agnews_256_493 basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 affine_scalar \
     --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
     --batch_size 1 \
     --calibration.max_ls 40 \
     --calibration.learning_rate 1e-2 \
     --calibration.accelerator "cpu" \
     --calibration.max_epochs 30
 
-python -m llmcal agnews_mini basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 affine_vector \
+### No adaptation + temp scaling
+python -m llmcal agnews_16_738 basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 temp_scaling \
     --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
+    --batch_size 1 \
+    --calibration.max_ls 40 \
+    --calibration.learning_rate 1e-2 \
+    --calibration.accelerator "cpu" \
+    --calibration.max_epochs 30
+
+python -m llmcal agnews_256_493 basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 temp_scaling \
+    --accelerator "gpu" \
+    --batch_size 1 \
+    --calibration.max_ls 40 \
+    --calibration.learning_rate 1e-2 \
+    --calibration.accelerator "cpu" \
+    --calibration.max_epochs 30
+
+### No adaptation + bias only
+python -m llmcal agnews_16_738 basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 bias_only \
+    --accelerator "gpu" \
+    --batch_size 1 \
+    --calibration.max_ls 40 \
+    --calibration.learning_rate 1e-2 \
+    --calibration.accelerator "cpu" \
+    --calibration.max_epochs 30
+
+python -m llmcal agnews_256_493 basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 bias_only \
+    --accelerator "gpu" \
     --batch_size 1 \
     --calibration.max_ls 40 \
     --calibration.learning_rate 1e-2 \
@@ -84,67 +58,5 @@ python -m llmcal agnews_mini basic_agnews_0-shot_litgpt lm_tinyllama no_adaptati
     --calibration.max_epochs 30
 
 ### Lora + no calibration
-python -m llmcal agnews_large basic_agnews_0-shot_litgpt lm_tinyllama lora_v2 no_calibration \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1
-
-python -m llmcal agnews_small basic_agnews_0-shot_litgpt lm_tinyllama lora_v3 no_calibration \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1
-
-python -m llmcal agnews_medium basic_agnews_0-shot_litgpt lm_tinyllama lora_v4 no_calibration \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1
-
-python -m llmcal agnews_mini basic_agnews_0-shot_litgpt lm_tinyllama lora_v4 no_calibration \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1
-
-### Lora + affine vector
-python -m llmcal agnews_large basic_agnews_0-shot_litgpt lm_tinyllama lora_v2 affine_vector \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 5e-3 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 40
-
-python -m llmcal agnews_small basic_agnews_0-shot_litgpt lm_tinyllama lora_v3 affine_vector \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 4e-3 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 20
-
-python -m llmcal agnews_medium basic_agnews_0-shot_litgpt lm_tinyllama lora_v4 affine_vector \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 4e-3 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 20
-
-python -m llmcal agnews_mini basic_agnews_0-shot_litgpt lm_tinyllama lora_v4 affine_vector \
-    --accelerator "gpu" \
-    --strategy "auto" \
-    --devices 1 \
-    --num_nodes 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 4e-3 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 20
+python -m llmcal agnews_16_738 basic_agnews_0-shot_litgpt lm_tinyllama lora_60samples no_calibration --accelerator "gpu"
+python -m llmcal agnews_256_493 basic_agnews_0-shot_litgpt lm_tinyllama lora_1000samples no_calibration --accelerator "gpu"

@@ -40,9 +40,9 @@ class AffineCalibrator(nn.Module):
 
         # Set the alpha parameter
         if alpha == "matrix":
-            self.alpha = nn.Parameter(torch.zeros(num_classes, num_classes), requires_grad=True)
+            self.alpha = nn.Parameter(torch.eye(num_classes), requires_grad=True)
         elif alpha == "vector":
-            self.alpha = nn.Parameter(torch.zeros(num_classes), requires_grad=True)
+            self.alpha = nn.Parameter(torch.ones(num_classes), requires_grad=True)
         elif alpha == "scalar":
             self.alpha = nn.Parameter(torch.tensor(1.), requires_grad=True)
         elif alpha == "none":
@@ -82,12 +82,7 @@ class AffineCalibration(L.LightningModule):
         self.learning_rate = learning_rate
 
         self.calibrator = AffineCalibrator(self.num_classes, self.alpha, self.beta)
-        for param in self.parameters():
-            param.requires_grad = True
-
-        self.calibrator.alpha.data.fill_(1.)
-        self.calibrator.beta.data.fill_(0.)
-
+        
         self.super_global_step = 0
         self.best_val_loss = float("inf")
 

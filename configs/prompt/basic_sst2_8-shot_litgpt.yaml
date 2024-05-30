@@ -1,0 +1,8 @@
+
+preshots_template: ""
+shots_template: "Review: \"{sentence}\"\nSentiment: {answer}\n"
+postshots_template: "Review: \"{sentence}\"\nSentiment:"
+num_shots: 8
+answers_templates: 
+  - "Negative"
+  - "Positive"

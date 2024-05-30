@@ -1,4 +1,0 @@
-dataset: "sst2"
-train_samples: 80
-val_samples: 20
-random_state: 738

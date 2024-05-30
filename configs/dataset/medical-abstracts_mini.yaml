@@ -1,4 +1,0 @@
-dataset: "medical-abstracts"
-train_samples: 40
-val_samples: 10
-random_state: 738

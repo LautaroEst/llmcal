@@ -3,6 +3,7 @@
 /.vscode/
 
 /data/
+/experiments.old/
 /experiments/
 /logs/
 /.old/

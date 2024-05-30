@@ -1,0 +1,3 @@
+method: "temp_scaling"
+alpha: "scalar"
+beta: False
