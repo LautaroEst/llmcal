@@ -1,4 +1,4 @@
 dataset: "20newsgroups"
-train_samples: 3584
-val_samples: 1536
+total_train_samples: 5120
+val_prop: 0.3
 random_state: 493

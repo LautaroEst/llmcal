@@ -36,8 +36,8 @@ def parse_checkpoint_dir(checkpoint_dir):
 def main(
     output_dir: str,
     dataset: SUPPORTED_DATASETS,
-    train_samples: int,
-    val_samples: int,
+    total_train_samples: int,
+    val_prop: float,
     num_shots: int,
     random_state: int,
     preshots_template: str, 
@@ -75,7 +75,7 @@ def main(
     save_yaml(locals(), os.path.join(output_dir, "params.yaml"))
 
     # Load dataset
-    train_datadict, prediction_datadict, shots = load_dataset(dataset, train_samples, val_samples, num_shots, random_state)
+    train_datadict, prediction_datadict, shots = load_dataset(dataset, total_train_samples, val_prop, num_shots, random_state)
 
     # Load and train prompt
     prompt = LitGPTPrompt(preshots_template, shots_template, postshots_template, answers_templates)

@@ -1,4 +1,4 @@
 dataset: "dbpedia"
-train_samples: 156
-val_samples: 68
+total_train_samples: 224
+val_prop: 0.3
 random_state: 738

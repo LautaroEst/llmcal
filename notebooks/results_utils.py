@@ -12,41 +12,13 @@ from datasets import load_from_disk
 
 from llmcal.utils import load_yaml
 
-method_short2name = OrderedDict([
-    ("no_adaptation+no_calibration", "Zero-shot"),
-    ("no_adaptation+affine_matrix", "Affine Matrix"),
-    # ("no_adaptation+affine_vector", "Affine Calibration"),
-    ("no_adaptation+affine_scalar", "Affine Scalar"),
-    ("no_adaptation+temp_scaling", "Temperature Scaling"),
-    ("no_adaptation+bias_only", "Bias Only"),
-    ("lora+no_calibration", "LoRA"),
-    # ("lora+affine_matrix", "LoRA + Affine Matrix"),
-    # ("lora+affine_vector", "LoRA + Affine Vector"),
-    # ("lora+affine_scalar", "LoRA + Affine Scalar"),
-    # ("lora+temperature_scaling", "LoRA + Temperature Scaling"),
-    # ("lora+bias_only", "LoRA + Bias Only"),
-])
-
-model_short2name = {
-    "lm_tinyllama": "TinyLLAMA",
-    "phi": "Phi-2",
-    # "lm_tinyllama_chat": "TinyLLAMA-Chat",
-}
-
 dataset_short2name = OrderedDict([
-    ("sst2", "SST-2"),
-    ("agnews", "AGNews"),
-    # ("medical-abstracts", "Medical Abstracts"),
-    ("dbpedia", "DBPedia"),
-    ("20newsgroups", "20NewsGroups"),
-    # ("banking77", "Banking77"),
-])
-
-sizes_short2name = OrderedDict([
-    ("mini", "Mini"),
-    ("small", "Small"),
-    ("medium", "Medium"),
-    ("large", "Large"),
+    ("sst2", {"name": "SST-2", "num_classes": 2}),
+    ("agnews", {"name": "AG News", "num_classes": 4}),
+    # ("medical-abstracts", {"name": "Medical Abstracts", "num_classes": 5}),
+    ("dbpedia", {"name": "DBpedia", "num_classes": 14}),
+    ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20}),
+    # ("banking77", {"name": "Banking77", "num_classes": 77}),
 ])
 
 metrics_short2name = {
@@ -56,6 +28,7 @@ metrics_short2name = {
     "cross_entropy": "Cross Entropy",
     "ece": "ECE",
 }
+
 
 def load_results_paths():
     root_results_dir = Path("../experiments")
@@ -70,36 +43,26 @@ def load_results_paths():
                         for path in (cal_method / "predictions").glob("*"):
                             if not path.exists():
                                 continue
-                            dataset_name, size = dataset.name.split("_")
-                            size = size.split("-")[0]
-                            if "basic_" in prompt.name:
-                                prompt_name = "Basic"
-                            elif "instr_" in prompt.name or "qa_" in prompt.name:
-                                prompt_name = "Instruction"
-                            else:
-                                prompt_name = prompt.name
+                            dataset_name, size, seed = dataset.name.split("_")
                             n_shots = load_yaml(f"../configs/prompt/{prompt.name}.yaml")["num_shots"]
                             data_config = load_yaml(f"../configs/dataset/{dataset.name}.yaml")
-                            num_samples = data_config["train_samples"] + data_config["val_samples"]
+                            num_samples = data_config["total_train_samples"]
                             model_name = model.name
                             base_method_name = load_yaml(f"../configs/base_method/{base_method.name}.yaml")["method"]
                             cal_method_name = load_yaml(f"../configs/calibration_method/{cal_method.name}.yaml")["method"]
                             split_name = path.name
                             results_path = str(path)
-                            if dataset_name not in dataset_short2name or \
-                                size not in sizes_short2name or \
-                                model_name not in model_short2name or \
-                                base_method_name + "+" + cal_method_name not in method_short2name:
-                                continue
                             results.append({
-                                "dataset": dataset_short2name[dataset_name],
-                                "size": sizes_short2name[size],
+                                "dataset": dataset_name,
+                                "size": int(size),
                                 "num_samples": num_samples,
-                                "prompt": prompt_name,
+                                "prompt": prompt.name,
                                 "n_shots": n_shots,
-                                "model": model_short2name[model_name],
-                                "method": method_short2name[base_method_name + "+" + cal_method_name],
+                                "model": model_name,
+                                "base_method": base_method_name,
+                                "cal_method": cal_method_name,
                                 "split": split_name,
+                                "seed": int(seed),
                                 "results": results_path
                             })
     return pd.DataFrame(results)
@@ -192,49 +155,173 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
     return values
 
 
-def compute_results(metrics, bootstrap, random_state, show_test=False):
+def compute_results(metrics, bootstrap, random_state):
     df_results = load_results_paths()
-    if not show_test:
-        df_results = df_results[df_results["split"] != "test"]
-    
-    for metric in metrics:
-        df_results[metric] = ""
-        df_results[f"{metric}:mean"] = np.nan
-        df_results[f"{metric}:std"] = np.nan
 
-    for idx, row in tqdm(df_results.iterrows(), total=len(df_results)):
-        row_results = load_from_disk(row["results"]).with_format("numpy")
-        logits = row_results["logits"].astype(float)
-        targets = row_results["label"].astype(int)
-        for metric in metrics:
+    grouped = df_results.groupby([c for c in df_results.columns if c not in ['results', 'seed']])
+    
+    for metric in tqdm(metrics, desc="Metrics"):
+        for group_name, group_df in tqdm(grouped, desc="Results", leave=False):
+            all_logits, all_targets = [], []
+            for idx, row in group_df.iterrows():
+                row_results = load_from_disk(row["results"]).with_format("numpy")
+                logits = row_results["logits"].astype(float)
+                targets = row_results["label"].astype(int)
+                all_logits.append(logits)
+                all_targets.append(targets)
+            all_logits = np.concatenate(all_logits)
+            all_targets = np.concatenate(all_targets)
+            
             values = compute_metric(logits, targets, metric, bootstrap, random_state)
             mean = np.mean(values)
             std = np.std(values)
+            
             df_results.loc[idx, metric] = f"{mean:.3f} ± {std:.3f}"
             df_results.loc[idx, f"{metric}:mean"] = mean
             df_results.loc[idx, f"{metric}:std"] = std
     
     df_results.drop(columns=["results"], inplace=True)
+    df_results.drop_duplicates(inplace=True, ignore_index=True)
 
     return df_results
 
+def format_method(base_method, cal_method, dataset, prompt, n_shots):
+    method = ""
+    kwargs = {}
+    
+    if n_shots == 0:
+        method += ""
+        kwargs["ls"] = "-"
+    else:
+        method += "Few-shot "
+        kwargs["ls"] = "--"
+    
+    if prompt == f"basic_{dataset}_{n_shots}-shot_litgpt":
+        method += ""
+    elif prompt == f"instr_{dataset}_{n_shots}-shot_litgpt":
+        method += "(Instructions) "
+    elif prompt == f"qa_{dataset}_{n_shots}-shot_litgpt":
+        method += "(Question Answering) "
+    else:
+        raise ValueError(f"Prompt {prompt} is not recognized")
+    
+    if base_method == "no_adaptation" and cal_method == "no_calibration":
+        method += "No adaptation"
+        kwargs["color"] = "black"
+    elif base_method == "no_adaptation" and cal_method == "affine_scalar":
+        method += "Affine Scalar"
+        kwargs["color"] = "tab:blue"
+    elif base_method == "no_adaptation" and cal_method == "temp_scaling":
+        method += "Temperature Scaling"
+        kwargs["color"] = "tab:orange"
+    elif base_method == "no_adaptation" and cal_method == "bias_only":
+        method += "Bias Only"
+        kwargs["color"] = "tab:green"
+    elif base_method == "lora" and cal_method == "no_calibration":
+        method += "LoRA"
+        kwargs["color"] = "tab:red"
+    else:
+        raise ValueError(f"Method {base_method} + {cal_method} is not recognized")
+    
+    return pd.Series({"method": method, "kwargs": kwargs})
+    
+    
 
-def plot_results(df, metrics, width=.8, test=False):
+def plot_results_for_model(df, model, metrics, width=.8, test=False):
+    df = df.copy()
+    df = df[df["split"] == "test"] if test else df[df["split"] == "validation"]
+    df = df[df["model"] == model]
+    df.loc[:,["method", "kwargs"]] = df.apply(lambda x: format_method(x["base_method"], x["cal_method"], x["dataset"], x["prompt"], x["n_shots"]), axis=1)
+    methods = df["method"].unique()
+    datasets = [dataset for dataset in dataset_short2name.keys() if dataset in df["dataset"].unique()]
+
+    fig, ax = plt.subplots(len(metrics),len(datasets), figsize=(len(datasets)*3, len(metrics)*2), sharex="col")
+    if len(metrics) == 1 and len(datasets) == 1:
+        ax = np.array([[ax]])
+    elif len(metrics) == 1:
+        ax = ax[np.newaxis, :]
+    elif len(datasets) == 1:
+        ax = ax[:, np.newaxis]
+    for i, dataset in enumerate(datasets):
+        for j, metric in enumerate(metrics):
+            for m, method in enumerate(methods):
+                num_samples = []
+                means = []
+                stds = []
+                sizes = sorted(df.loc[(df["dataset"] == dataset) & (df["method"] == method), "size"].unique())
+                for s, size in enumerate(sizes):
+                    mask = \
+                        (df["dataset"] == dataset) & \
+                        (df["size"] == size) & \
+                        (df["method"] == method)
+                    if mask.sum() == 0:
+                        continue
+                    if mask.sum() > 1:
+                        raise ValueError("More than one row found")
+                    mean = df[mask][f"{metric}:mean"].values[0]
+                    std = df[mask][f"{metric}:std"].values[0]
+                    # num_samples.append(s - width / 2 + width / (len(methods) - 1) * m)
+                    num_samples.append(df[mask]["num_samples"].astype(int).values[0])
+                    means.append(mean)
+                    stds.append(std)
+                    ls = df.loc[mask, "kwargs"].iloc[0]["ls"]
+                    color = df.loc[mask, "kwargs"].iloc[0]["color"]
+                ax[j, i].errorbar(
+                    np.array(num_samples),
+                    np.array(means), 
+                    yerr=np.array(stds), 
+                    ls = ls,
+                    label = method,
+                    capsize = width / (len(methods) - 1) * 20,
+                    capthick = 2,
+                    elinewidth = 2,
+                    color = color,
+                    alpha = 0.8,
+                )
+            ax[j, i].grid(True)
+            ax[j, i].set_xscale("log")
+
+    for i, dataset in enumerate(datasets):
+        sizes = sorted(df.loc[(df["dataset"] == dataset), "size"].unique())
+        num_samples = [df.loc[(df["dataset"] == dataset) & (df["size"] == size),"num_samples"].iloc[0] for size in sizes]
+        ax[0, i].set_title(
+            f"{dataset_short2name[dataset]['name']}\n"
+            f"({dataset_short2name[dataset]['num_classes']} classes)"
+        )
+        ax[-1, i].set_xticks(num_samples)
+        ax[-1, i].set_xticklabels(
+            [f"{n} * {dataset_short2name[dataset]['num_classes' ]}" for n in sizes],
+            rotation=45,
+            ha="right",
+            fontsize=8,
+        )
+
+    for j, metric in enumerate(metrics):
+        if "norm_" in metric:
+            metric_name = "Normalized\n" + metrics_short2name[metric[5:]]
+        else:
+            metric_name = metrics_short2name[metric]
+        ax[j, 0].set_ylabel(metric_name)
+
+    fig.text(0.5, 0.0, 'Number of training samples', ha='center')
+
+
+    hand, lab = ax[0,0].get_legend_handles_labels()
+    fig.legend(hand, lab, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods)//2, fancybox=True, shadow=True)
+    fig.tight_layout()
+
+
+
+def plot_results2(df, metrics, width=.8, test=False):
 
     df = df.copy()
     df = df[df["split"] == "test"] if test else df[df["split"] == "validation"]
     
     models_with_prompts = (df["model"]  + "---" + df["prompt"]).unique()
     datasets = [dataset for dataset in dataset_short2name.values() if dataset in df["dataset"].unique()]
-    sizes = sizes_short2name.values()
+    # sizes = sizes_short2name.values()
+    sizes = [2**i for i in range(2, 11)]
     methods = [method for method in method_short2name.values() if method in df["method"].unique()]
-    # for i, row in df.iterrows():
-    #     if row["method"] == "Zero-shot" and row["n_shots"] > 0:
-    #         df.loc[df.index == i, "method"] = "Few-shot"
-    #         # print(df.loc[df.index == i])
-    #         add_few_shot = True
-    # if add_few_shot:
-    #     methods.append("Few-shot")
     for method in ["Zero-shot", "Affine Scalar", "Temperature Scaling", "Bias Only"]:
         s = "Few-shot" if method == "Zero-shot" else "Few-shot + " + method
         df.loc[(df["method"] == method) & (df["n_shots"] > 0), "method"] = s
@@ -286,7 +373,7 @@ def plot_results(df, metrics, width=.8, test=False):
                             mean = df[mask][f"{metric}:mean"].values[0]
                             std = df[mask][f"{metric}:std"].values[0]
                             # x.append(s - width / 2 + width / (len(methods) - 1) * m)
-                            x.append(s)
+                            x.append(size)
                             means.append(mean)
                             stds.append(std)
                         ax[j, i].errorbar(
@@ -303,18 +390,25 @@ def plot_results(df, metrics, width=.8, test=False):
                         )
                 ax[j,i].grid(True)
             
-            sizes_with_samples_num = []
-            for size in sizes:
-                mask = (df["size"] == size) & (df["model"] == model) & (df["prompt"] == prompt) & (df["dataset"] == dataset)
-                if mask.sum() == 0:
-                    sizes_with_samples_num.append(size)
-                else:
-                    sizes_with_samples_num.append(
-                        df[mask]["num_samples"].astype(str).unique()[0]
-                    )
-            ax[-1, i].set_xticks(range(len(sizes)))
-            ax[-1, i].set_xticklabels(sizes_with_samples_num, rotation=45, ha="right")
-            ax[-1, i].set_xlim(-width, len(sizes) - (1 - width))
+            
+
+            # sizes_with_samples_num = []
+            # for size in sizes:
+            #     mask = (df["size"] == size) & (df["model"] == model) & (df["prompt"] == prompt) & (df["dataset"] == dataset)
+            #     if mask.sum() == 0:
+            #         sizes_with_samples_num.append(size)
+            #     else:
+            #         sizes_with_samples_num.append(
+            #             df[mask]["num_samples"].astype(int).unique()[0]
+            #         )
+            # ax[-1, i].set_xscale("log")
+            # ax[-1, i].set_xticks(sizes_with_samples_num)
+            # ax[-1, i].set_xticklabels(sizes_with_samples_num, rotation=45, ha="right")
+            # ax[-1, i].set_xlim(-width, len(sizes) - (1 - width))
+            # ax[-1, i].set_xticks(sizes)
+            # ax[-1, i].get_xaxis().set_major_formatter(plt.ScalarFormatter())
+            # ax[-1, i].get_xaxis().set_minor_formatter(plt.ScalarFormatter())
+            # ax[-1, i].set_xticklabels([f"{size}" for size in sizes], rotation=45, ha="right")            
         
         for i, dataset in enumerate(datasets):
             ax[0, i].set_title(dataset)

@@ -21,41 +21,71 @@ dataset2load_fn = {
     "banking77": load_banking
 }
 
-def sample_and_shuffle(dataset, num_samples, random_state):
-    rs = np.random.RandomState(random_state)
+# def sample_and_shuffle(dataset, num_samples, random_state):
+#     rs = np.random.RandomState(random_state)
     
-    if isinstance(dataset, Dataset):
-        if num_samples is None:
-            num_samples = len(dataset)
-        idx = rs.choice(len(dataset), num_samples, replace=False).tolist()
-        dataset = dataset.select(idx)
-    elif isinstance(dataset, dict):
-        if num_samples is None:
-            num_samples = len(next(iter(dataset)))
-        idx = rs.choice(next(iter(dataset.values())).shape[0], num_samples, replace=False).tolist()
-        dataset = {k: v[idx] for k, v in dataset.items()}
-    else:
-        raise ValueError(f"Invalid type of dataset: {type(dataset)}")
-    return dataset
+#     if isinstance(dataset, Dataset):
+#         if num_samples is None:
+#             num_samples = len(dataset)
+#         idx = rs.choice(len(dataset), num_samples, replace=False).tolist()
+#         dataset = dataset.select(idx)
+#     elif isinstance(dataset, dict):
+#         if num_samples is None:
+#             num_samples = len(next(iter(dataset)))
+#         idx = rs.choice(next(iter(dataset.values())).shape[0], num_samples, replace=False).tolist()
+#         dataset = {k: v[idx] for k, v in dataset.items()}
+#     else:
+#         raise ValueError(f"Invalid type of dataset: {type(dataset)}")
+#     return dataset
 
 
-def load_dataset(dataset_name, num_train_samples, num_val_samples, num_shots, random_state = 0):
+# def load_dataset(dataset_name, num_train_samples, num_val_samples, num_shots, random_state = 0):
+#     if dataset_name in dataset2load_fn:
+#         load_fn = dataset2load_fn[dataset_name]
+#     else:
+#         load_fn = lambda: {split: load_from_disk(os.path.join(dataset_name, split)) for split in ["train", "validation", "test"]}
+#     train_datadict = load_fn()
+#     train_datadict["train"] = sample_and_shuffle(train_datadict["train"], num_train_samples, random_state)
+#     train_datadict["validation"] = sample_and_shuffle(train_datadict["validation"], num_val_samples, random_state)
+#     if num_shots > 0:
+#         shots = sample_and_shuffle(train_datadict["train"], num_shots, random_state + 1)
+#         all_ids = np.asarray(train_datadict["train"]["idx"])
+#         shot_ids = np.asarray(shots["idx"])
+#         new_train_ids = np.setdiff1d(all_ids, shot_ids)
+#         new_train_ids = [i for i in range(len(all_ids)) if train_datadict["train"][i]["idx"] in new_train_ids]
+#         train_datadict["train"] = train_datadict["train"].select(new_train_ids)
+#     else:
+#         shots = []
+
+#     predict_datadict = load_fn() # original dataset
+#     return train_datadict, predict_datadict, shots
+
+
+def load_dataset(dataset_name: SUPPORTED_DATASETS, total_train_samples: int, val_prop: float, num_shots: int, random_state: int = 0):
     if dataset_name in dataset2load_fn:
-        load_fn = dataset2load_fn[dataset_name]
+        datadict = dataset2load_fn[dataset_name]()
+
+        train_samples = int(total_train_samples * (1 - val_prop))
+        val_samples = total_train_samples - train_samples
+        rs = np.random.RandomState(random_state)
+        idx = rs.permutation(len(datadict["train"]))
+        train_idx = idx[:train_samples]
+        val_idx = idx[train_samples:train_samples + val_samples]
+        datadict["validation"] = datadict["train"].select(val_idx)
+
+        if num_shots > 0:
+            shots = datadict["train"].select(train_idx[:num_shots])
+            train_idx = train_idx[num_shots:]
+        else:
+            shots = []
+        datadict["train"] = datadict["train"].select(train_idx)
+    
     else:
-        load_fn = lambda: {split: load_from_disk(os.path.join(dataset_name, split)) for split in ["train", "validation", "test"]}
-    train_datadict = load_fn()
-    train_datadict["train"] = sample_and_shuffle(train_datadict["train"], num_train_samples, random_state)
-    train_datadict["validation"] = sample_and_shuffle(train_datadict["validation"], num_val_samples, random_state)
-    if num_shots > 0:
-        shots = sample_and_shuffle(train_datadict["train"], num_shots, random_state + 1)
-        all_ids = np.asarray(train_datadict["train"]["idx"])
-        shot_ids = np.asarray(shots["idx"])
-        new_train_ids = np.setdiff1d(all_ids, shot_ids)
-        new_train_ids = [i for i in range(len(all_ids)) if train_datadict["train"][i]["idx"] in new_train_ids]
-        train_datadict["train"] = train_datadict["train"].select(new_train_ids)
-    else:
+        datadict = {split: load_from_disk(os.path.join(dataset_name, split)) for split in ["train", "validation", "test"]}
         shots = []
 
-    predict_datadict = load_fn() # original dataset
+    train_datadict = {split: datadict[split] for split in ["train", "validation"]}
+    predict_datadict = {split: datadict[split] for split in ["train", "validation", "test"]}
+
     return train_datadict, predict_datadict, shots
+        

@@ -1,26 +1,26 @@
 from datasets import load_dataset, concatenate_datasets
 import numpy as np
 
+VAL_HELD_OUT_SAMPLES = 12 * 77
 
 def load_banking():
-    datadict = load_dataset("PolyAI/banking77")
-    datadict["train"] = datadict["train"].add_column("idx", np.arange(len(datadict["train"])))
-    datadict["test"] = datadict["test"].add_column("idx", np.arange(len(datadict["train"]), len(datadict["train"])+len(datadict["test"])))
-    all_data = concatenate_datasets([datadict["train"], datadict["test"]])
+    data = load_dataset("PolyAI/banking77")
+    data["train"] = data["train"].add_column("idx", np.arange(len(data["train"])))
+    data["test"] = data["test"].add_column("idx", np.arange(len(data["train"]), len(data["train"])+len(data["test"])))
+    TEST_HELD_OUT_SAMPLES = len(data["test"])
+    all_data = concatenate_datasets([data["train"], data["test"]])
+
     rs = np.random.RandomState(7348)
     idx = rs.permutation(len(all_data))
-    train_idx = idx[:10000]
-    val_idx = idx[10000:11000]
-    test_idx = idx[11000:]
-    datadict["train"] = all_data.select(train_idx)
-    datadict["validation"] = all_data.select(val_idx)
-    datadict["test"] = all_data.select(test_idx)
+    test_heldout_idx = idx[:TEST_HELD_OUT_SAMPLES]
+    val_heldout_idx = idx[TEST_HELD_OUT_SAMPLES:TEST_HELD_OUT_SAMPLES+VAL_HELD_OUT_SAMPLES]
+    train_idx = idx[TEST_HELD_OUT_SAMPLES+VAL_HELD_OUT_SAMPLES:]
+
+    datadict = {
+        "train": all_data.select(train_idx),
+        "validation_held_out": all_data.select(val_heldout_idx),
+        "test_held_out": all_data.select(test_heldout_idx),
+    }
+    
     return datadict
 
-
-if __name__ == "__main__":
-    dataset = load_banking()
-    for split in ["train", "validation", "test"]:
-        print(f"Split: {split}")
-        for i, n in dataset[split].to_pandas()["label"].value_counts().sort_index().items():
-            print(f"Class {i}: {n} samples")

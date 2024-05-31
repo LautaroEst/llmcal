@@ -1,4 +1,4 @@
 dataset: "sst2"
-train_samples: 358
-val_samples: 154
+total_train_samples: 512
+val_prop: 0.3
 random_state: 493

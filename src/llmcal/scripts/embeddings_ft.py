@@ -19,8 +19,8 @@ from lightning.pytorch.trainer.states import TrainerStatus
 
 def main(
     output_dir: str,
-    train_samples: int,
-    val_samples: int,
+    total_train_samples: int,
+    val_prop: float,
     random_state: int,
     pooling: Literal["mean", "max", "last"] = "last",
     max_ls: int = 40,
@@ -35,7 +35,7 @@ def main(
 
     # Load dataset
     data_dir = os.path.join("/".join(output_dir.split("/")[:-1]),".cache/predictions")
-    train_datadict, prediction_datadict, _ = load_dataset(data_dir, train_samples, val_samples, 0, random_state)
+    train_datadict, prediction_datadict, _ = load_dataset(data_dir, total_train_samples, val_prop, 0, random_state)
 
     # Process the train dataset
     train_loader = DataLoader(
