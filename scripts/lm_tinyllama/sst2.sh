@@ -1,14 +1,14 @@
-#!/bin/bash
+# #!/bin/bash
 
 ### No adaptation + no calibration
 python -m llmcal sst2_16_738 basic_sst2_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/sst2_256_493/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../sst2_16_738/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/sst2_256_493/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+mkdir -p experiments/sst2_256_493/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../sst2_16_738/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions/test experiments/sst2_256_493/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
 python -m llmcal sst2_256_493 basic_sst2_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/sst2_8_639/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../sst2_16_738/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/sst2_8_639/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+mkdir -p experiments/sst2_8_639/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../sst2_16_738/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions/test experiments/sst2_8_639/basic_sst2_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
 python -m llmcal sst2_8_639 basic_sst2_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
 ### No adaptation + affine scalar

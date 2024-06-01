@@ -6,8 +6,11 @@ def load_dbpedia():
     data = load_dataset("fancyzhx/dbpedia_14")
     data["train"] = data["train"].add_column("idx", np.arange(len(data["train"])))
     data["test"] = data["test"].add_column("idx", np.arange(len(data["test"])))
+
+    rs = np.random.RandomState(27834)
+    test_idx = rs.choice(len(data["test"]), 7000, replace=False)
     datadict = {
         "train": data["train"],
-        "test": data["test"],
+        "test": data["test"].select(test_idx),
     }
     return datadict

@@ -3,16 +3,16 @@
 ### No adaptation + no calibration
 python -m llmcal 20newsgroups_4_295 basic_20newsgroups_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/20newsgroups_16_738/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../20newsgroups_4_295/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/20newsgroups_16_738/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+mkdir -p experiments/20newsgroups_16_738/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../20newsgroups_4_295/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions/test experiments/20newsgroups_16_738/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
 python -m llmcal 20newsgroups_16_738 basic_20newsgroups_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/20newsgroups_256_493/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../20newsgroups_4_295/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/20newsgroups_256_493/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+mkdir -p experiments/20newsgroups_256_493/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../20newsgroups_4_295/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions/test experiments/20newsgroups_256_493/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
 python -m llmcal 20newsgroups_256_493 basic_20newsgroups_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/20newsgroups_2_927/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../20newsgroups_4_295/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/20newsgroups_2_927/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+mkdir -p experiments/20newsgroups_2_927/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../20newsgroups_4_295/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions/test experiments/20newsgroups_2_927/basic_20newsgroups_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
 python -m llmcal 20newsgroups_2_927 basic_20newsgroups_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
 ### No adaptation + affine scalar

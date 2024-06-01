@@ -3,12 +3,12 @@
 ### No adaptation + no calibration
 python -m llmcal agnews_16_738 basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/agnews_256_493/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../agnews_16_738/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/agnews_256_493/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+mkdir -p experiments/agnews_256_493/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../agnews_16_738/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions/test experiments/agnews_256_493/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
 python -m llmcal agnews_256_493 basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/agnews_8_639/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../agnews_16_738/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/agnews_8_639/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+mkdir -p experiments/agnews_8_639/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../agnews_16_738/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions/test experiments/agnews_8_639/basic_agnews_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
 python -m llmcal agnews_8_639 basic_agnews_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
 ### No adaptation + affine scalar

@@ -3,16 +3,16 @@
 ### No adaptation + no calibration
 python -m llmcal dbpedia_4_295 basic_dbpedia_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/dbpedia_16_738/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../dbpedia_4_295/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/dbpedia_16_738/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+mkdir -p experiments/dbpedia_16_738/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../dbpedia_4_295/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions/test experiments/dbpedia_16_738/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
 python -m llmcal dbpedia_16_738 basic_dbpedia_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/dbpedia_256_493/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../dbpedia_4_295/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/dbpedia_256_493/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+mkdir -p experiments/dbpedia_256_493/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../dbpedia_4_295/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions/test experiments/dbpedia_256_493/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
 python -m llmcal dbpedia_256_493 basic_dbpedia_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/dbpedia_2_927/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/
-ln -sf ../../../../../dbpedia_4_295/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions experiments/dbpedia_2_927/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache
+mkdir -p experiments/dbpedia_2_927/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../dbpedia_4_295/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions/test experiments/dbpedia_2_927/basic_dbpedia_0-shot_litgpt/lm_tinyllama/no_adaptation_bf16/.cache/predictions
 python -m llmcal dbpedia_2_927 basic_dbpedia_0-shot_litgpt lm_tinyllama no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
 ### No adaptation + affine scalar

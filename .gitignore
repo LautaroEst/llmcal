@@ -4,7 +4,6 @@
 
 /data/
 /experiments/
-/experiments.old/
-/experiments.old.old/
+/*.old/
 /logs/
 /.old/
