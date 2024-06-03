@@ -87,6 +87,6 @@ python -m llmcal agnews_256_493 basic_agnews_0-shot_litgpt lm_tinyllama no_adapt
     --calibration.max_epochs 30
 
 ### Lora + no calibration
-python -m llmcal agnews_16_738 basic_agnews_0-shot_litgpt lm_tinyllama lora_20samples no_calibration --accelerator "gpu"
+python -m llmcal agnews_8_639 basic_agnews_0-shot_litgpt lm_tinyllama lora_20samples no_calibration --accelerator "gpu"
 python -m llmcal agnews_16_738 basic_agnews_0-shot_litgpt lm_tinyllama lora_60samples no_calibration --accelerator "gpu"
 python -m llmcal agnews_256_493 basic_agnews_0-shot_litgpt lm_tinyllama lora_1000samples no_calibration --accelerator "gpu"

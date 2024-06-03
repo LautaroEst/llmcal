@@ -13,8 +13,8 @@ lora_head: True
 
 precision: "bf16-true"
 batch_size: 1
-accumulate_grad_batches: 32
-val_check_interval: 32
+accumulate_grad_batches: 16
+val_check_interval: 16
 max_epochs: 50
 max_steps: -1
 optimizer: "adamw"

@@ -280,6 +280,8 @@ def plot_results_for_model(df, model, metrics, width=.8, test=False):
                 )
             ax[j, i].grid(True)
             ax[j, i].set_xscale("log")
+            ax[j, i].set_xticks([])
+            ax[j, i].minorticks_off()
 
     for i, dataset in enumerate(datasets):
         sizes = sorted(df.loc[(df["dataset"] == dataset), "size"].unique())
@@ -288,13 +290,10 @@ def plot_results_for_model(df, model, metrics, width=.8, test=False):
             f"{dataset_short2name[dataset]['name']}\n"
             f"({dataset_short2name[dataset]['num_classes']} classes)"
         )
+        ax[-1, i].set_xlim(0.8 * min(num_samples), 1.2 * max(num_samples))
         ax[-1, i].set_xticks(num_samples)
-        ax[-1, i].set_xticklabels(
-            [f"{n} * {dataset_short2name[dataset]['num_classes' ]}" for n in sizes],
-            rotation=45,
-            ha="right",
-            fontsize=8,
-        )
+        ax[-1, i].set_xticklabels(sizes)
+        ax[-1, i].set_xlabel(f"(x{dataset_short2name[dataset]['num_classes']})")
 
     for j, metric in enumerate(metrics):
         if "norm_" in metric:
@@ -307,7 +306,7 @@ def plot_results_for_model(df, model, metrics, width=.8, test=False):
 
 
     hand, lab = ax[0,0].get_legend_handles_labels()
-    fig.legend(hand, lab, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods)//2, fancybox=True, shadow=True)
+    fig.legend(hand, lab, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods), fancybox=True, shadow=True)
     fig.tight_layout()
 
 
