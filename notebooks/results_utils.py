@@ -1,3 +1,4 @@
+import torch
 from copy import deepcopy
 from pathlib import Path
 from typing import OrderedDict
@@ -11,6 +12,7 @@ from scipy.special import log_softmax, softmax
 from datasets import load_from_disk
 
 from llmcal.utils import load_yaml
+from affinecal import cal_loss
 
 dataset_short2name = OrderedDict([
     ("sst2", {"name": "SST-2", "num_classes": 2}),
@@ -28,6 +30,13 @@ metrics_short2name = {
     "cross_entropy": "Cross Entropy",
     "ece": "ECE",
 }
+supported_methods = [
+    "Affine Scalar",
+    "Temperature Scaling",
+    "Bias Only",
+    "LoRA",
+    "No adaptation",
+]
 
 
 def load_results_paths():
@@ -41,7 +50,7 @@ def load_results_paths():
                         if cal_method.name == ".cache":
                             continue
                         for path in (cal_method / "predictions").glob("*"):
-                            if not path.exists():
+                            if not path.exists() or "test" not in path.name:
                                 continue
                             dataset_name, size, seed = dataset.name.split("_")
                             n_shots = load_yaml(f"../configs/prompt/{prompt.name}.yaml")["num_shots"]
@@ -78,7 +87,9 @@ def f1_score(logits, targets):
 
 def cross_entropy(logits, targets):
     logprobs = log_softmax(logits, axis=1)
-    return - np.mean(logprobs[np.arange(len(targets)), targets])
+    scores = -logprobs[np.arange(len(targets)), targets]
+    scores[scores == np.inf] = 0
+    return scores.mean()
 
 def ece(logits, targets):
     n_bins = 10
@@ -112,6 +123,10 @@ def _compute_metric(logits, targets, metric):
         return cross_entropy(logits, targets)
     elif metric == "ece":
         return ece(logits, targets)
+    elif metric == "cal_loss":
+        logits = torch.from_numpy(logits).float()
+        targets = torch.from_numpy(targets).long()
+        return cal_loss(logits, targets, relative=True) * 100
     else:
         raise ValueError(f"Metric {metric} is not supported")
 
@@ -125,7 +140,8 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
         counts = np.bincount(targets, minlength=minlength)
         priors = counts / num_samples
         priors = np.tile(priors, (num_samples, 1))
-        logpriors = np.log(priors)
+        logpriors = np.log(priors, where=priors > 0)
+        logpriors[priors == 0] = -np.inf
         
         if bootstrap == 0:
             return [
@@ -160,34 +176,43 @@ def compute_results(metrics, bootstrap, random_state):
 
     grouped = df_results.groupby([c for c in df_results.columns if c not in ['results', 'seed']])
     
-    for metric in tqdm(metrics, desc="Metrics"):
-        for group_name, group_df in tqdm(grouped, desc="Results", leave=False):
-            all_logits, all_targets = [], []
+    for group_name, group_df in tqdm(grouped):
+        for metric in metrics:
+            all_values = []
             for idx, row in group_df.iterrows():
                 row_results = load_from_disk(row["results"]).with_format("numpy")
                 logits = row_results["logits"].astype(float)
                 targets = row_results["label"].astype(int)
-                all_logits.append(logits)
-                all_targets.append(targets)
-            all_logits = np.concatenate(all_logits)
-            all_targets = np.concatenate(all_targets)
+                if np.bincount(targets,minlength=logits.shape[1]).min() == 0 and row["split"] == "test":
+                    raise ValueError(
+                        f"Class missing in {row['dataset']} "
+                        f"{row['size']} "
+                        f"{row['prompt']} "
+                        f"{row['model']} "
+                        f"{row['base_method']} "
+                        f"{row['cal_method']} "
+                        f"{row['split']} "
+                    )
+                values = compute_metric(logits, targets, metric, bootstrap, random_state)
+                all_values.append(values)
+            all_values = np.concatenate(all_values)
             
-            values = compute_metric(logits, targets, metric, bootstrap, random_state)
             mean = np.mean(values)
             std = np.std(values)
-            
-            df_results.loc[idx, metric] = f"{mean:.3f} ± {std:.3f}"
-            df_results.loc[idx, f"{metric}:mean"] = mean
-            df_results.loc[idx, f"{metric}:std"] = std
+
+            for idx, row in group_df.iterrows():
+                df_results.loc[idx, metric] = f"{mean:.3f} ± {std:.3f}"
+                df_results.loc[idx, f"{metric}:mean"] = mean
+                df_results.loc[idx, f"{metric}:std"] = std
     
-    df_results.drop(columns=["results"], inplace=True)
+    df_results.drop(columns=["results", "seed"], inplace=True)
     df_results.drop_duplicates(inplace=True, ignore_index=True)
 
     return df_results
 
 def format_method(base_method, cal_method, dataset, prompt, n_shots):
     method = ""
-    kwargs = {}
+    kwargs = {"alpha": 1.}
     
     if n_shots == 0:
         method += ""
@@ -208,6 +233,8 @@ def format_method(base_method, cal_method, dataset, prompt, n_shots):
     if base_method == "no_adaptation" and cal_method == "no_calibration":
         method += "No adaptation"
         kwargs["color"] = "black"
+        kwargs["alpha"] = 0.6
+        kwargs["ls"] = "--"
     elif base_method == "no_adaptation" and cal_method == "affine_scalar":
         method += "Affine Scalar"
         kwargs["color"] = "tab:blue"
@@ -227,12 +254,11 @@ def format_method(base_method, cal_method, dataset, prompt, n_shots):
     
     
 
-def plot_results_for_model(df, model, metrics, width=.8, test=False):
+def plot_results_for_model(df, model, metrics, width=.8):
     df = df.copy()
-    df = df[df["split"] == "test"] if test else df[df["split"] == "validation"]
     df = df[df["model"] == model]
     df.loc[:,["method", "kwargs"]] = df.apply(lambda x: format_method(x["base_method"], x["cal_method"], x["dataset"], x["prompt"], x["n_shots"]), axis=1)
-    methods = df["method"].unique()
+    methods = [method for method in supported_methods if method in df["method"].unique()]
     datasets = [dataset for dataset in dataset_short2name.keys() if dataset in df["dataset"].unique()]
 
     fig, ax = plt.subplots(len(metrics),len(datasets), figsize=(len(datasets)*3, len(metrics)*2), sharex="col")
@@ -257,6 +283,7 @@ def plot_results_for_model(df, model, metrics, width=.8, test=False):
                     if mask.sum() == 0:
                         continue
                     if mask.sum() > 1:
+                        print(df[mask])
                         raise ValueError("More than one row found")
                     mean = df[mask][f"{metric}:mean"].values[0]
                     std = df[mask][f"{metric}:std"].values[0]
@@ -266,6 +293,7 @@ def plot_results_for_model(df, model, metrics, width=.8, test=False):
                     stds.append(std)
                     ls = df.loc[mask, "kwargs"].iloc[0]["ls"]
                     color = df.loc[mask, "kwargs"].iloc[0]["color"]
+                    alpha = df.loc[mask, "kwargs"].iloc[0]["alpha"]
                 ax[j, i].errorbar(
                     np.array(num_samples),
                     np.array(means), 
@@ -276,7 +304,7 @@ def plot_results_for_model(df, model, metrics, width=.8, test=False):
                     capthick = 2,
                     elinewidth = 2,
                     color = color,
-                    alpha = 0.8,
+                    alpha = alpha,
                 )
             ax[j, i].grid(True)
             ax[j, i].set_xscale("log")
