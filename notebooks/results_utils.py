@@ -12,7 +12,7 @@ from scipy.special import log_softmax, softmax
 from datasets import load_from_disk
 
 from llmcal.utils import load_yaml
-from affinecal import cal_loss
+from affinecal import cal_loss, min_cal
 
 dataset_short2name = OrderedDict([
     ("sst2", {"name": "SST-2", "num_classes": 2}),
@@ -24,19 +24,23 @@ dataset_short2name = OrderedDict([
 ])
 
 metrics_short2name = {
-    "accuracy": "Accuracy",
-    "error_rate": "Error Rate",
-    "f1_score": "F1 Score",
-    "cross_entropy": "Cross Entropy",
+    "accuracy": "Acc",
+    "error_rate": "ER",
+    "f1_score": "F1",
+    "cross_entropy": "CE",
     "ece": "ECE",
+    "cal_loss_bias": "CalLoss(%)",
+    "cal_loss_nobias": "CalLoss(%)\nWithout bias",
+    "min_calibration_bias": "CE (PostCal)",
+    "min_calibration_nobias": "Normalized CE after\nBias Calibration",
 }
-supported_methods = [
-    "Affine Scalar",
-    "Temperature Scaling",
-    "Bias Only",
-    "LoRA",
-    "No adaptation",
-]
+supported_methods = OrderedDict([
+    ("affine_scalar", {"label": "Affine Calibration", "color": "tab:blue"}),
+    ("temp_scaling", {"label": "Scale Only Calibration\n(Temperature Scaling)", "color": "tab:orange"}),
+    ("bias_only", {"label": "Bias Only Calibration", "color": "tab:green"}),
+    ("lora", {"label": "LoRA", "color": "tab:red"}),
+    ("no_adaptation", {"label": "No adaptation", "color": "black"}),
+])
 
 
 def load_results_paths():
@@ -112,7 +116,7 @@ def ece(logits, targets):
             ece += np.abs(avg_confidence_in_bin - accuracy_in_bin) * prop_in_bin
     return ece
 
-def _compute_metric(logits, targets, metric):
+def _compute_metric(logits, targets, metric, bootstrap_idx=None):
     if metric == "accuracy":
         return accuracy(logits, targets)
     elif metric == "error_rate":
@@ -123,10 +127,22 @@ def _compute_metric(logits, targets, metric):
         return cross_entropy(logits, targets)
     elif metric == "ece":
         return ece(logits, targets)
-    elif metric == "cal_loss":
+    elif metric == "cal_loss_bias":
         logits = torch.from_numpy(logits).float()
         targets = torch.from_numpy(targets).long()
-        return cal_loss(logits, targets, relative=True) * 100
+        return cal_loss(logits, targets, relative=True, condition_ids=bootstrap_idx, alpha="scalar", beta=True) * 100
+    elif metric == "cal_loss_nobias":
+        logits = torch.from_numpy(logits).float()
+        targets = torch.from_numpy(targets).long()
+        return cal_loss(logits, targets, relative=True, condition_ids=bootstrap_idx, alpha="scalar", beta=False) * 100
+    elif metric == "min_calibration_bias":
+        logits = torch.from_numpy(logits).float()
+        targets = torch.from_numpy(targets).long()
+        return min_cal(logits, targets, condition_ids=bootstrap_idx, alpha="scalar", beta=True) * 100
+    elif metric == "min_calibration_nobias":
+        logits = torch.from_numpy(logits).float()
+        targets = torch.from_numpy(targets).long()
+        return min_cal(logits, targets, condition_ids=bootstrap_idx, alpha="scalar", beta=False) * 100
     else:
         raise ValueError(f"Metric {metric} is not supported")
 
@@ -145,37 +161,39 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
         
         if bootstrap == 0:
             return [
-                _compute_metric(logits, targets, metric) /
-                _compute_metric(logpriors, targets, metric)
+                _compute_metric(logits, targets, metric, bootstrap_idx=None) /
+                _compute_metric(logpriors, targets, metric, bootstrap_idx=None)
             ]
         
         rs = np.random.RandomState(random_state)
         values = []
-        for _ in range(bootstrap):
-            idx = rs.choice(len(targets), len(targets), replace=True)
+        for bidx in range(bootstrap):
+            idx = rs.choice(len(targets), len(targets), replace=True, bootstrap_idx=bidx)
             values.append(
-                _compute_metric(logits[idx], targets[idx], metric) /
-                _compute_metric(logpriors[idx], targets[idx], metric)
+                _compute_metric(logits[idx], targets[idx], metric, bootstrap_idx=bidx) /
+                _compute_metric(logpriors[idx], targets[idx], metric, bootstrap_idx=bidx)
             )
         return values
     
     if bootstrap == 0:
-        return [_compute_metric(logits, targets, metric)]
+        return [_compute_metric(logits, targets, metric, bootstrap_idx=None)]
     
     rs = np.random.RandomState(random_state)
     values = []
-    for _ in range(bootstrap):
-        idx = rs.choice(len(targets), len(targets), replace=True)
-        values.append(_compute_metric(logits[idx], targets[idx], metric))
+    for bidx in range(bootstrap):
+        idx = rs.choice(len(targets), len(targets), replace=True, bootstrap_idx=bidx)
+        values.append(_compute_metric(logits[idx], targets[idx], metric, bootstrap_idx=bidx))
         
     return values
+
+
+
 
 
 def compute_results(metrics, bootstrap, random_state):
     df_results = load_results_paths()
 
     grouped = df_results.groupby([c for c in df_results.columns if c not in ['results', 'seed']])
-    
     for group_name, group_df in tqdm(grouped):
         for metric in metrics:
             all_values = []
@@ -194,11 +212,10 @@ def compute_results(metrics, bootstrap, random_state):
                         f"{row['split']} "
                     )
                 values = compute_metric(logits, targets, metric, bootstrap, random_state)
-                all_values.append(values)
-            all_values = np.concatenate(all_values)
+                all_values.extend(values)
             
-            mean = np.mean(values)
-            std = np.std(values)
+            mean = np.mean(all_values)
+            std = np.std(all_values)
 
             for idx, row in group_df.iterrows():
                 df_results.loc[idx, metric] = f"{mean:.3f} ± {std:.3f}"
@@ -231,22 +248,21 @@ def format_method(base_method, cal_method, dataset, prompt, n_shots):
         raise ValueError(f"Prompt {prompt} is not recognized")
     
     if base_method == "no_adaptation" and cal_method == "no_calibration":
-        method += "No adaptation"
-        kwargs["color"] = "black"
+        method += supported_methods["no_adaptation"]["label"]
+        kwargs["color"] = supported_methods["no_adaptation"]["color"]
         kwargs["alpha"] = 0.6
-        kwargs["ls"] = "--"
     elif base_method == "no_adaptation" and cal_method == "affine_scalar":
-        method += "Affine Scalar"
-        kwargs["color"] = "tab:blue"
+        method += supported_methods["affine_scalar"]["label"]
+        kwargs["color"] = supported_methods["affine_scalar"]["color"]
     elif base_method == "no_adaptation" and cal_method == "temp_scaling":
-        method += "Temperature Scaling"
-        kwargs["color"] = "tab:orange"
+        method += supported_methods["temp_scaling"]["label"]
+        kwargs["color"] = supported_methods["temp_scaling"]["color"]
     elif base_method == "no_adaptation" and cal_method == "bias_only":
-        method += "Bias Only"
-        kwargs["color"] = "tab:green"
+        method += supported_methods["bias_only"]["label"]
+        kwargs["color"] = supported_methods["bias_only"]["color"]
     elif base_method == "lora" and cal_method == "no_calibration":
-        method += "LoRA"
-        kwargs["color"] = "tab:red"
+        method += supported_methods["lora"]["label"]
+        kwargs["color"] = supported_methods["lora"]["color"]
     else:
         raise ValueError(f"Method {base_method} + {cal_method} is not recognized")
     
@@ -258,7 +274,7 @@ def plot_results_for_model(df, model, metrics, width=.8):
     df = df.copy()
     df = df[df["model"] == model]
     df.loc[:,["method", "kwargs"]] = df.apply(lambda x: format_method(x["base_method"], x["cal_method"], x["dataset"], x["prompt"], x["n_shots"]), axis=1)
-    methods = [method for method in supported_methods if method in df["method"].unique()]
+    methods = [supported_methods[method]["label"] for method in supported_methods if supported_methods[method]["label"] in df["method"].unique()]
     datasets = [dataset for dataset in dataset_short2name.keys() if dataset in df["dataset"].unique()]
 
     fig, ax = plt.subplots(len(metrics),len(datasets), figsize=(len(datasets)*3, len(metrics)*2), sharex="col")
@@ -297,7 +313,7 @@ def plot_results_for_model(df, model, metrics, width=.8):
                 ax[j, i].errorbar(
                     np.array(num_samples),
                     np.array(means), 
-                    yerr=np.array(stds), 
+                    # yerr=np.array(stds), 
                     ls = ls,
                     label = method,
                     capsize = width / (len(methods) - 1) * 20,
@@ -306,7 +322,7 @@ def plot_results_for_model(df, model, metrics, width=.8):
                     color = color,
                     alpha = alpha,
                 )
-            ax[j, i].grid(True)
+            ax[j, i].yaxis.grid(True)
             ax[j, i].set_xscale("log")
             ax[j, i].set_xticks([])
             ax[j, i].minorticks_off()
@@ -325,7 +341,7 @@ def plot_results_for_model(df, model, metrics, width=.8):
 
     for j, metric in enumerate(metrics):
         if "norm_" in metric:
-            metric_name = "Normalized\n" + metrics_short2name[metric[5:]]
+            metric_name = "N" + metrics_short2name[metric[5:]]
         else:
             metric_name = metrics_short2name[metric]
         ax[j, 0].set_ylabel(metric_name)

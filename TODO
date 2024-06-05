@@ -1,20 +1,7 @@
-- Hacer el gráfico de las priors por dataset y tamaño
+- agregar agnews con 4 puntos para 5 seeds en trust
+- correr banking con 5 seeds en trust
+- completar los loras que faltan en 20newsgroups en sailormoon
+- Arreglar 20newsgroups en el script de lora + affine
+- completar lora + affine en los puntos que faltan
 
-- Esperar a que termine bankin77.sh
-- Esperar a que termine dbpedia.sh y chequear que se haya corrido todo sin errores por más que los affines no hayan entrenado bien
-- Corregir los .sh de todas las bases de datos para que queden como dbpedia
-- Correr todos los .sh de tinyllama
-- Implementar FT con embeddings
-- agregar a .sh y correr todos los .sh de tinyllama de nuevo
-- Escribir
-
-
-- Repetir resultados para phi-1.5
-
-- completar los resultados
-- temp scaling
-- menos puntos de entrenamientos
-- medical y banking para el final
-- revisar la sección 5
-- todo zero shot (explicar por qué no few shot)
-- sacar bert-like models
+- repetir para otro modelo

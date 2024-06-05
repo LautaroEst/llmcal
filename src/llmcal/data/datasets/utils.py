@@ -9,6 +9,7 @@ from .newsgroups import load_newsgroups
 from .agnews import load_agnews
 from typing import Literal
 from datasets import Dataset, load_from_disk
+from sklearn.model_selection import KFold
 
 
 SUPPORTED_DATASETS = Literal["sst2", "dbpedia", "agnews", "20newsgroups", "medical-abstracts", "banking77"]
@@ -88,4 +89,22 @@ def load_dataset(dataset_name: SUPPORTED_DATASETS, total_train_samples: int, val
     predict_datadict = {split: datadict[split] for split in ["train", "validation", "test"]}
 
     return train_datadict, predict_datadict, shots
+        
+def load_dataset_for_xval(dataset_name: SUPPORTED_DATASETS, total_train_samples: int, nfolds: int, random_state: int = 0):
+    if dataset_name in dataset2load_fn:
+        datadict = dataset2load_fn[dataset_name]()
+
+        rs = np.random.RandomState(random_state)
+        idx = rs.permutation(len(datadict["train"]))
+        all_data = datadict["train"].select(idx[:total_train_samples])
+        
+        folds = []
+        skf = KFold(n_splits=nfolds, shuffle=True, random_state=random_state)
+        all_idx = np.arange(total_train_samples)
+        for train_idx, val_idx in skf.split(all_idx):
+            train_data = all_data.select(train_idx)
+            val_data = all_data.select(val_idx)
+            folds.append({"train": train_data, "validation": val_data})
+
+    return folds
         

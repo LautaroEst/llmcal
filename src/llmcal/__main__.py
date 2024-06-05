@@ -3,6 +3,7 @@ import os
 from .utils import load_yaml
 from .scripts.litgpt_no_adaptation import main as litgtp_no_adaptation
 from .scripts.litgpt_lora import main as litgpt_lora
+from .scripts.litgpt_lora_xval import main as litgpt_lora_xval
 from .scripts.litgpt_full_ft import main as litgpt_full_ft
 from .scripts.affine_calibration import main as affine_calibration, AFFINE_METHODS
 from .models import SUPPORTED_LITGPT_MODELS
@@ -63,6 +64,8 @@ def main(
         litgtp_no_adaptation(**base_config)
     elif base_method_name == "lora" and model_name in SUPPORTED_LITGPT_MODELS:
         litgpt_lora(**base_config)
+    elif base_method_name == "lora_xval" and model_name in SUPPORTED_LITGPT_MODELS:
+        litgpt_lora_xval(**base_config)
     elif base_method_name == "full_ft" and model_name in SUPPORTED_LITGPT_MODELS:
         litgpt_full_ft(**base_config)
     else:

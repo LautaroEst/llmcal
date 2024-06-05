@@ -8,7 +8,7 @@ class LitGPTPrompt:
         self.postshots_template = postshots_template
         self.answers_templates = answers_templates
 
-    def fit(self, dataset):
+    def fit(self, dataset = []):
         self.preshots_features = re.findall(r'\{(\w+)\}', self.preshots_template)
         self.shots_features = re.findall(r'\{(\w+)\}', self.shots_template)
         self.postshots_features = re.findall(r'\{(\w+)\}', self.postshots_template)

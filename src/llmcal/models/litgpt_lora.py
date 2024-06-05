@@ -112,6 +112,9 @@ class LanguageModelLitGPTLoRA(L.LightningModule):
             self.cum_loss += outputs["cum_loss"]
             self.cum_num_tokens += outputs["num_tokens"]
             return
+
+        if self.cum_num_tokens == 0:
+            return
         
         for logger in self.loggers:
             logger.log_metrics(
