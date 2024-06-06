@@ -35,11 +35,14 @@ metrics_short2name = {
     "min_calibration_nobias": "Normalized CE after\nBias Calibration",
 }
 supported_methods = OrderedDict([
-    ("affine_scalar", {"label": "Affine Calibration", "color": "tab:blue"}),
-    ("temp_scaling", {"label": "Scale Only Calibration\n(Temperature Scaling)", "color": "tab:orange"}),
-    ("bias_only", {"label": "Bias Only Calibration", "color": "tab:green"}),
-    ("lora", {"label": "LoRA", "color": "tab:red"}),
-    ("no_adaptation", {"label": "No adaptation", "color": "black"}),
+    ("affine_scalar", {"label": "Affine Calibration", "color": "tab:blue", "ls": "-"}),
+    ("temp_scaling", {"label": "Scale Only Calibration\n(Temperature Scaling)", "color": "tab:orange", "ls": "-"}),
+    ("bias_only", {"label": "Bias Only Calibration", "color": "tab:green", "ls": "-"}),    
+    ("lora", {"label": "LoRA", "color": "tab:red", "ls": "-"}),
+    ("no_adaptation", {"label": "No adaptation", "color": "black", "ls": "-"}),
+    ("lora+affine_scalar", {"label": "LoRA + Affine Calibration", "color": "tab:blue", "ls": "--"}),
+    ("lora+temp_scaling", {"label": "LoRA + Scale Only Calibration", "color": "tab:orange", "ls": "--"}),
+    ("lora+bias_only", {"label": "LoRA + Bias Only Calibration", "color": "tab:green", "ls": "--"}),
 ])
 
 
@@ -187,9 +190,6 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
     return values
 
 
-
-
-
 def compute_results(metrics, bootstrap, random_state):
     df_results = load_results_paths()
 
@@ -251,18 +251,39 @@ def format_method(base_method, cal_method, dataset, prompt, n_shots):
         method += supported_methods["no_adaptation"]["label"]
         kwargs["color"] = supported_methods["no_adaptation"]["color"]
         kwargs["alpha"] = 0.6
+        kwargs["ls"] = supported_methods["no_adaptation"]["ls"]
     elif base_method == "no_adaptation" and cal_method == "affine_scalar":
         method += supported_methods["affine_scalar"]["label"]
         kwargs["color"] = supported_methods["affine_scalar"]["color"]
+        kwargs["ls"] = supported_methods["affine_scalar"]["ls"]
     elif base_method == "no_adaptation" and cal_method == "temp_scaling":
         method += supported_methods["temp_scaling"]["label"]
         kwargs["color"] = supported_methods["temp_scaling"]["color"]
+        kwargs["ls"] = supported_methods["temp_scaling"]["ls"]
     elif base_method == "no_adaptation" and cal_method == "bias_only":
         method += supported_methods["bias_only"]["label"]
         kwargs["color"] = supported_methods["bias_only"]["color"]
+        kwargs["ls"] = supported_methods["bias_only"]["ls"]
     elif base_method == "lora" and cal_method == "no_calibration":
         method += supported_methods["lora"]["label"]
         kwargs["color"] = supported_methods["lora"]["color"]
+        kwargs["ls"] = supported_methods["lora"]["ls"]
+    elif base_method == "lora_xval" and cal_method == "no_calibration":
+        method += supported_methods["lora+no_calibration"]["label"]
+        kwargs["color"] = supported_methods["lora+no_calibration"]["color"]
+        kwargs["ls"] = supported_methods["lora+no_calibration"]["ls"]
+    elif base_method == "lora_xval" and cal_method == "affine_scalar":
+        method += supported_methods["lora+affine_scalar"]["label"]
+        kwargs["color"] = supported_methods["lora+affine_scalar"]["color"]
+        kwargs["ls"] = supported_methods["lora+affine_scalar"]["ls"]
+    elif base_method == "lora_xval" and cal_method == "temp_scaling":
+        method += supported_methods["lora+temp_scaling"]["label"]
+        kwargs["color"] = supported_methods["lora+temp_scaling"]["color"]
+        kwargs["ls"] = supported_methods["lora+temp_scaling"]["ls"]
+    elif base_method == "lora_xval" and cal_method == "bias_only":
+        method += supported_methods["lora+bias_only"]["label"]
+        kwargs["color"] = supported_methods["lora+bias_only"]["color"]
+        kwargs["ls"] = supported_methods["lora+bias_only"]["ls"]
     else:
         raise ValueError(f"Method {base_method} + {cal_method} is not recognized")
     
@@ -350,135 +371,7 @@ def plot_results_for_model(df, model, metrics, width=.8):
 
 
     hand, lab = ax[0,0].get_legend_handles_labels()
-    fig.legend(hand, lab, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods), fancybox=True, shadow=True)
+    fig.legend(hand, lab, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods)//2, fancybox=True, shadow=True)
     fig.tight_layout()
 
-
-
-def plot_results2(df, metrics, width=.8, test=False):
-
-    df = df.copy()
-    df = df[df["split"] == "test"] if test else df[df["split"] == "validation"]
-    
-    models_with_prompts = (df["model"]  + "---" + df["prompt"]).unique()
-    datasets = [dataset for dataset in dataset_short2name.values() if dataset in df["dataset"].unique()]
-    # sizes = sizes_short2name.values()
-    sizes = [2**i for i in range(2, 11)]
-    methods = [method for method in method_short2name.values() if method in df["method"].unique()]
-    for method in ["Zero-shot", "Affine Scalar", "Temperature Scaling", "Bias Only"]:
-        s = "Few-shot" if method == "Zero-shot" else "Few-shot + " + method
-        df.loc[(df["method"] == method) & (df["n_shots"] > 0), "method"] = s
-        if s in df["method"].unique():
-            methods.append(s)
-    num_shots = df["n_shots"].unique()
-
-    alpha = 0.6
-    methods_kwargs = {
-        "Zero-shot": {"ls": "-", "color": "black", "alpha": alpha},
-        "Few-shot": {"ls": "--", "color": "black", "alpha": alpha},
-        "Affine Scalar": {"ls": "-", "color": "tab:blue", "alpha": alpha},
-        "Temperature Scaling": {"ls": "-", "color": "tab:orange", "alpha": alpha},
-        "Bias Only": {"ls": "-", "color": "tab:green", "alpha": alpha},
-        "Few-shot + Affine Scalar": {"ls": "--", "color": "tab:blue", "alpha": alpha},
-        "Few-shot + Temperature Scaling": {"ls": "--", "color": "tab:orange", "alpha": alpha},
-        "Few-shot + Bias Only": {"ls": "--", "color": "tab:green", "alpha": alpha},
-        "LoRA": {"ls": "-", "color": "tab:red", "alpha": alpha},
-    }
-
-    for model_with_prompt in models_with_prompts:
-        model, prompt = model_with_prompt.split("---")
-        if model not in model_short2name.values():
-            continue
-        fig, ax = plt.subplots(len(metrics),len(datasets), figsize=(len(datasets)*3, len(metrics)*2), sharex="col")
-        if len(metrics) == 1 and len(datasets) == 1:
-            ax = np.array([[ax]])
-        elif len(metrics) == 1:
-            ax = ax[np.newaxis, :]
-        elif len(datasets) == 1:
-            ax = ax[:, np.newaxis]
-        for i, dataset in enumerate(datasets):
-            for j, metric in enumerate(metrics):
-                for n in num_shots:
-                    for m, method in enumerate(methods):
-                        x = []
-                        means = []
-                        stds = []
-                        for s, size in enumerate(sizes):
-                            mask = \
-                                (df["n_shots"] == n) & \
-                                (df["model"] == model) & \
-                                (df["prompt"] == prompt) & \
-                                (df["dataset"] == dataset) & \
-                                (df["size"] == size) & \
-                                (df["method"] == method)
-                            if mask.sum() == 0:
-                                continue
-                            mean = df[mask][f"{metric}:mean"].values[0]
-                            std = df[mask][f"{metric}:std"].values[0]
-                            # x.append(s - width / 2 + width / (len(methods) - 1) * m)
-                            x.append(size)
-                            means.append(mean)
-                            stds.append(std)
-                        ax[j, i].errorbar(
-                            np.array(x),
-                            np.array(means), 
-                            yerr=np.array(stds), 
-                            ls = methods_kwargs[method]["ls"],
-                            label=method,
-                            capsize= width / (len(methods) - 1) * 20,
-                            capthick=2,
-                            elinewidth=2,
-                            color=methods_kwargs[method]["color"],
-                            alpha=methods_kwargs[method]["alpha"],
-                        )
-                ax[j,i].grid(True)
-            
-            
-
-            # sizes_with_samples_num = []
-            # for size in sizes:
-            #     mask = (df["size"] == size) & (df["model"] == model) & (df["prompt"] == prompt) & (df["dataset"] == dataset)
-            #     if mask.sum() == 0:
-            #         sizes_with_samples_num.append(size)
-            #     else:
-            #         sizes_with_samples_num.append(
-            #             df[mask]["num_samples"].astype(int).unique()[0]
-            #         )
-            # ax[-1, i].set_xscale("log")
-            # ax[-1, i].set_xticks(sizes_with_samples_num)
-            # ax[-1, i].set_xticklabels(sizes_with_samples_num, rotation=45, ha="right")
-            # ax[-1, i].set_xlim(-width, len(sizes) - (1 - width))
-            # ax[-1, i].set_xticks(sizes)
-            # ax[-1, i].get_xaxis().set_major_formatter(plt.ScalarFormatter())
-            # ax[-1, i].get_xaxis().set_minor_formatter(plt.ScalarFormatter())
-            # ax[-1, i].set_xticklabels([f"{size}" for size in sizes], rotation=45, ha="right")            
-        
-        for i, dataset in enumerate(datasets):
-            ax[0, i].set_title(dataset)
-        for j, metric in enumerate(metrics):
-            if "norm_" in metric:
-                metric_name = "Normalized\n" + metrics_short2name[metric[5:]]
-                for i, dataset in enumerate(datasets):
-                    # ylim = ax[j, i].get_ylim()
-                    # ax[j, i].set_ylim(0, max(1.2,ylim[1]))
-                    # ax[j, i].axhline(1, color='black', linestyle='--', linewidth=1, label="Naive")
-                    pass
-            else:
-                metric_name = metrics_short2name[metric]
-            ax[j, 0].set_ylabel(metric_name)
-
-        fig.suptitle(model)
-        fig.text(0.5, 0.0, 'Number of training samples', ha='center')
-
-        handles, labels = [], []
-
-        for a in fig.axes:
-            hand, lab = a.get_legend_handles_labels()
-            for h, l in zip(hand, lab):
-                if l not in labels and l != "Naive":
-                    handles.append(h)
-                    labels.append(l)
-
-        fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods)//2, fancybox=True, shadow=True)
-        fig.tight_layout()
 
