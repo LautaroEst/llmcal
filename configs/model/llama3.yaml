@@ -1,0 +1,2 @@
+model: "llama3"
+checkpoint_dir: "meta-llama/Meta-Llama-3-8B"

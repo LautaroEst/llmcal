@@ -1,5 +1,3 @@
-conda create -n llmcal python
-conda activate llmcal
 pip install -e .
 mkdir ../affinecal
 git clone https://github.com/LautaroEst/affinecal.git ../affinecal
@@ -12,3 +10,5 @@ if [ -z "${LIT_CHECKPOINTS}" ]; then
     echo "export LIT_CHECKPOINTS=${LIT_CHECKPOINTS}" >> ~/.bashrc
     export LIT_CHECKPOINTS=${LIT_CHECKPOINTS}
 fi
+
+echo $LIT_CHECKPOINTS
