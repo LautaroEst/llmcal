@@ -6,6 +6,7 @@ from .scripts.litgpt_lora import main as litgpt_lora
 from .scripts.litgpt_lora_xval import main as litgpt_lora_xval
 from .scripts.litgpt_full_ft import main as litgpt_full_ft
 from .scripts.affine_calibration import main as affine_calibration, AFFINE_METHODS
+from .scripts.affine_calibration_no_es import main as affine_calibration_no_es, AFFINE_METHODS_NO_ES
 from .models import SUPPORTED_LITGPT_MODELS
 
 import datasets
@@ -81,6 +82,8 @@ def main(
                 os.symlink(src_pred_dir, dst_pred_dir, target_is_directory=True)
     elif calibration_method_name in AFFINE_METHODS:
         affine_calibration(**calibration_config)
+    elif calibration_method_name in AFFINE_METHODS_NO_ES:
+        affine_calibration_no_es(**calibration_config)
     else:
         raise NotImplementedError(f"Calibration method {calibration_method_name} not implemented")
     

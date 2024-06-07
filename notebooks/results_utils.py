@@ -43,6 +43,7 @@ supported_methods = OrderedDict([
     ("lora+affine_scalar", {"label": "LoRA + Affine Calibration", "color": "tab:blue", "ls": "--"}),
     ("lora+temp_scaling", {"label": "LoRA + Scale Only Calibration", "color": "tab:orange", "ls": "--"}),
     ("lora+bias_only", {"label": "LoRA + Bias Only Calibration", "color": "tab:green", "ls": "--"}),
+    ("affine_scalar_no_es", {"label": "Affine Calibration\n(NO Early Stopping)", "color": "tab:blue", "ls": "-."}),
 ])
 
 
@@ -284,6 +285,10 @@ def format_method(base_method, cal_method, dataset, prompt, n_shots):
         method += supported_methods["lora+bias_only"]["label"]
         kwargs["color"] = supported_methods["lora+bias_only"]["color"]
         kwargs["ls"] = supported_methods["lora+bias_only"]["ls"]
+    elif base_method == "no_adaptation" and cal_method == "affine_scalar_no_es":
+        method += supported_methods["affine_scalar_no_es"]["label"]
+        kwargs["color"] = supported_methods["affine_scalar_no_es"]["color"]
+        kwargs["ls"] = supported_methods["affine_scalar_no_es"]["ls"]
     else:
         raise ValueError(f"Method {base_method} + {cal_method} is not recognized")
     

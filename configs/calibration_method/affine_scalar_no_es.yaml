@@ -1,0 +1,3 @@
+method: "affine_scalar_no_es"
+alpha: "scalar"
+beta: True

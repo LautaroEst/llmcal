@@ -21,6 +21,8 @@ dependencies = [
     "litgpt>=0.1.0",
     "deepspeed>=0.5.7",
     "sentencepiece>=0.2.0",
+    "psrcal>=0.0.2",
+    "expected_cost>=0.0.4",
 ]
 
 [project.urls]
