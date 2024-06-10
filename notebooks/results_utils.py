@@ -20,7 +20,7 @@ dataset_short2name = OrderedDict([
     # ("medical-abstracts", {"name": "Medical Abstracts", "num_classes": 5}),
     ("dbpedia", {"name": "DBpedia", "num_classes": 14}),
     ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20}),
-    # ("banking77", {"name": "Banking77", "num_classes": 77}),
+    ("banking77", {"name": "Banking77", "num_classes": 77}),
 ])
 
 metrics_short2name = {
