@@ -1,5 +1,4 @@
 
-conda activate llmcal
 
 # Read token from token.txt
 HF_TOKEN=$(cat hf_token.txt)
