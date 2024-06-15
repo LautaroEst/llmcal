@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 import sys
+from time import time
 from typing import List, Union
 
 import torch
@@ -50,6 +51,7 @@ def main(
     devices: int = 1,
     num_nodes: int = 1,
     precision: Union[int,str] = 32,
+    timing: bool = False,
 ):
     torch.set_float32_matmul_precision("high")
     os.makedirs(output_dir, exist_ok=True)
@@ -57,7 +59,7 @@ def main(
     save_yaml(locals(), os.path.join(output_dir, "params.yaml"))
 
     # Load dataset
-    _, prediction_datadict, shots = load_dataset(dataset, total_train_samples, val_prop, num_shots, random_state)
+    _, prediction_datadict, shots = load_dataset(dataset, total_train_samples, val_prop, num_shots, random_state, timing=timing)
 
     # Load and train prompt
     prompt = LitGPTPrompt(preshots_template, shots_template, postshots_template, answers_templates)
@@ -104,6 +106,7 @@ def main(
         answers_ids = [tokenizer.encode(ans, bos=True)[1:] for ans in filled_prompt["answers"]]
         return {"idx": sample["idx"], "prompt_ids": prompt_ids, "answers_ids": answers_ids, "label": sample["label"]}
     
+    total_time = 0
     os.makedirs(os.path.join(output_dir, "predictions"), exist_ok=True)
     for split, dataset in prediction_datadict.items():
         if os.path.exists(os.path.join(output_dir, f"predictions/{split}")):
@@ -115,11 +118,17 @@ def main(
             num_workers=4, 
             collate_fn=LitGPTCollator(0, config.block_size)
         )
+        if timing and split in ["train", "validation"]:
+            start_time = time()
         trainer.predict(model, dataloaders=dataloader)
+        if timing and split in ["train", "validation"]:
+            total_time += time() - start_time
         if trainer.state.status == TrainerStatus.INTERRUPTED:
             sys.exit("Prediction interrupted.")
         model.predict_outputs.save_to_disk(os.path.join(output_dir, f"predictions/{split}"))
-
+    if timing:
+        with open(os.path.join(output_dir, "timing_predictions.txt"), "w") as f:
+            f.write(f"{total_time}")
 
     
 if __name__ == "__main__":

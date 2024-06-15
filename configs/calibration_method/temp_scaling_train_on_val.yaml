@@ -1,0 +1,3 @@
+method: "temp_scaling_train_on_val"
+alpha: "scalar"
+beta: False

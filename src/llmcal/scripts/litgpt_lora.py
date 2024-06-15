@@ -21,6 +21,7 @@ from torch.utils.data import DataLoader
 import lightning as L
 from lightning.fabric.utilities.load import _lazy_load as lazy_load
 from lightning.pytorch.trainer.states import TrainerStatus
+from time import time
 
 def parse_checkpoint_dir(checkpoint_dir):
     if not os.path.exists(checkpoint_dir):
@@ -68,6 +69,7 @@ def main(
     optimizer: str = "adamw",
     learning_rate: float = 1e-4,
     weight_decay: float = 0.0,
+    timing: bool = False,
 ):
     torch.set_float32_matmul_precision("high")
     os.makedirs(output_dir, exist_ok=True)
@@ -75,7 +77,7 @@ def main(
     save_yaml(locals(), os.path.join(output_dir, "params.yaml"))
 
     # Load dataset
-    train_datadict, prediction_datadict, shots = load_dataset(dataset, total_train_samples, val_prop, num_shots, random_state)
+    train_datadict, prediction_datadict, shots = load_dataset(dataset, total_train_samples, val_prop, num_shots, random_state, timing=timing)
 
     # Load and train prompt
     prompt = LitGPTPrompt(preshots_template, shots_template, postshots_template, answers_templates)
@@ -144,6 +146,9 @@ def main(
         default_root_dir = output_dir,
     )
 
+    if timing:
+        start_time = time()
+
     # Init base model
     with trainer.init_module(empty_init=True):
         gpt = LitGPTLoRA(config)
@@ -172,6 +177,11 @@ def main(
     # -----------------
     last_checkpoint_path = os.path.join(output_dir, "last.ckpt") if os.path.exists(os.path.join(output_dir, "last.ckpt")) else None
     trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader, ckpt_path=last_checkpoint_path)
+    if timing:
+        end_time = time()
+        with open(os.path.join(output_dir, "timing_lora.txt"), "w") as f:
+            f.write(f"{end_time - start_time}")
+        sys.exit("Finish timing")
     if trainer.state.status == TrainerStatus.INTERRUPTED:
         sys.exit("Training interrupted.")
     trainer.validate(model, dataloaders=val_loader)

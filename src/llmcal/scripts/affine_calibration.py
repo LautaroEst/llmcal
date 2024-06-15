@@ -2,6 +2,7 @@
 
 import os
 import sys
+from time import time
 from typing import Literal
 
 import torch
@@ -30,6 +31,7 @@ def main(
     learning_rate: float = 0.001,
     accelerator: str = "cpu",
     max_epochs: int = 1000,
+    timing: bool = False,
 ):
     torch.set_float32_matmul_precision("high")
     os.makedirs(output_dir, exist_ok=True)
@@ -38,7 +40,7 @@ def main(
 
     # Load dataset
     data_dir = os.path.join("/".join(output_dir.split("/")[:-1]),".cache/predictions")
-    train_datadict, prediction_datadict, _ = load_dataset(data_dir, total_train_samples, val_prop, 0, random_state)
+    train_datadict, prediction_datadict, _ = load_dataset(data_dir, total_train_samples, val_prop, 0, random_state, timing=timing)
 
     # Process the train dataset
     train_loader = DataLoader(
@@ -75,6 +77,9 @@ def main(
         default_root_dir = output_dir,
     )
 
+    if timing:
+        start_time = time()
+
     # Init base model
     model_params = dict(
         num_classes = len(train_datadict["train"][0]["logits"]),
@@ -91,6 +96,11 @@ def main(
     # -------------------
     last_checkpoint_path = os.path.join(output_dir, "last.ckpt") if os.path.exists(os.path.join(output_dir, "last.ckpt")) else None
     trainer.fit(model, train_dataloaders=train_loader, val_dataloaders=val_loader, ckpt_path=last_checkpoint_path)
+    if timing:
+        end_time = time()
+        with open(os.path.join(output_dir, "timing_calibration.txt"), "w") as f:
+            f.write(f"{end_time - start_time}")
+        return
     if trainer.state.status == TrainerStatus.INTERRUPTED:
         sys.exit("Training interrupted.")
 

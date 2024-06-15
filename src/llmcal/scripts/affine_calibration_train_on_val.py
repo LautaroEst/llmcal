@@ -17,7 +17,7 @@ import lightning as L
 from lightning.fabric.utilities.load import _lazy_load as lazy_load
 from lightning.pytorch.trainer.states import TrainerStatus
 
-AFFINE_METHODS = ["affine_matrix", "affine_vector", "affine_scalar", "temp_scaling", "bias_only"]
+AFFINE_METHODS_TRAIN_ON_VAL = ["affine_matrix_train_on_val", "affine_vector_train_on_val", "affine_scalar_train_on_val", "temp_scaling_train_on_val", "bias_only_train_on_val"]
 
 
 def main(
@@ -43,20 +43,24 @@ def main(
 
     rs = np.random.RandomState(random_state+3)
     all_idx = rs.permutation(np.arange(len(train_datadict["validation"])))
-    train_idx = all_idx[:int(1 - val_prop)]
-    val_idx = all_idx[total_train_samples:]
-    cal_train_data = 
+    train_samples = int((1 - val_prop) * len(all_idx))
+    train_idx = all_idx[:train_samples]
+    val_idx = all_idx[train_samples:]
+    cal_train_data = train_datadict["validation"].select(train_idx).with_format("torch")
+    cal_val_data = train_datadict["validation"].select(val_idx).with_format("torch")
+    prediction_datadict["cal_train"] = cal_train_data
+    prediction_datadict["cal_val"] = cal_val_data
 
     # Process the train dataset
     train_loader = DataLoader(
-        train_datadict["train"].with_format("torch"), 
-        batch_size=len(train_datadict["train"]), 
+        cal_train_data, 
+        batch_size=len(cal_train_data), 
         shuffle=True, 
         num_workers=4, 
     )
     val_loader = DataLoader(
-        train_datadict["validation"].with_format("torch"), 
-        batch_size=len(train_datadict["validation"]), 
+        cal_val_data, 
+        batch_size=len(cal_val_data), 
         shuffle=False, 
         num_workers=4, 
     )
@@ -134,6 +138,9 @@ def main(
         if trainer.state.status == TrainerStatus.INTERRUPTED:
             sys.exit("Prediction interrupted.")
         model.predict_outputs.save_to_disk(os.path.join(output_dir, f"predictions/{split}"))
+    prediction_datadict["cal_train"].save_to_disk(os.path.join(output_dir, f"predictions/cal_train_no_adapt"))
+    prediction_datadict["cal_val"].save_to_disk(os.path.join(output_dir, f"predictions/cal_val_no_adapt"))
+    
 
 
 if __name__ == "__main__":

@@ -1,0 +1,3 @@
+method: "affine_scalar_train_on_val"
+alpha: "scalar"
+beta: True

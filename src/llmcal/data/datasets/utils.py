@@ -62,7 +62,7 @@ dataset2load_fn = {
 #     return train_datadict, predict_datadict, shots
 
 
-def load_dataset(dataset_name: SUPPORTED_DATASETS, total_train_samples: int, val_prop: float, num_shots: int, random_state: int = 0):
+def load_dataset(dataset_name: SUPPORTED_DATASETS, total_train_samples: int, val_prop: float, num_shots: int, random_state: int = 0, timing: bool = False):
     if dataset_name in dataset2load_fn:
         datadict = dataset2load_fn[dataset_name]()
 
@@ -82,11 +82,17 @@ def load_dataset(dataset_name: SUPPORTED_DATASETS, total_train_samples: int, val
         datadict["train"] = datadict["train"].select(train_idx)
     
     else:
-        datadict = {split: load_from_disk(os.path.join(dataset_name, split)) for split in ["train", "validation", "test"]}
+        if not timing:
+            datadict = {split: load_from_disk(os.path.join(dataset_name, split)) for split in ["train", "validation", "test"]}
+        else:
+            datadict = {split: load_from_disk(os.path.join(dataset_name, split)) for split in ["train", "validation"]}
         shots = []
 
     train_datadict = {split: datadict[split] for split in ["train", "validation"]}
-    predict_datadict = {split: datadict[split] for split in ["train", "validation", "test"]}
+    if not timing:
+        predict_datadict = {split: datadict[split] for split in ["train", "validation", "test"]}
+    else:
+        predict_datadict = {split: datadict[split] for split in ["train", "validation"]}
 
     return train_datadict, predict_datadict, shots
         

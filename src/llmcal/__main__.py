@@ -7,6 +7,7 @@ from .scripts.litgpt_lora_xval import main as litgpt_lora_xval
 from .scripts.litgpt_full_ft import main as litgpt_full_ft
 from .scripts.affine_calibration import main as affine_calibration, AFFINE_METHODS
 from .scripts.affine_calibration_no_es import main as affine_calibration_no_es, AFFINE_METHODS_NO_ES
+from .scripts.affine_calibration_train_on_val import main as affine_calibration_train_on_val, AFFINE_METHODS_TRAIN_ON_VAL
 from .models import SUPPORTED_LITGPT_MODELS
 
 import datasets
@@ -21,6 +22,8 @@ def main(
     **kwargs
 ):
     
+    timing = kwargs.pop("timing", False)
+
     # Load config files
     dataset_config = load_yaml(f"configs/dataset/{dataset}.yaml")
     prompt_config = load_yaml(f"configs/prompt/{prompt}.yaml")
@@ -62,9 +65,9 @@ def main(
 
     # Run training method
     if base_method_name == "no_adaptation":
-        litgtp_no_adaptation(**base_config)
+        litgtp_no_adaptation(**base_config, timing=timing)
     elif base_method_name == "lora" and model_name in SUPPORTED_LITGPT_MODELS:
-        litgpt_lora(**base_config)
+        litgpt_lora(**base_config, timing=timing)
     elif base_method_name == "lora_xval" and model_name in SUPPORTED_LITGPT_MODELS:
         litgpt_lora_xval(**base_config)
     elif base_method_name == "full_ft" and model_name in SUPPORTED_LITGPT_MODELS:
@@ -81,9 +84,11 @@ def main(
                 os.makedirs("/".join(dst_pred_dir.split("/")[:-1]), exist_ok=True)
                 os.symlink(src_pred_dir, dst_pred_dir, target_is_directory=True)
     elif calibration_method_name in AFFINE_METHODS:
-        affine_calibration(**calibration_config)
+        affine_calibration(**calibration_config, timing=timing)
     elif calibration_method_name in AFFINE_METHODS_NO_ES:
         affine_calibration_no_es(**calibration_config)
+    elif calibration_method_name in AFFINE_METHODS_TRAIN_ON_VAL:
+        affine_calibration_train_on_val(**calibration_config)
     else:
         raise NotImplementedError(f"Calibration method {calibration_method_name} not implemented")
     

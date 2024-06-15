@@ -1,0 +1,29 @@
+\begin{tabular}{llrrrrr}
+\toprule
+ &  & LoRA & \multicolumn{3}{r}{DP Calibration} & LoRA / DP Calibration \\
+ &  &  & Forward pass & Training & Total &  \\
+Dataset & Samples
+per
+Class &  &  &  &  &  \\
+\midrule
+\multirow[t]{3}{*}{\textbf{20newsgroups}} & \textbf{2} & 365 & 27 & 15 & 43 & 8 \\
+\textbf{} & \textbf{4} & 249 & 54 & 15 & 69 & 3 \\
+\textbf{} & \textbf{256} & 11790 & 3220 & 24 & 3245 & 3 \\
+\cline{1-7}
+\multirow[t]{3}{*}{\textbf{agnews}} & \textbf{4} & 221 & 4 & 14 & 19 & 11 \\
+\textbf{} & \textbf{8} & 189 & 7 & 14 & 21 & 8 \\
+\textbf{} & \textbf{256} & 807 & 153 & 15 & 168 & 4 \\
+\cline{1-7}
+\multirow[t]{2}{*}{\textbf{banking77}} & \textbf{4} & 754 & 703 & 15 & 718 & 1 \\
+\textbf{} & \textbf{16} & 1046 & 2800 & 18 & 2819 & 0 \\
+\cline{1-7}
+\multirow[t]{3}{*}{\textbf{dbpedia}} & \textbf{2} & 168 & 14 & 15 & 29 & 5 \\
+\textbf{} & \textbf{4} & 160 & 27 & 15 & 42 & 3 \\
+\textbf{} & \textbf{256} & 4694 & 1599 & 21 & 1621 & 2 \\
+\cline{1-7}
+\multirow[t]{3}{*}{\textbf{sst2}} & \textbf{8} & 230 & 3 & 13 & 17 & 13 \\
+\textbf{} & \textbf{16} & 190 & 5 & 14 & 19 & 9 \\
+\textbf{} & \textbf{256} & 741 & 47 & 14 & 62 & 11 \\
+\cline{1-7}
+\bottomrule
+\end{tabular}

@@ -4,6 +4,8 @@
 
 /data/
 /experiments/
+/experiments.ok/
+/experiments.ok.zip
 /*.old/
 /logs/
 /.old/
