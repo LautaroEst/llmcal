@@ -200,8 +200,8 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
 
 def compute_results(metrics, bootstrap, random_state):
     df_results = load_results_paths()
-    # df_results = df_results[df_results["dataset"] == "dbpedia"]
-    # df_results = df_results[df_results["size"] == 4]
+    # df_results = df_results[df_results["dataset"] == "sst2"]
+    # df_results = df_results[df_results["seed"].isin([639,738,1738,493])]
 
     grouped = df_results.groupby([c for c in df_results.columns if c not in ['results', 'seed']])
     for group_name, group_df in tqdm(grouped):
@@ -373,7 +373,8 @@ def plot_mean_std_for_model(df, model, metrics, width=.8, err=True, stat="mean")
             ax[j, i].minorticks_off()
             ylim = ax[j, i].get_ylim()
             sup_lim = 1.2 * df[(df["dataset"] == dataset) & (df["method"] == "No adaptation")].iloc[0][f"{metric}:mean"]
-            # ax[j, i].set_ylim(ylim[0], min(sup_lim, ylim[1]))
+            ax[j, i].set_ylim(max(0,ylim[0]), min(sup_lim, ylim[1]))
+            ax[j, i].set_ylim(max(0,ylim[0]), ylim[1])
             ax[j, i].set_yticks(ax[j, i].get_yticks())
             ax[j, i].set_yticklabels([f"{y:2g}" for y in ax[j, i].get_yticks()], fontsize=10)
 
@@ -474,8 +475,9 @@ def plot_manual_boxplot_for_model(df, model, metrics, width=.8):
             ax[j, i].set_xticks([])
             ax[j, i].minorticks_off()
             ylim = ax[j, i].get_ylim()
-            sup_lim = 1.3 * df[(df["dataset"] == dataset) & (df["method"] == "No adaptation")].iloc[0][f"{metric}:mean"]
-            ax[j, i].set_ylim(ylim[0], min(sup_lim, ylim[1]))
+            sup_lim = 1.2 * df[(df["dataset"] == dataset) & (df["method"] == "No adaptation")].iloc[0][f"{metric}:mean"]
+            # ax[j, i].set_ylim(ylim[0], min(sup_lim, ylim[1]))
+            ax[j, i].set_ylim(max(0,ylim[0]), min(sup_lim, ylim[1]))
             ax[j, i].set_yticks(ax[j, i].get_yticks())
             ax[j, i].set_yticklabels([f"{y:2g}" for y in ax[j, i].get_yticks()], fontsize=10)
 

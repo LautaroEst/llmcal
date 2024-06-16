@@ -13,13 +13,15 @@ Run from the root of the repository (You will be asked to set up the checkpoints
 bash setup.sh
 ```
 
-Reset terminal and run:
+Reset terminal. Write your HF token on a file named `hf_token.txt` and then run:
 ```bash
 conda activate llmcal
 bash scripts/run.00.download.sh
 ```
 
-Run experiments for llama3:
+Run experiments for tinyllama:
 ```bash
-bash scripts/llama3_all.sh
+bash scripts/all.sh
 ```
+
+You can inspect the results in the `results.ipynb` and `timing.ipynb` notebooks.

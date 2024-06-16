@@ -1,7 +1,0 @@
-# - agregar agnews con 4 puntos para 5 seeds en trust
-# - correr banking con 5 seeds en trust
-- completar los loras que faltan en 20newsgroups en sailormoon
-- Arreglar 20newsgroups en el script de lora + affine
-- completar lora + affine en los puntos que faltan
-
-- repetir para otro modelo

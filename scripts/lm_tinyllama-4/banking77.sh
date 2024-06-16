@@ -87,6 +87,6 @@ python -m llmcal banking77_64_912 basic_banking77_0-shot_litgpt lm_tinyllama no_
     --calibration.max_epochs 30
 
 # ### Lora + no calibration
-# python -m llmcal banking77_4_2951 basic_banking77_0-shot_litgpt lm_tinyllama lora_200samples no_calibration --accelerator "gpu"
-# python -m llmcal banking77_16_5641 basic_banking77_0-shot_litgpt lm_tinyllama lora_1000samples no_calibration --accelerator "gpu"
-# python -m llmcal banking77_64_912 basic_banking77_0-shot_litgpt lm_tinyllama lora_5000samples no_calibration --accelerator "gpu"
+python -m llmcal banking77_4_2951 basic_banking77_0-shot_litgpt lm_tinyllama lora_200samples no_calibration --accelerator "gpu"
+python -m llmcal banking77_16_5641 basic_banking77_0-shot_litgpt lm_tinyllama lora_1000samples no_calibration --accelerator "gpu"
+python -m llmcal banking77_64_912 basic_banking77_0-shot_litgpt lm_tinyllama lora_5000samples no_calibration --accelerator "gpu"
