@@ -4,6 +4,8 @@
 
 /data/
 /experiments/
+/experiments.timing/
+/experiments.timing.zip
 /experiments.ok/
 /experiments.ok.zip
 /*.old/
