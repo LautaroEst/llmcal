@@ -22,7 +22,7 @@ def main(
     **kwargs
 ):
     
-    timing = kwargs.pop("timing", False)
+    timing = kwargs.pop("timing", True)
 
     # Load config files
     dataset_config = load_yaml(f"configs/dataset/{dataset}.yaml")

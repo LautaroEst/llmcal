@@ -1,0 +1,2 @@
+model: "phi3"
+checkpoint_dir: "microsoft/Phi-3-mini-4k-instruct"
