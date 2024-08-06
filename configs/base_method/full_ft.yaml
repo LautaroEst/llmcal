@@ -1,0 +1,7 @@
+method: "full_ft"
+
+precision: 32
+accelerator: "gpu"
+weight_decay: 0.0
+optimizer: "adamw"
+

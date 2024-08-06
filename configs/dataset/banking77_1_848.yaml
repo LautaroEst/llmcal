@@ -1,0 +1,4 @@
+dataset: "banking77"
+total_train_samples: 77
+val_prop: 0.3
+random_state: 848

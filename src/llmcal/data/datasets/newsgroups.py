@@ -5,7 +5,8 @@ import numpy as np
 VAL_HELD_OUT_SAMPLES = 12 * 20
 
 def load_newsgroups():
-    data = load_dataset("SetFit/20_newsgroups")
+    # data = load_dataset("SetFit/20_newsgroups")
+    data = load_dataset("20newsgroups", data_dir="data")
     classes_names = data["train"].to_pandas().loc[:,["label","label_text"]].drop_duplicates().set_index("label").squeeze().sort_index().tolist()
     data["train"] = data["train"].add_column("idx", np.arange(len(data["train"])))
     data["test"] = data["test"].add_column("idx", np.arange(len(data["test"])))

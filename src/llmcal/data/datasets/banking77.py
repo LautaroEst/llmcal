@@ -3,7 +3,8 @@ import numpy as np
 
 
 def load_banking():
-    data = load_dataset("PolyAI/banking77")
+    # data = load_dataset("PolyAI/banking77")
+    data = load_dataset("banking77", data_dir="data")
     data["train"] = data["train"].add_column("idx", np.arange(len(data["train"])))
     data["test"] = data["test"].add_column("idx", np.arange(len(data["train"]), len(data["train"])+len(data["test"])))
     all_data = concatenate_datasets([data["train"], data["test"]])

@@ -3,7 +3,12 @@
 /.vscode/
 
 /data/
+/data.zip
 /experiments/
+/experiments_temp/
+/experiments.llama3/
+/experiments.phi3/
+/experiments.tinyllama/
 /experiments.timing/
 /experiments.timing.zip
 /experiments.ok/

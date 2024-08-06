@@ -116,6 +116,6 @@ python -m llmcal dbpedia_256_821 basic_dbpedia_0-shot_litgpt lm_phi3 no_adaptati
 
 ### Lora + no calibration
 python -m llmcal dbpedia_2_435 basic_dbpedia_0-shot_litgpt lm_phi3 lora_20samples no_calibration --accelerator "gpu"
-python -m llmcal dbpedia_4_926 basic_dbpedia_0-shot_litgpt lm_phi3 lora_60samples no_calibration --accelerator "gpu"
-python -m llmcal dbpedia_16_564 basic_dbpedia_0-shot_litgpt lm_phi3 lora_200samples no_calibration --accelerator "gpu"
+# python -m llmcal dbpedia_4_926 basic_dbpedia_0-shot_litgpt lm_phi3 lora_60samples no_calibration --accelerator "gpu"
+# python -m llmcal dbpedia_16_564 basic_dbpedia_0-shot_litgpt lm_phi3 lora_200samples no_calibration --accelerator "gpu"
 python -m llmcal dbpedia_256_821 basic_dbpedia_0-shot_litgpt lm_phi3 lora_3500samples no_calibration --accelerator "gpu"
