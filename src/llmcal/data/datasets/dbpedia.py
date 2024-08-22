@@ -1,10 +1,11 @@
 import os
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 import numpy as np
 
 def load_dbpedia():
     # data = load_dataset("fancyzhx/dbpedia_14")
-    data = load_dataset("dbpedia", data_dir="data")
+    # data = load_dataset("dbpedia", data_dir="data")
+    data = load_from_disk("data/dbpedia")
     data["train"] = data["train"].add_column("idx", np.arange(len(data["train"])))
     data["test"] = data["test"].add_column("idx", np.arange(len(data["test"])))
 
