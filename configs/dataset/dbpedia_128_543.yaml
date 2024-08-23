@@ -1,0 +1,4 @@
+dataset: "dbpedia"
+total_train_samples: 1792
+val_prop: 0.3
+random_state: 543

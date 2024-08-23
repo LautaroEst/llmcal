@@ -5,10 +5,11 @@ from .scripts.litgpt_no_adaptation import main as litgtp_no_adaptation
 from .scripts.litgpt_lora import main as litgpt_lora
 from .scripts.litgpt_lora_xval import main as litgpt_lora_xval
 from .scripts.litgpt_full_ft import main as litgpt_full_ft
+from .scripts.bert_full_ft import main as encoder_full_ft
 from .scripts.affine_calibration import main as affine_calibration, AFFINE_METHODS
 from .scripts.affine_calibration_no_es import main as affine_calibration_no_es, AFFINE_METHODS_NO_ES
 from .scripts.affine_calibration_train_on_val import main as affine_calibration_train_on_val, AFFINE_METHODS_TRAIN_ON_VAL
-from .models import SUPPORTED_LITGPT_MODELS
+from .models import SUPPORTED_LITGPT_MODELS, SUPPORTED_ENCODER_MODELS
 
 import datasets
 datasets.disable_caching()
@@ -22,7 +23,7 @@ def main(
     **kwargs
 ):
     
-    timing = kwargs.pop("timing", True)
+    timing = kwargs.pop("timing", False)
 
     # Load config files
     dataset_config = load_yaml(f"configs/dataset/{dataset}.yaml")
@@ -72,6 +73,8 @@ def main(
         litgpt_lora_xval(**base_config)
     elif base_method_name == "full_ft" and model_name in SUPPORTED_LITGPT_MODELS:
         litgpt_full_ft(**base_config)
+    elif base_method_name == "full_ft" and model_name in SUPPORTED_ENCODER_MODELS:
+        encoder_full_ft(**base_config)
     else:
         raise NotImplementedError(f"Method {base_method_name} not implemented for model {model_name}")
 

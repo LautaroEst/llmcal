@@ -116,6 +116,6 @@ python -m llmcal agnews_256_812 basic_agnews_0-shot_litgpt lm_phi3 no_adaptation
 
 ### Lora + no calibration
 python -m llmcal agnews_4_962 basic_agnews_0-shot_litgpt lm_phi3 lora_10samples no_calibration --accelerator "gpu"
-python -m llmcal agnews_8_923 basic_agnews_0-shot_litgpt lm_phi3 lora_20samples no_calibration --accelerator "gpu"
-python -m llmcal agnews_16_783 basic_agnews_0-shot_litgpt lm_phi3 lora_60samples no_calibration --accelerator "gpu"
+# python -m llmcal agnews_8_923 basic_agnews_0-shot_litgpt lm_phi3 lora_20samples no_calibration --accelerator "gpu"
+# python -m llmcal agnews_16_783 basic_agnews_0-shot_litgpt lm_phi3 lora_60samples no_calibration --accelerator "gpu"
 python -m llmcal agnews_256_812 basic_agnews_0-shot_litgpt lm_phi3 lora_1000samples no_calibration --accelerator "gpu"

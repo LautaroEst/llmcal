@@ -1,0 +1,3 @@
+num_shots: 0
+sentence_field: "content"
+num_classes: 14

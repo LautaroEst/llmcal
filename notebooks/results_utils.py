@@ -23,6 +23,10 @@ dataset_short2name = OrderedDict([
     ("banking77", {"name": "Banking77", "num_classes": 77}),
 ])
 
+encoder2name = {
+    "roberta_base": "RoBERTa-FT",
+}
+
 metrics_short2name = {
     "accuracy": "Acc",
     "error_rate": "ER",
@@ -36,7 +40,6 @@ metrics_short2name = {
 }
 marker_size = 7
 supported_methods = OrderedDict([
-    
     ("temp_scaling", {"label": "Scale-only Calibration\n(Temperature Scaling)", "color": "tab:orange", "ls": "--", "marker": "*","ms": marker_size}),
     ("bias_only", {"label": "Bias-only Calibration", "color": "tab:green", "ls": "--", "marker": "*","ms": marker_size}),    
     ("affine_scalar", {"label": "DP Calibration", "color": "tab:blue", "ls": "--", "marker": "*", "ms": marker_size}),
@@ -50,8 +53,10 @@ supported_methods = OrderedDict([
 ])
 
 
-def load_results_paths():
-    root_results_dir = Path("../experiments")
+def load_results_paths(root_results_dir):
+    # root_results_dir = Path("../experiments.ok")
+    # root_results_dir = Path("../experiments.ok")
+    root_results_dir = Path(root_results_dir)
     results = []
     for dataset in root_results_dir.glob("*"):
         for prompt in dataset.glob("*"):
@@ -199,7 +204,12 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
 
 
 def compute_results(metrics, bootstrap, random_state):
-    df_results = load_results_paths()
+    df_results = pd.concat([
+        load_results_paths("../experiments.ok"), 
+        load_results_paths("../experiments"),
+        load_results_paths("../experiments.llama3"),
+    ], ignore_index=True)
+    df_results.drop_duplicates(inplace=True, ignore_index=True)
     # df_results = df_results[df_results["dataset"] == "sst2"]
     # df_results = df_results[df_results["seed"].isin([639,738,1738,493])]
 
@@ -317,8 +327,8 @@ def format_method(base_method, cal_method, dataset, prompt, n_shots):
     
     
 
-def plot_mean_std_for_model(df, model, metrics, width=.8, err=True, stat="mean"):
-    df = df.copy()
+def plot_mean_std_for_model(df_orig, model, metrics, width=.8, err=True, stat="mean"):
+    df = df_orig.copy()
     df = df[df["model"] == model]
     df.loc[:,["method", "kwargs"]] = df.apply(lambda x: format_method(x["base_method"], x["cal_method"], x["dataset"], x["prompt"], x["n_shots"]), axis=1)
     methods = [supported_methods[method]["label"] for method in supported_methods if supported_methods[method]["label"] in df["method"].unique()]
@@ -367,6 +377,47 @@ def plot_mean_std_for_model(df, model, metrics, width=.8, err=True, stat="mean")
                     elinewidth = 2,
                     **kwargs
                 )
+
+            ## Add bert results
+            df_encoders_results = df_orig.loc[(df_orig["dataset"] == dataset) & (df_orig["base_method"] == "full_ft") & (df_orig["cal_method"] == "no_calibration"),:]
+            encoders = df_encoders_results["model"].unique()
+            for encoder in encoders:
+                num_samples = []
+                means = []
+                stds = []
+                sizes = sorted(df_encoders_results.loc[(df_encoders_results["model"] == encoder), "size"].unique())
+                for s, size in enumerate(sizes):
+                    mask = \
+                        (df_encoders_results["size"] == size) & \
+                        (df_encoders_results["model"] == encoder)
+                    if mask.sum() == 0:
+                        continue
+                    if mask.sum() > 1:
+                        print(df_encoders_results[mask])
+                        raise ValueError("More than one row found")
+                    # mean = df[mask][f"{metric}:mean"].values[0]
+                    mean = df_encoders_results[mask][f"{metric}:{stat}"].values[0]
+                    std = df_encoders_results[mask][f"{metric}:std"].values[0]
+                    # num_samples.append(s - width / 2 + width / (len(methods) - 1) * m)
+                    num_samples.append(df_encoders_results[mask]["num_samples"].astype(int).values[0])
+                    means.append(mean)
+                    stds.append(std)
+                yerr = np.array(stds) if err else None
+                ax[j, i].errorbar(
+                    np.array(num_samples),
+                    np.array(means), 
+                    yerr=yerr, 
+                    label = encoder2name[encoder],
+                    capsize = width / (len(methods) - 1) * 20,
+                    capthick = 2,
+                    elinewidth = 2,
+                    color = "gray",
+                    ls = "--",
+                    marker = "*",
+                    ms = marker_size,
+                )
+
+            # axes format
             ax[j, i].yaxis.grid(True)
             ax[j, i].set_xscale("log")
             ax[j, i].set_xticks([])

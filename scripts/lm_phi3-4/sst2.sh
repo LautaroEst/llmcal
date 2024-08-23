@@ -109,6 +109,6 @@ python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf
 
 ### Lora + no calibration
 python -m llmcal sst2_8_6391 basic_sst2_0-shot_litgpt lm_phi3 lora_10samples no_calibration --accelerator "gpu"
-python -m llmcal sst2_16_5641 basic_sst2_0-shot_litgpt lm_phi3 lora_20samples no_calibration --accelerator "gpu"
-python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 lora_40samples no_calibration --accelerator "gpu"
+# python -m llmcal sst2_16_5641 basic_sst2_0-shot_litgpt lm_phi3 lora_20samples no_calibration --accelerator "gpu"
+# python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 lora_40samples no_calibration --accelerator "gpu"
 python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 lora_500samples no_calibration --accelerator "gpu"

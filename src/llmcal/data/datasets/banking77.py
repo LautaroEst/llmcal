@@ -1,9 +1,11 @@
-from datasets import load_dataset, concatenate_datasets
+from datasets import load_dataset, load_from_disk, concatenate_datasets
 import numpy as np
 
 
 def load_banking():
-    data = load_dataset("PolyAI/banking77")
+    # data = load_dataset("PolyAI/banking77")
+    # data = load_dataset("banking77", data_dir="data")
+    data = load_from_disk("data/banking77")
     data["train"] = data["train"].add_column("idx", np.arange(len(data["train"])))
     data["test"] = data["test"].add_column("idx", np.arange(len(data["train"]), len(data["train"])+len(data["test"])))
     all_data = concatenate_datasets([data["train"], data["test"]])
@@ -20,3 +22,5 @@ def load_banking():
     
     return datadict
 
+if __name__ == "__main__":
+    load_banking()

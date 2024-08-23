@@ -1,0 +1,2 @@
+model: "roberta-base"
+checkpoint_dir: "FacebookAI/roberta-base"
