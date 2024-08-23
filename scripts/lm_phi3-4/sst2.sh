@@ -3,17 +3,21 @@
 ### No adaptation + no calibration
 python -m llmcal sst2_16_5641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/sst2_256_4931/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
-ln -sf ../../../../../../sst2_16_5641/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/sst2_256_4931/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
-python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
+# mkdir -p experiments/sst2_256_4931/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+# ln -sf ../../../../../../sst2_16_5641/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/sst2_256_4931/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+# python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
+
+mkdir -p experiments/sst2_512_890/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../sst2_16_5641/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/sst2_512_890/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+python -m llmcal sst2_512_890 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
 mkdir -p experiments/sst2_8_6391/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
 ln -sf ../../../../../../sst2_16_5641/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/sst2_8_6391/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
 python -m llmcal sst2_8_6391 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/sst2_32_15641/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
-ln -sf ../../../../../../sst2_16_5641/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/sst2_32_15641/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
-python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
+# mkdir -p experiments/sst2_32_15641/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+# ln -sf ../../../../../../sst2_16_5641/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/sst2_32_15641/basic_sst2_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+# python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
 
 ### No adaptation + affine scalar
@@ -25,23 +29,31 @@ python -m llmcal sst2_8_6391 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16
     --calibration.accelerator "cpu" \
     --calibration.max_epochs 30
 
-python -m llmcal sst2_16_5641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal sst2_16_5641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
+# python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
+
+python -m llmcal sst2_512_890 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
     --accelerator "gpu" \
     --batch_size 1 \
     --calibration.max_ls 40 \
@@ -58,23 +70,31 @@ python -m llmcal sst2_8_6391 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16
     --calibration.accelerator "cpu" \
     --calibration.max_epochs 30
 
-python -m llmcal sst2_16_5641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal sst2_16_5641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
+# python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
+
+python -m llmcal sst2_512_890 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
     --accelerator "gpu" \
     --batch_size 1 \
     --calibration.max_ls 40 \
@@ -91,15 +111,32 @@ python -m llmcal sst2_8_6391 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16
     --calibration.accelerator "cpu" \
     --calibration.max_epochs 30
 
-python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal sst2_16_5641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
+
+# python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
+
+# python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
+
+python -m llmcal sst2_512_890 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
     --accelerator "gpu" \
     --batch_size 1 \
     --calibration.max_ls 40 \
@@ -111,4 +148,5 @@ python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 no_adaptation_bf
 python -m llmcal sst2_8_6391 basic_sst2_0-shot_litgpt lm_phi3 lora_10samples no_calibration --accelerator "gpu"
 # python -m llmcal sst2_16_5641 basic_sst2_0-shot_litgpt lm_phi3 lora_20samples no_calibration --accelerator "gpu"
 # python -m llmcal sst2_32_15641 basic_sst2_0-shot_litgpt lm_phi3 lora_40samples no_calibration --accelerator "gpu"
-python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 lora_500samples no_calibration --accelerator "gpu"
+# python -m llmcal sst2_256_4931 basic_sst2_0-shot_litgpt lm_phi3 lora_500samples no_calibration --accelerator "gpu"
+python -m llmcal sst2_512_890 basic_sst2_0-shot_litgpt lm_phi3 lora_1000samples no_calibration --accelerator "gpu"

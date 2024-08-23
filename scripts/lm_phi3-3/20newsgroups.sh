@@ -3,17 +3,21 @@
 ### No adaptation + no calibration
 python -m llmcal 20newsgroups_4_962 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/20newsgroups_16_783/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
-ln -sf ../../../../../../20newsgroups_4_962/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/20newsgroups_16_783/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
-python -m llmcal 20newsgroups_16_783 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
+# mkdir -p experiments/20newsgroups_16_783/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+# ln -sf ../../../../../../20newsgroups_4_962/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/20newsgroups_16_783/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+# python -m llmcal 20newsgroups_16_783 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
-mkdir -p experiments/20newsgroups_256_812/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
-ln -sf ../../../../../../20newsgroups_4_962/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/20newsgroups_256_812/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
-python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
+# mkdir -p experiments/20newsgroups_256_812/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+# ln -sf ../../../../../../20newsgroups_4_962/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/20newsgroups_256_812/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+# python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
 mkdir -p experiments/20newsgroups_2_972/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
 ln -sf ../../../../../../20newsgroups_4_962/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/20newsgroups_2_972/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
 python -m llmcal 20newsgroups_2_972 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
+
+mkdir -p experiments/20newsgroups_128_543/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+ln -sf ../../../../../../20newsgroups_4_962/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions/test experiments/20newsgroups_128_543/basic_20newsgroups_0-shot_litgpt/lm_phi3/no_adaptation_bf16/.cache/predictions
+python -m llmcal 20newsgroups_128_543 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 no_calibration --accelerator "gpu" --batch_size 1
 
 ### No adaptation + affine scalar
 python -m llmcal 20newsgroups_2_972 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
@@ -24,23 +28,31 @@ python -m llmcal 20newsgroups_2_972 basic_20newsgroups_0-shot_litgpt lm_phi3 no_
     --calibration.accelerator "cpu" \
     --calibration.max_epochs 30
 
-python -m llmcal 20newsgroups_4_962 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal 20newsgroups_4_962 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal 20newsgroups_16_783 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal 20newsgroups_16_783 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
+# python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
+
+python -m llmcal 20newsgroups_128_543 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 affine_scalar \
     --accelerator "gpu" \
     --batch_size 1 \
     --calibration.max_ls 40 \
@@ -57,23 +69,31 @@ python -m llmcal 20newsgroups_2_972 basic_20newsgroups_0-shot_litgpt lm_phi3 no_
     --calibration.accelerator "cpu" \
     --calibration.max_epochs 30
 
-python -m llmcal 20newsgroups_4_962 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal 20newsgroups_4_962 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal 20newsgroups_16_783 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal 20newsgroups_16_783 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
+# python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
+
+python -m llmcal 20newsgroups_128_543 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 temp_scaling \
     --accelerator "gpu" \
     --batch_size 1 \
     --calibration.max_ls 40 \
@@ -90,23 +110,31 @@ python -m llmcal 20newsgroups_2_972 basic_20newsgroups_0-shot_litgpt lm_phi3 no_
     --calibration.accelerator "cpu" \
     --calibration.max_epochs 30
 
-python -m llmcal 20newsgroups_4_962 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal 20newsgroups_4_962 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal 20newsgroups_16_783 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
-    --accelerator "gpu" \
-    --batch_size 1 \
-    --calibration.max_ls 40 \
-    --calibration.learning_rate 1e-2 \
-    --calibration.accelerator "cpu" \
-    --calibration.max_epochs 30
+# python -m llmcal 20newsgroups_16_783 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
 
-python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
+# python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
+#     --accelerator "gpu" \
+#     --batch_size 1 \
+#     --calibration.max_ls 40 \
+#     --calibration.learning_rate 1e-2 \
+#     --calibration.accelerator "cpu" \
+#     --calibration.max_epochs 30
+
+python -m llmcal 20newsgroups_128_543 basic_20newsgroups_0-shot_litgpt lm_phi3 no_adaptation_bf16 bias_only \
     --accelerator "gpu" \
     --batch_size 1 \
     --calibration.max_ls 40 \
@@ -116,6 +144,7 @@ python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 n
 
 ### Lora + no calibration
 python -m llmcal 20newsgroups_2_972 basic_20newsgroups_0-shot_litgpt lm_phi3 lora_40samples no_calibration --accelerator "gpu"
-python -m llmcal 20newsgroups_4_962 basic_20newsgroups_0-shot_litgpt lm_phi3 lora_60samples no_calibration --accelerator "gpu"
-python -m llmcal 20newsgroups_16_783 basic_20newsgroups_0-shot_litgpt lm_phi3 lora_200samples no_calibration --accelerator "gpu"
-python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 lora_3500samples no_calibration --accelerator "gpu"
+# python -m llmcal 20newsgroups_4_962 basic_20newsgroups_0-shot_litgpt lm_phi3 lora_60samples no_calibration --accelerator "gpu"
+# python -m llmcal 20newsgroups_16_783 basic_20newsgroups_0-shot_litgpt lm_phi3 lora_200samples no_calibration --accelerator "gpu"
+# python -m llmcal 20newsgroups_256_812 basic_20newsgroups_0-shot_litgpt lm_phi3 lora_3500samples no_calibration --accelerator "gpu"
+python -m llmcal 20newsgroups_128_543 basic_20newsgroups_0-shot_litgpt lm_phi3 lora_1000samples no_calibration --accelerator "gpu"
