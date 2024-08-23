@@ -51,7 +51,7 @@ supported_methods = OrderedDict([
 
 
 def load_results_paths():
-    root_results_dir = Path("../experiments.ok")
+    root_results_dir = Path("../experiments")
     results = []
     for dataset in root_results_dir.glob("*"):
         for prompt in dataset.glob("*"):
