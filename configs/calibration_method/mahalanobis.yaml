@@ -1,0 +1,2 @@
+method: "mahalanobis"
+eps: 0.000001

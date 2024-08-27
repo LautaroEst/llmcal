@@ -9,6 +9,7 @@ from .scripts.bert_full_ft import main as encoder_full_ft
 from .scripts.affine_calibration import main as affine_calibration, AFFINE_METHODS
 from .scripts.affine_calibration_no_es import main as affine_calibration_no_es, AFFINE_METHODS_NO_ES
 from .scripts.affine_calibration_train_on_val import main as affine_calibration_train_on_val, AFFINE_METHODS_TRAIN_ON_VAL
+from .scripts.mahalanobis import main as mahalanobis_calibration 
 from .models import SUPPORTED_LITGPT_MODELS, SUPPORTED_ENCODER_MODELS
 
 import datasets
@@ -92,6 +93,8 @@ def main(
         affine_calibration_no_es(**calibration_config)
     elif calibration_method_name in AFFINE_METHODS_TRAIN_ON_VAL:
         affine_calibration_train_on_val(**calibration_config)
+    elif calibration_method_name == "mahalanobis":
+        mahalanobis_calibration(**calibration_config)
     else:
         raise NotImplementedError(f"Calibration method {calibration_method_name} not implemented")
     
