@@ -205,9 +205,9 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
 
 def compute_results(metrics, bootstrap, random_state):
     df_results = pd.concat([
-        load_results_paths("../experiments.ok"), 
+        # load_results_paths("../experiments.ok"), 
         load_results_paths("../experiments"),
-        load_results_paths("../experiments.llama3"),
+        # load_results_paths("../experiments.llama3"),
     ], ignore_index=True)
     df_results.drop_duplicates(inplace=True, ignore_index=True)
     # df_results = df_results[df_results["dataset"] == "sst2"]
@@ -357,6 +357,7 @@ def plot_mean_std_for_model(df_orig, model, metrics, width=.8, err=True, stat="m
                         continue
                     if mask.sum() > 1:
                         print(df[mask])
+                        import pdb; pdb.set_trace()
                         raise ValueError("More than one row found")
                     # mean = df[mask][f"{metric}:mean"].values[0]
                     mean = df[mask][f"{metric}:{stat}"].values[0]
