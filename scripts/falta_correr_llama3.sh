@@ -1,3 +1,4 @@
+export CUDA_VISIBLE_DEVICES=1
 bash scripts/lm_llama3-1/all.sh
 bash scripts/lm_llama3-2/all.sh
 bash scripts/lm_llama3-3/all.sh

@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-for dataset in ./experiments.llama3_all/*; do
+for dataset in ./experiments/*; do
     for prompt in $dataset/*; do
         for model in $prompt/*; do
             for base_method in $model/*; do
