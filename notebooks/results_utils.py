@@ -206,7 +206,7 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
 def compute_results(metrics, bootstrap, random_state):
     df_results = pd.concat([
         # load_results_paths("../experiments.ok"), 
-        load_results_paths("../experiments"),
+        load_results_paths("../experiments.llama3.03-09-2024"),
         # load_results_paths("../experiments.llama3"),
     ], ignore_index=True)
     df_results.drop_duplicates(inplace=True, ignore_index=True)
