@@ -5,6 +5,7 @@
 /data/
 /data.zip
 /experiments*/
+/experiments*.zip
 /*.old/
 /logs/
 /.old/
