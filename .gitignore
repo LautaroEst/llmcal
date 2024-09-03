@@ -4,17 +4,7 @@
 
 /data/
 /data.zip
-/experiments/
-/experiments_temp/
-/experiments_temp_llama3/
-/experiments.llama3/
-/experiments.phi3/
-/experiments.tinyllama/
-/experiments.timing/
-/experiments.timing.zip
-/experiments.ok/
-/experiments.ok.zip
-/experiments.tinyllama.ok.03-09-2024/
+/experiments*/
 /*.old/
 /logs/
 /.old/
