@@ -15,12 +15,12 @@ from llmcal.utils import load_yaml
 from affinecal import cal_loss, min_cal
 
 dataset_short2name = OrderedDict([
-    ("sst2", {"name": "SST-2", "num_classes": 2}),
-    ("agnews", {"name": "AG News", "num_classes": 4}),
+    ("sst2", {"name": "SST-2", "num_classes": 2, "sizes": [8, 32, 512]}),
+    ("agnews", {"name": "AG News", "num_classes": 4, "sizes": [4, 16, 256]}),
     # ("medical-abstracts", {"name": "Medical Abstracts", "num_classes": 5}),
-    ("dbpedia", {"name": "DBpedia", "num_classes": 14}),
-    ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20}),
-    ("banking77", {"name": "Banking77", "num_classes": 77}),
+    ("dbpedia", {"name": "DBpedia", "num_classes": 14, "sizes": [2, 8, 128]}),
+    ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20, "sizes": [2, 8, 128]}),
+    ("banking77", {"name": "Banking77", "num_classes": 77, "sizes": [1, 4, 64]}),
 ])
 
 encoder2name = {
@@ -50,6 +50,7 @@ supported_methods = OrderedDict([
     # ("affine_scalar_no_es", {"label": "Affine Calibration\n(NO Early Stopping)", "color": "tab:blue", "ls": "-."}),
     ("lora+affine_scalar_train_on_val", {"label": "Lora + DP Calibration", "color": "tab:purple", "marker": "*", "alpha": 1., "ls": "--", "ms": marker_size}),
     ("no_adaptation", {"label": "No adaptation", "color": "black", "ls": "--", "marker": "*","ms": marker_size}),
+    ("no_adaptation+mahalanobis", {"label": "Mahalanobis Calibration", "color": "tab:brown", "marker": "*", "alpha": 1., "ls": "--", "ms": marker_size}),
 ])
 
 
@@ -206,7 +207,9 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
 def compute_results(metrics, bootstrap, random_state):
     df_results = pd.concat([
         # load_results_paths("../experiments.ok"), 
-        load_results_paths("../experiments.llama3.03-09-2024"),
+        # load_results_paths("../experiments.phi3.03-09-2024"),
+        # load_results_paths("../experiments.tinyllama.ok.03-09-2024"),
+        load_results_paths("../experiments"),
         # load_results_paths("../experiments.llama3"),
     ], ignore_index=True)
     df_results.drop_duplicates(inplace=True, ignore_index=True)
@@ -320,6 +323,10 @@ def format_method(base_method, cal_method, dataset, prompt, n_shots):
         method += supported_methods["lora+affine_scalar_train_on_val"]["label"]
         kwargs.update(**supported_methods["lora+affine_scalar_train_on_val"])
         kwargs.pop("label")
+    elif base_method == "no_adaptation" and cal_method == "mahalanobis":
+        method += supported_methods["no_adaptation+mahalanobis"]["label"]
+        kwargs.update(**supported_methods["no_adaptation+mahalanobis"])
+        kwargs.pop("label")
     else:
         raise ValueError(f"Method {base_method} + {cal_method} is not recognized")
     
@@ -347,7 +354,8 @@ def plot_mean_std_for_model(df_orig, model, metrics, width=.8, err=True, stat="m
                 num_samples = []
                 means = []
                 stds = []
-                sizes = sorted(df.loc[(df["dataset"] == dataset) & (df["method"] == method), "size"].unique())
+                # sizes = sorted(df.loc[(df["dataset"] == dataset) & (df["method"] == method), "size"].unique())
+                sizes = dataset_short2name[dataset]["sizes"]
                 for s, size in enumerate(sizes):
                     mask = \
                         (df["dataset"] == dataset) & \
@@ -386,7 +394,8 @@ def plot_mean_std_for_model(df_orig, model, metrics, width=.8, err=True, stat="m
                 num_samples = []
                 means = []
                 stds = []
-                sizes = sorted(df_encoders_results.loc[(df_encoders_results["model"] == encoder), "size"].unique())
+                # sizes = sorted(df_encoders_results.loc[(df_encoders_results["model"] == encoder), "size"].unique())
+                sizes = dataset_short2name[dataset]["sizes"]
                 for s, size in enumerate(sizes):
                     mask = \
                         (df_encoders_results["size"] == size) & \
@@ -426,12 +435,13 @@ def plot_mean_std_for_model(df_orig, model, metrics, width=.8, err=True, stat="m
             ylim = ax[j, i].get_ylim()
             sup_lim = 1.2 * df[(df["dataset"] == dataset) & (df["method"] == "No adaptation")].iloc[0][f"{metric}:mean"]
             ax[j, i].set_ylim(max(0,ylim[0]), min(sup_lim, ylim[1]))
-            ax[j, i].set_ylim(max(0,ylim[0]), ylim[1])
+            # ax[j, i].set_ylim(max(0,ylim[0]), ylim[1])
             ax[j, i].set_yticks(ax[j, i].get_yticks())
             ax[j, i].set_yticklabels([f"{y:2g}" for y in ax[j, i].get_yticks()], fontsize=10)
 
     for i, dataset in enumerate(datasets):
-        sizes = sorted(df.loc[(df["dataset"] == dataset), "size"].unique())
+        # sizes = sorted(df.loc[(df["dataset"] == dataset), "size"].unique())
+        sizes = dataset_short2name[dataset]["sizes"]
         num_samples = [df.loc[(df["dataset"] == dataset) & (df["size"] == size),"num_samples"].iloc[0] for size in sizes]
         ax[0, i].set_title(
             f"{dataset_short2name[dataset]['name']}\n"

@@ -16,8 +16,6 @@ class MahalanobisCalibrator(nn.Module):
 
     Parameters
     ----------
-    num_features : int
-        Number of input features of the calibrator.
     num_classes : int
         Number of output classes of the calibrator.
     alpha : {"vector", "scalar", "matrix", "none"}, optional
@@ -35,22 +33,20 @@ class MahalanobisCalibrator(nn.Module):
     ):
         super().__init__()
         self.num_classes = num_classes
-        self.additional_arguments = {
-            "eps": eps,
-            "random_state": random_state
-        }
+        self.eps = eps
+        self.random_state = random_state
 
         # Parameters
         self.means = nn.Parameter(torch.zeros(num_classes,num_classes), requires_grad=True)
         # self.covariances = nn.Parameter(torch.zeros(num_classes,num_classes,num_classes), requires_grad=False)
     
-    def init_parameters(self, train_data):
-        logits, labels = train_data["logits"].float(), train_data["label"].long()
-        logits = torch.log_softmax(logits, dim=1)
+    def init_parameters(self, features, labels):
+        self.train_features = features
+        self.train_labels = labels
 
         device = self.means.device
         for c in range(self.num_classes):
-            features_c = logits[labels == c].to(device)
+            features_c = features[labels == c].to(device)
             self.means.data[c] = torch.mean(features_c, dim=0)
 
     def forward(self, features):
@@ -60,13 +56,13 @@ class MahalanobisCalibrator(nn.Module):
         for c in range(self.num_classes):
             features_c = self.train_features[self.train_labels == c].to(device)
             centered_features = features_c - self.means[c]
-            covariances[c] = torch.matmul(centered_features.T, centered_features) / (features_c.shape[0] - 1) + self.eps * torch.eye(self.num_features, device=features_c.device)
+            covariances[c] = torch.matmul(centered_features.T, centered_features) / (features_c.shape[0] - 1) + self.eps * torch.eye(self.num_classes, device=features_c.device)
 
         inv_sigma = torch.cholesky_inverse(covariances)
         features_centered = features.unsqueeze(1) - self.means
         inv_sigma_features = torch.matmul(inv_sigma.unsqueeze(0), features_centered.unsqueeze(3)).squeeze(3)
         mahalanobis = torch.sum(features_centered * inv_sigma_features, dim=2)
-        cal_logits = torch.log_softmax(-mahalanobis)
+        cal_logits = torch.log_softmax(-mahalanobis, dim=1)
         return cal_logits
 
 
@@ -76,6 +72,7 @@ class MahalanobisCalibration(L.LightningModule):
         self,
         num_classes: int,
         eps: float = 1e-6,
+        max_ls: int = 40,
         learning_rate: float = 0.001,
         random_state: int = 42,
     ):
@@ -83,6 +80,7 @@ class MahalanobisCalibration(L.LightningModule):
         self.automatic_optimization = False
         self.num_classes = num_classes
         self.eps = eps
+        self.max_ls = max_ls
         self.learning_rate = learning_rate
         self.random_state = random_state
 
@@ -93,19 +91,12 @@ class MahalanobisCalibration(L.LightningModule):
 
     def configure_optimizers(self):
         trainable_params = [param for param in self.parameters() if param.requires_grad]
-        if self._optimizer_name == "adamw":
-            optimizer = torch.optim.AdamW(trainable_params, lr=self._learning_rate, weight_decay=self._weight_decay)
-        elif self._optimizer_name == "sgd":
-            optimizer = torch.optim.SGD(trainable_params, lr=self._learning_rate, weight_decay=self._weight_decay)
-        else:
-            raise ValueError(f"Invalid optimizer {self._optimizer_name}")
-        return optimizer
+        return torch.optim.LBFGS(trainable_params, lr=self.learning_rate, max_iter=self.max_ls)
     
     def forward(self, logits) -> torch.Tensor:
         return self.calibrator(logits)
     
     def training_step(self, batch, batch_idx):
-
         optimizer = self.optimizers()
         logits, labels = batch["logits"].float(), batch["label"].long()
         logits = torch.log_softmax(logits, dim=1)

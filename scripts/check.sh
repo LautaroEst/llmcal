@@ -1,6 +1,6 @@
 
 # exp_dir=experiments.llama3.03-09-2024
-exp_dir=experiments
+exp_dir=experiments.phi3.03-09-2024
 for dataset in 20newsgroups agnews banking77 dbpedia sst2; do
     prompt="basic_${dataset}_0-shot_litgpt"
     # model="lm_tinyllama"
