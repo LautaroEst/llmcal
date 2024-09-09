@@ -27,7 +27,7 @@ def main(
     random_state: int,
     # alpha: Literal["matrix", "vector", "scalar", "none"] = "matrix",
     # beta: bool = True,
-    # max_ls: int = 40,
+    max_ls: int = 40,
     eps: float = 1e-6,
     learning_rate: float = 0.001,
     accelerator: str = "cpu",
@@ -86,14 +86,16 @@ def main(
         num_classes = len(train_datadict["train"][0]["logits"]),
         # alpha = alpha,
         # beta = beta,
-        # max_ls = max_ls,
+        max_ls = max_ls,
         eps = eps,
         learning_rate = learning_rate,
         random_state = random_state,
     )
     with trainer.init_module():
         model = MahalanobisCalibration(**model_params)
-    model.calibrator.init_parameters(train_loader.dataset)
+    logits, labels = train_loader.dataset["logits"].float(), train_loader.dataset["label"].long()
+    logits = torch.log_softmax(logits, dim=1)
+    model.calibrator.init_parameters(logits, labels)
             
     # -------------------
     # Fit the model

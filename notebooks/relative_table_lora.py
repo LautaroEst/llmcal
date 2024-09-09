@@ -49,8 +49,9 @@ def main():
     # results.index = results.index.map(methods)
     # results = results.loc[methods.values()]
     # results = (results * 100).round(2)
-    results_filename = "results_0_42_tinyllama_phi3_llama3_bert.csv"
-    # skip_datasets = ["20newsgroups", "banking77"]
+    # results_filename = "results_0_42_tinyllama_phi3_llama3_bert.csv"
+    results_filename = "results_llama3_phi3_tinyllama_03092024.csv"
+    # skip_datasets = ["20newsgroups"]
     skip_datasets = []
     metric = "norm_cross_entropy"
     results = pd.read_csv(results_filename, header=0, index_col=None)
@@ -59,7 +60,7 @@ def main():
     results = results.drop(columns=["base_method", "cal_method"])
     new_results = []
     # for model in results["model"].unique():
-    for model in ["lm_tinyllama", "roberta_base"]:
+    for model in ["lm_phi3", "lm_llama3", "lm_tinyllama", "roberta_base"]:
         model_results = results.loc[results["model"] == model]
         for dataset in model_results["dataset"].unique():
             if dataset in skip_datasets:
