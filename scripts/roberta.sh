@@ -1,3 +1,4 @@
+export CUDA_VISIBLE_DEVICES=1
 bash scripts/roberta_base-1/all.sh
 bash scripts/roberta_base-2/all.sh
 bash scripts/roberta_base-3/all.sh
