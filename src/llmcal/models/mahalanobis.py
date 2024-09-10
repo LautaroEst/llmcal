@@ -50,13 +50,15 @@ class MahalanobisCalibrator(nn.Module):
             self.means.data[c] = torch.mean(features_c, dim=0)
 
     def forward(self, features):
-
         device = self.means.device
         covariances = torch.zeros(self.num_classes, self.num_classes, self.num_classes, device=device)
         for c in range(self.num_classes):
             features_c = self.train_features[self.train_labels == c].to(device)
             centered_features = features_c - self.means[c]
-            covariances[c] = torch.matmul(centered_features.T, centered_features) / (features_c.shape[0] - 1) + self.eps * torch.eye(self.num_classes, device=features_c.device)
+            if features_c.shape[0] == 1:
+                covariances[c] = self.eps * torch.eye(self.num_classes, device=features_c.device)
+            else:
+                covariances[c] = torch.matmul(centered_features.T, centered_features) / (features_c.shape[0] - 1) + self.eps * torch.eye(self.num_classes, device=features_c.device)
 
         inv_sigma = torch.cholesky_inverse(covariances)
         features_centered = features.unsqueeze(1) - self.means
