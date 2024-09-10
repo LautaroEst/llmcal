@@ -14,13 +14,22 @@ from datasets import load_from_disk
 from llmcal.utils import load_yaml
 from affinecal import cal_loss, min_cal
 
+# dataset_short2name = OrderedDict([
+#     ("sst2", {"name": "SST-2", "num_classes": 2, "sizes": [8, 32, 512]}),
+#     ("agnews", {"name": "AG News", "num_classes": 4, "sizes": [4, 16, 256]}),
+#     # ("medical-abstracts", {"name": "Medical Abstracts", "num_classes": 5}),
+#     ("dbpedia", {"name": "DBpedia", "num_classes": 14, "sizes": [2, 8, 128]}),
+#     ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20, "sizes": [2, 8, 128]}),
+#     ("banking77", {"name": "Banking77", "num_classes": 77, "sizes": [1, 4, 64]}),
+# ])
+
 dataset_short2name = OrderedDict([
-    ("sst2", {"name": "SST-2", "num_classes": 2, "sizes": [8, 32, 512]}),
-    ("agnews", {"name": "AG News", "num_classes": 4, "sizes": [4, 16, 256]}),
+    ("sst2", {"name": "SST-2", "num_classes": 2, "sizes": [8, 512]}),
+    ("agnews", {"name": "AG News", "num_classes": 4, "sizes": [4, 256]}),
     # ("medical-abstracts", {"name": "Medical Abstracts", "num_classes": 5}),
-    ("dbpedia", {"name": "DBpedia", "num_classes": 14, "sizes": [2, 8, 128]}),
-    ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20, "sizes": [2, 8, 128]}),
-    ("banking77", {"name": "Banking77", "num_classes": 77, "sizes": [1, 4, 64]}),
+    ("dbpedia", {"name": "DBpedia", "num_classes": 14, "sizes": [2, 128]}),
+    ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20, "sizes": [2, 128]}),
+    ("banking77", {"name": "Banking77", "num_classes": 77, "sizes": [1, 64]}),
 ])
 
 encoder2name = {

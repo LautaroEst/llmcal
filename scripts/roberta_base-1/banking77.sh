@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ### Finetuning
-python -m llmcal banking77_4_295 encoder_banking77 roberta_base full_ft no_calibration \
+python -m llmcal banking77_1_322 encoder_banking77 roberta_base full_ft no_calibration \
     --batch_size 32 \
     --accumulate_grad_batches 1 \
     --learning_rate 1e-5 \
@@ -9,7 +9,7 @@ python -m llmcal banking77_4_295 encoder_banking77 roberta_base full_ft no_calib
     --val_check_interval 1 \
     --max_steps -1
 
-python -m llmcal banking77_16_738 encoder_banking77 roberta_base full_ft no_calibration \
+python -m llmcal banking77_4_295 encoder_banking77 roberta_base full_ft no_calibration \
     --batch_size 32 \
     --accumulate_grad_batches 1 \
     --learning_rate 1e-5 \

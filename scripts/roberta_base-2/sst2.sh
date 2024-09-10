@@ -1,8 +1,7 @@
-#!/bin/bash
-
+# #!/bin/bash
 
 ### Finetuning
-python -m llmcal 20newsgroups_2_927 encoder_20newsgroups roberta_base full_ft no_calibration \
+python -m llmcal sst2_8_932 encoder_sst2 roberta_base full_ft no_calibration \
     --batch_size 32 \
     --accumulate_grad_batches 1 \
     --learning_rate 1e-5 \
@@ -10,7 +9,7 @@ python -m llmcal 20newsgroups_2_927 encoder_20newsgroups roberta_base full_ft no
     --val_check_interval 1 \
     --max_steps -1
 
-python -m llmcal 20newsgroups_8_338 encoder_20newsgroups roberta_base full_ft no_calibration \
+python -m llmcal sst2_32_1564 encoder_sst2 roberta_base full_ft no_calibration \
     --batch_size 32 \
     --accumulate_grad_batches 1 \
     --learning_rate 1e-5 \
@@ -18,7 +17,7 @@ python -m llmcal 20newsgroups_8_338 encoder_20newsgroups roberta_base full_ft no
     --val_check_interval 1 \
     --max_steps -1
 
-python -m llmcal 20newsgroups_128_129 encoder_20newsgroups roberta_base full_ft no_calibration \
+python -m llmcal sst2_512_121 encoder_sst2 roberta_base full_ft no_calibration \
     --batch_size 32 \
     --accumulate_grad_batches 1 \
     --learning_rate 1e-5 \

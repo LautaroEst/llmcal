@@ -100,8 +100,8 @@ for suffix in 128_129 128_131 128_543 128_878 128_909; do
 done
 
 dataset=20newsgroups
-# for suffix in 2_435 2_927 2_972 2_4351 2_9722; do
-for suffix in 2_435 2_972 2_4351 2_9722; do
+for suffix in 2_435 2_927 2_972 2_4351 2_9722; do
+# for suffix in 2_435 2_972 2_4351 2_9722; do
     for method in affine_scalar_train_on_val ; do
         python -m llmcal ${dataset}_${suffix} basic_${dataset}_0-shot_litgpt lm_phi3 lora_40samples $method --accelerator "gpu" --batch_size 1 --calibration.max_ls 40 --calibration.learning_rate 1e-2 --calibration.accelerator "cpu" --calibration.max_epochs 30
     done
@@ -120,6 +120,13 @@ done
 #         python -m llmcal ${dataset}_${suffix} basic_${dataset}_0-shot_litgpt lm_phi3 lora_200samples $method --accelerator "gpu" --batch_size 1 --calibration.max_ls 40 --calibration.learning_rate 1e-2 --calibration.accelerator "cpu" --calibration.max_epochs 30
 #     done
 # done
+
+dataset=20newsgroups
+for suffix in 128_129 128_131 128_543 128_878 128_909; do
+    for method in affine_scalar_train_on_val ; do
+        python -m llmcal ${dataset}_${suffix} basic_${dataset}_0-shot_litgpt lm_phi3 lora_1000samples $method --accelerator "gpu" --batch_size 1 --calibration.max_ls 40 --calibration.learning_rate 1e-2 --calibration.accelerator "cpu" --calibration.max_epochs 30
+    done
+done
 
 # dataset=20newsgroups
 # for suffix in 256_493 256_812 256_821 256_4931 256_8212; do
