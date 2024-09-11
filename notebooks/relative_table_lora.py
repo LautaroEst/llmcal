@@ -50,7 +50,7 @@ def main():
     # results = results.loc[methods.values()]
     # results = (results * 100).round(2)
     # results_filename = "results_0_42_tinyllama_phi3_llama3_bert.csv"
-    results_filename = "results_llama3_phi3_tinyllama_03092024.csv"
+    results_filename = "results_tinyllama_phi3_llama3_bert_11092024.csv"
     # skip_datasets = ["20newsgroups"]
     skip_datasets = []
     metric = "norm_cross_entropy"
@@ -95,6 +95,8 @@ def main():
                     # })
                 
     results = pd.DataFrame(new_results)
+    print(results[results["size"].isin(["small","large"]) & results["method"].isin(["lora+no_calibration","lora+affine_scalar_train_on_val","full_ft+no_calibration","no_adaptation+affine_scalar"])].sort_values(by=["model","dataset","method","size"]).to_latex("table.tex",index=False))
+    print(results[results["size"].isin(["small","large"]) & results["method"].isin(["lora+no_calibration","lora+affine_scalar_train_on_val","full_ft+no_calibration","no_adaptation+affine_scalar"])].sort_values(by=["model","dataset","method","size"]).to_csv("results.csv",index=False))
     results = results.groupby(["model","method","size"]).agg({f"{metric}:value:median": "mean"}).reset_index()
     results["method"] = results["method"].map(methods)
     results["model"] = results["model"].map({

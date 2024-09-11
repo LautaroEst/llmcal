@@ -22,7 +22,9 @@ metrics = ["norm_error_rate", "norm_cross_entropy", "ece"]#, "cal_loss_bias", "n
 # results_filename = "results_phi3_03092024.csv"
 # results_filename = "results_tinyllama_03092024.csv"
 # results_filename = "results_tinyllama_03092024_mahalanobis.csv"
-results_filename = "results_phi3_10092024.csv"
+# results_filename = "results_phi3_10092024.csv"
+# results_filename = "results_tinyllama_11092024.csv" # este tiene cal_loss
+results_filename = "results_tinyllama_phi3_llama3_bert_11092024.csv"
 bootstrap = 0
 random_state = 42
 if os.path.exists(results_filename):
@@ -70,4 +72,4 @@ df_results = df
 # table_results = table_results.sort_values(by=["dataset","method","size"]).set_index("dataset")
 # print(table_results.to_markdown())
 
-plot_mean_std_for_model(df_results, "lm_phi3", metrics, width = 0.5, err=False, stat="median")
+# plot_mean_std_for_model(df_results, "lm_tinyllama", metrics[:-1], width = 0.5, err=False, stat="median")

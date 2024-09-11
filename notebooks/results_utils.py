@@ -14,23 +14,23 @@ from datasets import load_from_disk
 from llmcal.utils import load_yaml
 from affinecal import cal_loss, min_cal
 
-# dataset_short2name = OrderedDict([
-#     ("sst2", {"name": "SST-2", "num_classes": 2, "sizes": [8, 32, 512]}),
-#     ("agnews", {"name": "AG News", "num_classes": 4, "sizes": [4, 16, 256]}),
-#     # ("medical-abstracts", {"name": "Medical Abstracts", "num_classes": 5}),
-#     ("dbpedia", {"name": "DBpedia", "num_classes": 14, "sizes": [2, 8, 128]}),
-#     ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20, "sizes": [2, 8, 128]}),
-#     ("banking77", {"name": "Banking77", "num_classes": 77, "sizes": [1, 4, 64]}),
-# ])
-
 dataset_short2name = OrderedDict([
-    ("sst2", {"name": "SST-2", "num_classes": 2, "sizes": [8, 512]}),
-    ("agnews", {"name": "AG News", "num_classes": 4, "sizes": [4, 256]}),
+    ("sst2", {"name": "SST-2", "num_classes": 2, "sizes": [8, 32, 512]}),
+    ("agnews", {"name": "AG News", "num_classes": 4, "sizes": [4, 16, 256]}),
     # ("medical-abstracts", {"name": "Medical Abstracts", "num_classes": 5}),
-    ("dbpedia", {"name": "DBpedia", "num_classes": 14, "sizes": [2, 128]}),
-    ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20, "sizes": [2, 128]}),
-    ("banking77", {"name": "Banking77", "num_classes": 77, "sizes": [1, 64]}),
+    ("dbpedia", {"name": "DBpedia", "num_classes": 14, "sizes": [2, 8, 128]}),
+    ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20, "sizes": [2, 8, 128]}),
+    ("banking77", {"name": "Banking77", "num_classes": 77, "sizes": [1, 4, 64]}),
 ])
+
+# dataset_short2name = OrderedDict([
+#     ("sst2", {"name": "SST-2", "num_classes": 2, "sizes": [8, 512]}),
+#     ("agnews", {"name": "AG News", "num_classes": 4, "sizes": [4, 256]}),
+#     # ("medical-abstracts", {"name": "Medical Abstracts", "num_classes": 5}),
+#     ("dbpedia", {"name": "DBpedia", "num_classes": 14, "sizes": [2, 128]}),
+#     ("20newsgroups", {"name": "20 Newsgroups", "num_classes": 20, "sizes": [2, 128]}),
+#     ("banking77", {"name": "Banking77", "num_classes": 77, "sizes": [1, 64]}),
+# ])
 
 encoder2name = {
     "roberta_base": "RoBERTa-FT",
@@ -49,7 +49,7 @@ metrics_short2name = {
 }
 marker_size = 7
 supported_methods = OrderedDict([
-    ("temp_scaling", {"label": "Scale-only Calibration\n(Temperature Scaling)", "color": "tab:orange", "ls": "--", "marker": "*","ms": marker_size}),
+    ("temp_scaling", {"label": "Scale-only Calibration (Temperature Scaling)", "color": "tab:orange", "ls": "--", "marker": "*","ms": marker_size}),
     ("bias_only", {"label": "Bias-only Calibration", "color": "tab:green", "ls": "--", "marker": "*","ms": marker_size}),    
     ("affine_scalar", {"label": "DP Calibration", "color": "tab:blue", "ls": "--", "marker": "*", "ms": marker_size}),
     ("lora", {"label": "LoRA", "color": "tab:red", "ls": "--", "marker": "*","ms": marker_size}),
@@ -216,9 +216,9 @@ def compute_metric(logits, targets, metric, bootstrap, random_state):
 def compute_results(metrics, bootstrap, random_state):
     df_results = pd.concat([
         # load_results_paths("../experiments.ok"), 
-        # load_results_paths("../experiments.phi3.03-09-2024"),
-        # load_results_paths("../experiments.tinyllama.ok.03-09-2024"),
-        load_results_paths("../experiments"),
+        load_results_paths("../experiments.phi3.ok.10-09-2024"),
+        load_results_paths("../experiments.tinyllama.ok.11-09-2024"),
+        # load_results_paths("../experiments"),
         # load_results_paths("../experiments.llama3"),
     ], ignore_index=True)
     df_results.drop_duplicates(inplace=True, ignore_index=True)
@@ -473,7 +473,7 @@ def plot_mean_std_for_model(df_orig, model, metrics, width=.8, err=True, stat="m
 
 
     hand, lab = ax[0,0].get_legend_handles_labels()
-    fig.legend(hand, lab, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods), fancybox=True, shadow=True, fontsize=13)
+    fig.legend(hand, lab, loc='upper center', bbox_to_anchor=(0.5, 1.12), ncol=len(methods)//2, fancybox=True, shadow=True, fontsize=13)
     fig.tight_layout()
     plt.savefig(f"../results_{model}.pdf", dpi=300, bbox_inches="tight")
 
@@ -579,7 +579,7 @@ def plot_manual_boxplot_for_model(df, model, metrics, width=.8):
 
 
     hand, lab = ax[0,0].get_legend_handles_labels()
-    fig.legend(hand, lab, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods), fancybox=True, shadow=True, fontsize=13)
+    fig.legend(hand, lab, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(methods)//2, fancybox=True, shadow=True, fontsize=13)
     fig.tight_layout()
     plt.savefig(f"../results_{model}_intervals.pdf", dpi=300, bbox_inches="tight")
 
