@@ -1,6 +1,7 @@
 
 # exp_dir=experiments.llama3.09-09-2024
-exp_dir=experiments
+# exp_dir=experiments
+exp_dir=experiments.tinyllama.ok.11-09-2024
 for dataset in 20newsgroups agnews banking77 dbpedia sst2; do
     prompt="encoder_${dataset}"
     # model="lm_tinyllama"

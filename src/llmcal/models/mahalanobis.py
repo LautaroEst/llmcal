@@ -43,11 +43,14 @@ class MahalanobisCalibrator(nn.Module):
     def init_parameters(self, features, labels):
         self.train_features = features
         self.train_labels = labels
-
         device = self.means.device
+        self.generator = torch.Generator(device=device).manual_seed(self.random_state)
         for c in range(self.num_classes):
             features_c = features[labels == c].to(device)
-            self.means.data[c] = torch.mean(features_c, dim=0)
+            if features_c.shape[0] == 0:
+                self.means.data[c] = torch.randn(self.num_classes, device=device, generator=self.generator)
+            else:
+                self.means.data[c] = torch.mean(features_c, dim=0)
 
     def forward(self, features):
         device = self.means.device

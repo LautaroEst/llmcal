@@ -79,7 +79,7 @@ done
 # done
 
 dataset=dbpedia
-for suffix in 8_338 3_364 3_383 8_3641 8_3832; do
+for suffix in 8_338 8_364 8_383 8_3641 8_3832; do
     for method in affine_scalar_train_on_val ; do
         python -m llmcal ${dataset}_${suffix} basic_${dataset}_0-shot_litgpt lm_tinyllama lora_200samples $method --accelerator "gpu" --batch_size 1 --calibration.max_ls 40 --calibration.learning_rate 1e-2 --calibration.accelerator "cpu" --calibration.max_epochs 30
     done
