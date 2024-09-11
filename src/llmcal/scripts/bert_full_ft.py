@@ -63,15 +63,18 @@ def main(
     config.num_labels = num_classes
 
     # Process the train dataset
+    def tokenize(text):
+        return tokenizer(text, padding=False, truncation="longest_first", max_length=tokenizer.model_max_length)
+
     train_loader = DataLoader(
-        train_datadict["train"].map(tokenizer, input_columns=sentence_field, remove_columns=sentence_field).select_columns(["idx","input_ids","attention_mask","label"]).with_format("torch"), 
+        train_datadict["train"].map(tokenize, input_columns=sentence_field, remove_columns=sentence_field).select_columns(["idx","input_ids","attention_mask","label"]).with_format("torch"), 
         batch_size=batch_size, 
         shuffle=True, 
         num_workers=4, 
         collate_fn=DataCollatorWithPadding(tokenizer, padding=True)
     )
     val_loader = DataLoader(
-        train_datadict["validation"].map(tokenizer, input_columns=sentence_field, remove_columns=sentence_field).select_columns(["idx","input_ids","attention_mask","label"]).with_format("torch"), 
+        train_datadict["validation"].map(tokenize, input_columns=sentence_field, remove_columns=sentence_field).select_columns(["idx","input_ids","attention_mask","label"]).with_format("torch"), 
         batch_size=batch_size, 
         shuffle=False, 
         num_workers=4, 
@@ -165,7 +168,7 @@ def main(
         if os.path.exists(os.path.join(output_dir, f"predictions/{split}")):
             continue
         dataloader = DataLoader(
-            dataset.map(tokenizer, input_columns=sentence_field, remove_columns=sentence_field).select_columns(["idx","input_ids","attention_mask","label"]).with_format("torch"),
+            dataset.map(tokenize, input_columns=sentence_field, remove_columns=sentence_field).select_columns(["idx","input_ids","attention_mask","label"]).with_format("torch"),
             shuffle=False, 
             batch_size=batch_size, 
             num_workers=4, 

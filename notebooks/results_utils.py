@@ -219,7 +219,7 @@ def compute_results(metrics, bootstrap, random_state):
         # load_results_paths("../experiments.phi3.03-09-2024"),
         # load_results_paths("../experiments.tinyllama.ok.03-09-2024"),
         load_results_paths("../experiments"),
-        # load_results_paths("../experiments.llama3"),
+        load_results_paths("../experiments.llama3.10-09-2024"),
     ], ignore_index=True)
     df_results.drop_duplicates(inplace=True, ignore_index=True)
     # df_results = df_results[df_results["dataset"] == "sst2"]
