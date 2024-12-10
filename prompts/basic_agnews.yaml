@@ -1,0 +1,6 @@
+prompt_template: "Determine the category of the news article given by the user."
+answers_templates: 
+  - "World"
+  - "Sports"
+  - "Business"
+  - "Science and Technology"

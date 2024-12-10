@@ -1,0 +1,4 @@
+prompt_template: "Determine if the following review is positive or negative, based on the input given by the user."
+answers_templates: 
+  - "Negative"
+  - "Positive"
