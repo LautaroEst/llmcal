@@ -81,7 +81,8 @@ run_lora() {
     local output_dir="$train_dir/test=$dataset/list=$test_list"
     if [ ! -f $output_dir/logits.csv ]; then
         mkdir -p $output_dir
-        python -m llmcal2.scripts.run_posteriors \
+        python -m llmcal.scripts.run_posteriors \
+            --base_checkpoint_dir $model_dir \
             --checkpoint_dir $output_checkpoint_dir \
             --peft "lora" \
             --data_path outputs/prompts/$model/$dataset/all.jsonl \
@@ -102,12 +103,11 @@ run_lora() {
 # 3: val_check_interval
 run_lora_vs_samples() {
     local model=$1
-    local sizes=$2
-    local val_check_interval=$3
-    for size in $sizes; do
+    local val_check_interval=$2
+    for size in ${FACTORS[@]}; do
         for dataset in "${DATASETS[@]}"; do
             local test_list="test_${dataset2testsize[$dataset]}"
-            for num_seed in $(seq 0 $num_seeds); do
+            for num_seed in $(seq 0 $(($num_seeds - 1))); do
 
                 # Train lora-ans without early stopping on 70% of the data
                 train_list="0.0-0.7"
@@ -141,5 +141,5 @@ run_lora_vs_samples() {
     done
 }
 
-run_lora_vs_samples $model "${FACTORS[@]}" 16
+run_lora_vs_samples $model 16
 

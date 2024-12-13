@@ -11,6 +11,9 @@ If you have other data, calibrate after train:
 LoraMismatchedAns/LoraMismatchedFS/Instruct/InstructFewShot + DPCal (use zero-shot/zero-shot+dpcal as baseline)
 
 
+sin es con 100 deberia dar mejor que con 70
+el mejor deberia ser sin es calibrado en el 30
+
 
 
 
@@ -32,3 +35,67 @@ instruct + 70-30 lora + dpcal
 instruc + 100 lora (no es)
 instruct + 100 lora (con steps de lora70-30)
 
+
+
+Data split:
+- Set 1: first p% of the data
+- Set 2: last 100-p% of the data
+- Set 3: 100% of the data
+
+Methods:
+1. No Adaptation (baseline): Do not use training data
+2. Calibration: Use Set 3 for calibration
+
+3. LoRA p%: Use Set 1 for training LoRA and Set 2 for validation
+4. LoRA 100%: Use Set 3 for training LoRA with number of steps used in method 3.
+
+5. LoRA p% without ES: Use Set 1 for training LoRA without Early Stopping
+6. LoRA 100% without ES: Use Set 3 for training LoRA without Early Stopping
+
+7. LoRA p% + Cal: Method 3 plus calibration on Set 2.
+8. LoRA 100% + Cal: Method 4 plus calibration with parameters of method 7.
+
+9. LoRA p% without ES + Cal: Method 5 plus calibration on Set 2.
+10. LoRA 100% without ES + Cal: Method 6 plus calibration with parameters of method 9.
+
+* = No ES
+x = ES
+
+Red = LoRA p
+Green = LoRA 100
+
+Solid (-) = No calibration
+Dashed (--) = Temp Scaling
+Dotted (:) = DP Calibration
+
+
+
+icen laboratorio
+cerca del RR, tambien hay bus a la universidad
+estacion de orsay
+qualcum
+
+
+
+
+
+Cosas para el paper:
+
+- Hay que argumentar que un modelo robusto es un modelo que puede clasificar bien para cualquier set de respuestas que se le presente
+- Capaz podemos venderlo como un framework alternativo a prompt engineering en donde elgís las posibles respuestas y se las das como answers en lugar de en el prompt. 
+
+- Métodos PEFTs son efectivos: https://aclanthology.org/2021.acl-long.172.pdf
+- Ejemplo de catastrofic forgeting en medical domain: https://arxiv.org/abs/2203.13381
+- Otro ejemplo de catastrofic forgeting: https://arxiv.org/abs/2308.08747
+- Mixture of Prompts: https://arxiv.org/pdf/2310.02842
+- Filtrado de muestras para hacer in domain finetuning: https://arxiv.org/abs/2410.14745
+- Blog que habla sobre catastrofic forgetting: https://blog.arcee.ai/the-hidden-obstacles-of-domain-adaptation-in-llms/
+- Synthetic generation: https://arxiv.org/abs/2303.00807
+- Training budget guide: https://aclanthology.org/2024.eamt-1.51/
+- Prompt engineering: https://ieeexplore.ieee.org/abstract/document/9908590
+- Paper de continual pretraining: https://arxiv.org/abs/2004.10964
+
+
+
+
+No tiene que ver con el paper pero sí con el proyecto de pablo: https://arxiv.org/abs/2310.01444
