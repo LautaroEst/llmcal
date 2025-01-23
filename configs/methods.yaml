@@ -1,5 +1,5 @@
-markersize: &markersize 5
-linewidth: &linewidth 1.5
+markersize: &markersize 6
+linewidth: &linewidth 4
 
 no_adaptation:
   label: "No Adaptation"
@@ -9,34 +9,58 @@ no_adaptation:
   linewidth: *linewidth
   markersize: *markersize
 
-dp_calibration:
-  label: "Direction Preserving"
-  color: "blue"
+temp_scaling:
+  label: "Temperature Scaling"
+  color: "tab:blue"
   linestyle: "-"
-  marker: "*"
+  marker: "o"
   linewidth: *linewidth
   markersize: *markersize
 
-temp_scaling:
-  label: "Temperature Scaling"
-  color: "purple"
+dp_calibration:
+  label: "Direction Preserving"
+  color: "tab:orange"
   linestyle: "-"
-  marker: "x"
+  marker: "o"
+  linewidth: *linewidth
+  markersize: *markersize
+
+vector_scaling:
+  label: "Vector Scaling"
+  color: "tab:purple"
+  linestyle: "-"
+  marker: "o"
+  linewidth: *linewidth
+  markersize: *markersize
+
+bias_shift:
+  label: "Bias Shift"
+  color: "tab:brown"
+  linestyle: "-"
+  marker: "o"
   linewidth: *linewidth
   markersize: *markersize
 
 lora_0.7:
-  label: "LoRA (p=0.7)"
-  color: "green"
+  label: "LoRA (70% Train + 30% Val)\nwith Early Stopping"
+  color: "tab:red"
   linestyle: "-"
   marker: "o"
   linewidth: *linewidth
   markersize: *markersize
 
 lora_1.0:
-  label: "LoRA (p=1.0)"
-  color: "red"
+  label: "LoRA (100% Train)\nwith Early Stopping"
+  color: "tab:green"
   linestyle: "-"
+  marker: "o"
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_no_es:
+  label: "LoRA (100% Train)\nwithout Early Stopping"
+  color: "tab:green"
+  linestyle: "--"
   marker: "o"
   linewidth: *linewidth
   markersize: *markersize
@@ -46,6 +70,14 @@ lora_0.7_no_es:
   color: "green"
   linestyle: "--"
   marker: "o"
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_0.7_no_es_plus_dpcal:
+  label: "LoRA (p=0.7, No ES) + Direction Preserving"
+  color: "tab:orange"
+  linestyle: "-"
+  marker: "*"
   linewidth: *linewidth
   markersize: *markersize
 
@@ -89,13 +121,7 @@ lora_0.7_no_es_plus_tempscaling_trainontest:
   linewidth: *linewidth
   markersize: *markersize
 
-lora_1.0_no_es:
-  label: "LoRA (p=1.0, no ES)"
-  color: "red"
-  linestyle: "--"
-  marker: "o"
-  linewidth: *linewidth
-  markersize: *markersize
+
 
 lora_1.0_plus_dpcal:
   label: "LoRA (p=1.0) + Direction Preserving"

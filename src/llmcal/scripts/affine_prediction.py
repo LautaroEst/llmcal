@@ -19,7 +19,7 @@ def main(
     # Load model
     model = AffineCalibrator(method=method, num_classes=predict_logits.shape[1])
     state = torch.load(checkpoint_path, weights_only=False)
-    model.load_state_dict(state['model'])
+    model.load_state_dict(state['best_model'])
 
     # Predict
     cal_logits = predict(model, predict_logits)

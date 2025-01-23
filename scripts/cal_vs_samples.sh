@@ -100,6 +100,12 @@ run_cal_vs_samples() {
 
                 # Run Temp Scaling
                 run_affine_calibration $model $dataset $size $num_seed "temp_scaling"
+
+                # Run Vector scaling
+                run_affine_calibration $model $dataset $size $num_seed "vector_scaling"
+
+                # Run Bias shift
+                run_affine_calibration $model $dataset $size $num_seed "bias_shift"
             done
         done
     done

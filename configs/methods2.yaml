@@ -1,0 +1,75 @@
+markersize: &markersize 5
+linewidth: &linewidth 4
+
+lora_1.0_no_es:
+  label: "SFT w/o Early Stopping"
+  color: "tab:blue"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_0.7_no_es:
+  label: "SFT w/o Early-stopping (70%)"
+  color: "tab:purple"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_0.7_no_es_plus_dpcal:
+  label: "SFT SFT w/o Early Stopping (70%) + DP Cal"
+  color: "tab:brown"
+  linestyle: "--"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_0.7_no_es_plus_tempscaling:
+  label: "SFT w/o Early Stopping (70%) + Temp Scaling"
+  color: "tab:cyan"
+  linestyle: "--"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+
+lora_1.0:
+  label: "SFT w/ Early Stopping"
+  color: "tab:orange"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_no_es_plus_dpcal:
+  label: "SFT w/o Early Stopping\n+ Direction Preserving"
+  color: "tab:green"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_no_es_plus_dpcal_naive:
+  label: "SFT w/o Early Stopping\n+ Direction Preserving (Naive)"
+  color: "tab:green"
+  linestyle: "--"
+  marker: "x"
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_no_es_plus_tempscaling:
+  label: "SFT w/o Early Stopping\n+ Temperature Scaling"
+  color: "tab:green"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_no_es_plus_tempscaling_naive:
+  label: "SFT w/o Early Stopping\n+ Temperature Scaling (Naive)"
+  color: "tab:orange"
+  linestyle: "--"
+  marker: "o"
+  linewidth: *linewidth
+  markersize: *markersize

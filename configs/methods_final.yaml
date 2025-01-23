@@ -1,0 +1,83 @@
+markersize: &markersize 6
+linewidth: &linewidth 4
+
+
+no_adaptation:
+  label: "No Adaptation"
+  color: "black"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+temp_scaling:
+  label: "Temperature Scaling" # PHC-TS
+  color: "tab:pink"
+  linestyle: "--"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+dp_calibration:
+  label: "Direction Preserving" # PHC-DP
+  color: "tab:brown"
+  linestyle: "--"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+vector_scaling:
+  label: "Vector Scaling" # PHC-VS
+  color: "tab:cyan"
+  linestyle: "--"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+bias_shift:
+  label: "Bias Shift" # PHC-BS
+  color: "tab:purple"
+  linestyle: "--"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_0.7:
+  label: "SFT (70% Train + 30% Val)\nw/ Early Stopping" # SFT with val
+  color: "tab:pink"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0:
+  label: "SFT (100% Train)\nw/ Early Stopping" # SFT without val
+  color: "tab:blue"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_no_es:
+  label: "SFT (100% Train)\nw/o Early Stopping" # SFT retrain
+  color: "tab:orange"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_no_es_plus_tempscaling:
+  label: "SFT (100% Train)\nw/o Early Stopping\n+ Temperature Scaling"
+  color: "tab:green"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_no_es_plus_dpcal:
+  label: "SFT (100% Train)\nw/o Early Stopping\n+ Direction Preserving"
+  color: "tab:red"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize

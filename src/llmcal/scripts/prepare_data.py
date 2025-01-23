@@ -20,6 +20,10 @@ def load_shots(dataset, shots_list, answers):
 def select_prompt(model):
     if "llama3" in model:
         return Llama3Prompt
+    elif "gemma" in model:
+        return GemmaPrompt
+    elif "qwen" in model:
+        return QwenPrompt
     elif "tinyllama" in model:
         return TinyLlamaPrompt
     elif "phi3" in model:

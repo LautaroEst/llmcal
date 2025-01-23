@@ -147,6 +147,39 @@ def read_calibration_results(root_results_dir: Path):
 
     return pd.DataFrame(data)
 
+
+def read_no_adaptation_results(root_results_dir: Path):
+    data = []
+    for dataset_dir in root_results_dir.iterdir():
+        train_dataset = dataset_dir.name
+        for test_dataset_dir in (dataset_dir / "size=all/seed=all").iterdir():
+            if not test_dataset_dir.name.startswith("test="):
+                continue
+            test_dataset = test_dataset_dir.name.split("=")[1]
+            for test_lst in test_dataset_dir.iterdir():
+                if not test_lst.name.startswith("list=test"):
+                    continue
+                test_lst_name = test_lst.name.split("=")[1]
+                if not (logits_path := test_lst / "logits.csv").exists():
+                    continue
+                if not (labels_path := test_lst / "labels.csv").exists():
+                    continue
+                data.append({
+                    "train_dataset": train_dataset,
+                    "size": "all",
+                    "seed": "all",
+                    "method": "no_adaptation",
+                    "train_lst": None,
+                    "val_lst": None,
+                    "cal_lst": None,
+                    "test_dataset": test_dataset,
+                    "test_lst": test_lst_name,
+                    "logits": logits_path,
+                    "labels": labels_path,
+                })
+
+    return pd.DataFrame(data)
+
 def compute_metrics(data, metric):
     data_with_metrics = data.copy()
     for i, row in tqdm(data.iterrows(), total=len(data)):
@@ -172,7 +205,7 @@ def extract_method(row):
             method = f"lora_{p_train:.1f}"
         else:
             method = f"lora_{p_train:.1f}_no_es"
-    elif row["method_type"] in ["lora_plus_dpcal", "lora_plus_tempscaling", "lora_plus_dpcal_trainontest", "lora_plus_tempscaling_trainontest"]:
+    elif row["method_type"] in ["lora_plus_dpcal", "lora_plus_tempscaling", "lora_plus_dpcal_trainontest", "lora_plus_tempscaling_trainontest", "lora_plus_dpcal_naive", "lora_plus_tempscaling_naive"]:
         s, e = map(float,row["train_lst"].split("-"))
         p_train = e - s
         if row["method"] != "lora_ans_no_es":
@@ -213,18 +246,22 @@ def process_data(data, reduced = False):
 
 def main(
     metric: str,
-    finetuning_root_results_dirs: str,
-    lora_plus_cal_root_results_dirs: str,
-    cal_root_results_dirs: str,
-    trainontest_root_results_dirs: str,
-    output_path: str,
+    finetuning_root_results_dirs: str = None,
+    lora_plus_cal_root_results_dirs: str = None,
+    lora_plus_cal_naive_root_results_dirs: str = None,
+    cal_root_results_dirs: str = None,
+    trainontest_root_results_dirs: str = None,
+    no_adaptation_root_results_dirs: str = None,
+    output_path: str = "outputs",
     reduced: bool = False,
 ):
     # Read results
     finetuning_root_results_dirs = [Path(d) for d in finetuning_root_results_dirs.split(",")] if finetuning_root_results_dirs is not None else []
     cal_root_results_dirs = [Path(d) for d in cal_root_results_dirs.split(",")] if cal_root_results_dirs is not None else []
     lora_plus_cal_root_results_dirs = [Path(d) for d in lora_plus_cal_root_results_dirs.split(",")] if lora_plus_cal_root_results_dirs is not None else []
+    lora_plus_cal_naive_root_results_dirs = [Path(d) for d in lora_plus_cal_naive_root_results_dirs.split(",")] if lora_plus_cal_naive_root_results_dirs is not None else []
     trainontest_root_results_dirs = [Path(d) for d in trainontest_root_results_dirs.split(",")] if trainontest_root_results_dirs is not None else []
+    no_adaptation_root_results_dirs = [Path(d) for d in no_adaptation_root_results_dirs.split(",")] if no_adaptation_root_results_dirs is not None else []
     all_data = []
     for root_results_dir in finetuning_root_results_dirs:
         finetuning_data = read_finetuning_results(root_results_dir)
@@ -238,10 +275,18 @@ def main(
         cal_data = read_lora_plus_calibration_results(root_results_dir)
         cal_data["method_type"] = str(root_results_dir).split("/")[-2]
         all_data.append(cal_data)
+    for root_results_dir in lora_plus_cal_naive_root_results_dirs:
+        cal_data = read_lora_plus_calibration_results(root_results_dir)
+        cal_data["method_type"] = str(root_results_dir).split("/")[-2]
+        all_data.append(cal_data)
     for root_results_dir in trainontest_root_results_dirs:
         trainontest_data = read_lora_plus_calibration_results(root_results_dir)
         trainontest_data["method_type"] = str(root_results_dir).split("/")[-2]
         all_data.append(trainontest_data)
+    for root_results_dir in no_adaptation_root_results_dirs:
+        no_adaptation_data = read_no_adaptation_results(root_results_dir)
+        no_adaptation_data["method_type"] = "no_adaptation"
+        all_data.append(no_adaptation_data)
 
     data = pd.concat(all_data, ignore_index=True)
     

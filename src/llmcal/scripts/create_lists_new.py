@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 DATASETS = {"sst2": 2, "agnews": 4, "dbpedia": 14, "20newsgroups": 20, "banking77": 77}
 TEST_SAMPLES = {"sst2": 400, "agnews": 400, "dbpedia": 700, "20newsgroups": 800, "banking77": 1000}
-N_SEEDS = 5
+N_SEEDS = 10
 FACTORS = [8, 16, 32, 64, 128, 256, 512]
 
 def main():

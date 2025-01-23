@@ -1,19 +1,18 @@
 CHECKPOINTS_DIR=../llmcal2/outputs/checkpoints
 HF_TOKEN=$(cat hf_token.txt)
 model="llama3.2-1b-instruct"
-# model="pythia-14m"
-# model=tinyllama
+# model="qwen2.5-7b-instruct"
 
 # Reproducibility
 base_seed=2834
-num_seeds=5
+num_seeds=7
 
 # Supported models
 declare -A model2checkpoint=(
-    ["pythia-14m"]="EleutherAI/pythia-14m"
     ["llama3.2-1b"]="meta-llama/Llama-3.2-1B"
     ["llama3.2-1b-instruct"]="meta-llama/Llama-3.2-1B-Instruct"
-    ["tinyllama"]="TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
+    ["qwen2.5-7b"]="Qwen/Qwen2.5-7B"
+    ["qwen2.5-7b-instruct"]="Qwen/Qwen2.5-7B-Instruct"
 )
 mkdir -p $CHECKPOINTS_DIR
 if [ ! -d $CHECKPOINTS_DIR/${model2checkpoint[$model]} ]; then
@@ -28,7 +27,8 @@ if [ ! -z ${model2checkpoint[${model}-instruct]} ]; then
 fi
 
 # Datasets
-declare -a DATASETS=(sst2 agnews dbpedia 20newsgroups banking77)
+# declare -a DATASETS=(20newsgroups dbpedia sst2 agnews banking77)
+declare -a DATASETS=(sst2 agnews)
 
 # Train sizes
 declare -a FACTORS=(8 16 32 64 128 256)

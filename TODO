@@ -99,3 +99,32 @@ Cosas para el paper:
 
 
 No tiene que ver con el paper pero sí con el proyecto de pablo: https://arxiv.org/abs/2310.01444
+
+Mostrar NER y NCE con todos los métodos de adaptación
+otro plot con LoRA p=1.0 no ES con calibracion
+en dbpedia, comparar distribuciones en pocas mustras del sin calibrar y del calibrado.
+
+
+
+TODO:
+- Hacer y agregar plots de la primera sección de resultados
+- Hacer y agregar plots de la segunda sección de resultados
+- Análisis de las posteriors de las clases
+- Análisis de las posteriors por fuera de la distribución de tokens de interés
+- Escribir la primera parte de la sección de entrenamiento (descripción de LoRA y fine-tuning)
+- Agregar related works
+- Escribir el experimental setup
+- agregar las referencias al .bib
+- Terminar de correr Qwen y agregar al apéndice
+<!-- - Ver intervalos y ver si agrego muestras al test
+- Ver si tengo que correr más seeds -->
+<!-- - Correr / buscar en resultados viejos para muchas muestras en Llama3.2 y todos los datasets, y agregar calibración:
+    - Base model
+    - Instruct model
+    - Base trained on mismatched data
+    - Instruct trained on mismatched data
+    - LoRA p=1.0 con early stopping en Base
+    - LoRA p=1.0 con early stopping en Instruct -->
+
+
+
