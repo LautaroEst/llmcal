@@ -57,7 +57,7 @@ def compute_num_samples(sizes, dataset):
 
 
 
-def plot_metric_vs_samples(ax, data, all_methods, methods_config, datasets, sizes, intervals=False, pos=0):
+def plot_metric_vs_samples(ax, data, all_methods, methods_config, datasets, sizes, intervals=False, pos=0, no_adaptation="plot"):
     datasets_data = {}
     for i, dataset in enumerate(datasets):
         
@@ -79,18 +79,21 @@ def plot_metric_vs_samples(ax, data, all_methods, methods_config, datasets, size
 
             # Plot
             if method == "no_adaptation":
-                if dataset_data.loc[:, "q1"].min() < method_data.loc["all", "median"] < dataset_data.loc[:, "q3"].max():
+                if dataset_data.loc[:, "q1"].min() < method_data.loc["all", "median"] < dataset_data.loc[:, "median"].max() and no_adaptation in ["plot", "auto"]:
                     num_samples = compute_num_samples(sizes, dataset)
                     medians = [method_data.loc["all", "median"]] * len(num_samples)
                     q1 = [method_data.loc["all", "q1"]] * len(num_samples)
                     q3 = [method_data.loc["all", "q3"]] * len(num_samples)
                     kwargs = methods_config[method]
                     ax[i].plot(num_samples, medians, **kwargs)
-                else:
+                elif no_adaptation in ["text", "auto"]:
                     ax[i].text(.95, .95-pos, 
-                        f"No adaptation = {method_data.loc['all', 'median']:.2f}",
+                        f"{methods_config['no_adaptation']['label']} = {method_data.loc['all', 'median']:.2f}",
                         fontsize=18, ha="right", va="top", transform=ax[i].transAxes, color=methods_config[method]["color"]
                     )
+                elif no_adaptation == "skip":
+                    pass
+
             else:
                 num_samples = compute_num_samples(method_data.index.astype(int), dataset)
                 medians = method_data["median"]
@@ -139,7 +142,7 @@ def main(
         data = pd.read_json(results_dir / f"{metric}.jsonl", orient='records', lines=True)
         processed_data[metric] = data
         data = process_data(data, datasets, sizes, methods)
-        datasets_data = plot_metric_vs_samples(ax, data, methods, methods_config, datasets, sizes, intervals=intervals)
+        datasets_data = plot_metric_vs_samples(ax, data, methods, methods_config, datasets, sizes, intervals=intervals, no_adaptation="auto")
         for i, dataset in enumerate(datasets):
             min_y, max_y = datasets_data[dataset].loc[datasets_data[dataset]["method"].isin(set(methods) - {"no_adaptation"}),"median"].min(), datasets_data[dataset].loc[datasets_data[dataset]["method"].isin(set(methods) - {"no_adaptation"}),"median"].max()
             ax[i].set_ylim(min_y*0.99, max_y*1.01)

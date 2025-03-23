@@ -151,6 +151,7 @@ run_lora_vs_samples() {
     for size in ${FACTORS[@]}; do
         for dataset in "${DATASETS[@]}"; do
             local test_list="test_${dataset2testsize[$dataset]}"
+            local num_seeds=${dataset2nseeds[$dataset]}
             for num_seed in $(seq 0 $(($num_seeds - 1))); do
 
                 # Train lora-ans without early stopping on 70% of the data and calibrate on 30% of the data
@@ -167,6 +168,14 @@ run_lora_vs_samples() {
                     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/test=$dataset/list=$pred_list" \
                     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/test=$dataset/list=$test_list" \
                     "outputs/lora_plus_tempscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
+                train_and_run_calibration "vector_scaling" $num_seed \
+                    "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/test=$dataset/list=$pred_list" \
+                    "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/test=$dataset/list=$test_list" \
+                    "outputs/lora_plus_vectorscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
+                train_and_run_calibration "bias_shift" $num_seed \
+                    "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/test=$dataset/list=$pred_list" \
+                    "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/test=$dataset/list=$test_list" \
+                    "outputs/lora_plus_biasshift/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
 
                 # Train lora-ans without early stopping on 100% of the data and calibrate using the above calibrated model
                 train_list="0.0-1.0"
@@ -183,6 +192,14 @@ run_lora_vs_samples() {
                     "outputs/lora_plus_tempscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/0.0-0.7/0.0-0.3/$pred_list/state.ckpt" \
                     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/test=$dataset/list=$test_list" \
                     "outputs/lora_plus_tempscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
+                run_calibration "vector_scaling" \
+                    "outputs/lora_plus_vectorscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/0.0-0.7/0.0-0.3/$pred_list/state.ckpt" \
+                    "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/test=$dataset/list=$test_list" \
+                    "outputs/lora_plus_vectorscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
+                run_calibration "bias_shift" \
+                    "outputs/lora_plus_biasshift/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/0.0-0.7/0.0-0.3/$pred_list/state.ckpt" \
+                    "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/test=$dataset/list=$test_list" \
+                    "outputs/lora_plus_biasshift/$model/$dataset/size=$size/seed=$num_seed/lora_ans_no_es/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
 
                 # Train lora-ans without early stopping on 100% of the data + naive calibration
                 train_list="0.0-1.0"
@@ -231,6 +248,14 @@ run_lora_vs_samples() {
                     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/test=$dataset/list=$pred_list" \
                     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/test=$dataset/list=$test_list" \
                     "outputs/lora_plus_tempscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
+                # train_and_run_calibration "vector_scaling" $num_seed \
+                #     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/test=$dataset/list=$pred_list" \
+                #     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/test=$dataset/list=$test_list" \
+                #     "outputs/lora_plus_vectorscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
+                # train_and_run_calibration "bias_shift" $num_seed \
+                #     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/test=$dataset/list=$pred_list" \
+                #     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/test=$dataset/list=$test_list" \
+                #     "outputs/lora_plus_biasshift/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
 
                 # Train lora-ans with early stopping on 100% of the data and calibrate using the above calibrated model
                 train_list="0.0-1.0"
@@ -247,7 +272,15 @@ run_lora_vs_samples() {
                     "outputs/lora_plus_tempscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans/0.0-0.7/0.7-1.0/$pred_list/state.ckpt" \
                     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/test=$dataset/list=$test_list" \
                     "outputs/lora_plus_tempscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
-                
+                # run_calibration "vector_scaling" \
+                #     "outputs/lora_plus_vectorscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans/0.0-0.7/0.7-1.0/$pred_list/state.ckpt" \
+                #     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/test=$dataset/list=$test_list" \
+                #     "outputs/lora_plus_vectorscaling/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
+                # run_calibration "bias_shift" \
+                #     "outputs/lora_plus_biasshift/$model/$dataset/size=$size/seed=$num_seed/lora_ans/0.0-0.7/0.7-1.0/$pred_list/state.ckpt" \
+                #     "outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/test=$dataset/list=$test_list" \
+                #     "outputs/lora_plus_biasshift/$model/$dataset/size=$size/seed=$num_seed/lora_ans/$train_list/$val_list/$pred_list/test=$dataset/list=$test_list"
+
                 # Train lora-ans with early stopping on 100% of the data + calibration on test set
                 train_list="0.0-1.0"
                 val_list="0.7-1.0"

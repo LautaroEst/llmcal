@@ -107,6 +107,7 @@ run_lora_vs_samples() {
     for size in ${FACTORS[@]}; do
         for dataset in "${DATASETS[@]}"; do
             local test_list="test_${dataset2testsize[$dataset]}"
+            local num_seeds=${dataset2nseeds[$dataset]}
             for num_seed in $(seq 0 $(($num_seeds - 1))); do
 
                 # Train lora-ans without early stopping on 70% of the data

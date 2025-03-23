@@ -11,9 +11,13 @@ METHODS = [
     "no_adaptation",
     "dpcal",
     "tempscaling",
+    "vectorscaling",
+    "biasshift",
     "finetunne_lora",
     "lora_plus_dpcal",
     "lora_plus_tempscaling",
+    "lora_plus_biasshfit",
+    "lora_plus_vectorscaling",
 ]
 
 
@@ -205,7 +209,7 @@ def extract_method(row):
             method = f"lora_{p_train:.1f}"
         else:
             method = f"lora_{p_train:.1f}_no_es"
-    elif row["method_type"] in ["lora_plus_dpcal", "lora_plus_tempscaling", "lora_plus_dpcal_trainontest", "lora_plus_tempscaling_trainontest", "lora_plus_dpcal_naive", "lora_plus_tempscaling_naive"]:
+    elif row["method_type"] in ["lora_plus_dpcal", "lora_plus_tempscaling", "lora_plus_biasshift", "lora_plus_vectorscaling", "lora_plus_dpcal_trainontest", "lora_plus_tempscaling_trainontest", "lora_plus_dpcal_naive", "lora_plus_tempscaling_naive"]:
         s, e = map(float,row["train_lst"].split("-"))
         p_train = e - s
         if row["method"] != "lora_ans_no_es":

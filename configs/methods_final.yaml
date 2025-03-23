@@ -3,7 +3,7 @@ linewidth: &linewidth 4
 
 
 no_adaptation:
-  label: "No Adaptation"
+  label: "NoA" # No Adaptation
   color: "black"
   linestyle: "-"
   marker: null
@@ -11,39 +11,40 @@ no_adaptation:
   markersize: *markersize
 
 temp_scaling:
-  label: "Temperature Scaling" # PHC-TS
+  label: "PHC TS" # Temperature Scaling
   color: "tab:pink"
-  linestyle: "--"
+  linestyle: "-."
   marker: null
   linewidth: *linewidth
   markersize: *markersize
 
 dp_calibration:
-  label: "Direction Preserving" # PHC-DP
-  color: "tab:brown"
-  linestyle: "--"
+  label: "PHC DP" # Direction Preserving
+  color: "tab:red"
+  linestyle: "-."
   marker: null
   linewidth: *linewidth
   markersize: *markersize
 
 vector_scaling:
-  label: "Vector Scaling" # PHC-VS
+  label: "PHC VS" # Vector Scaling
   color: "tab:cyan"
-  linestyle: "--"
+  linestyle: "-."
   marker: null
   linewidth: *linewidth
   markersize: *markersize
 
 bias_shift:
-  label: "Bias Shift" # PHC-BS
+  label: "PHC BS" # Bias Shift
   color: "tab:purple"
-  linestyle: "--"
+  linestyle: "-."
   marker: null
   linewidth: *linewidth
   markersize: *markersize
 
 lora_0.7:
-  label: "SFT (70% Train + 30% Val)\nw/ Early Stopping" # SFT with val
+  label: "SFT w/ validation" # "SFT (70% Train + 30% Val)\nw/ Early Stopping"
+  # label: "SFT (70% Train + 30% Val)\nw/ Early Stopping"
   color: "tab:pink"
   linestyle: "-"
   marker: null
@@ -51,7 +52,8 @@ lora_0.7:
   markersize: *markersize
 
 lora_1.0:
-  label: "SFT (100% Train)\nw/ Early Stopping" # SFT without val
+  label: "SFT retrain" # "SFT (100% Train)\nw/ Early Stopping" 
+  # label: "SFT (100% Train)\nw/ Early Stopping" 
   color: "tab:blue"
   linestyle: "-"
   marker: null
@@ -59,7 +61,8 @@ lora_1.0:
   markersize: *markersize
 
 lora_1.0_no_es:
-  label: "SFT (100% Train)\nw/o Early Stopping" # SFT retrain
+  label: "SFT w/o validation" # "SFT (100% Train)\nw/o Early Stopping" 
+  # label: "SFT (100% Train)\nw/o Early Stopping" 
   color: "tab:orange"
   linestyle: "-"
   marker: null
@@ -67,17 +70,37 @@ lora_1.0_no_es:
   markersize: *markersize
 
 lora_1.0_no_es_plus_tempscaling:
-  label: "SFT (100% Train)\nw/o Early Stopping\n+ Temperature Scaling"
+  # label: "SFT retrain + PHC TS"
+  label: "Combined SFT-PHC (TS)"
   color: "tab:green"
-  linestyle: "-"
+  linestyle: "--"
   marker: null
   linewidth: *linewidth
   markersize: *markersize
 
 lora_1.0_no_es_plus_dpcal:
-  label: "SFT (100% Train)\nw/o Early Stopping\n+ Direction Preserving"
+  # label: "SFT retrain + PHC DP"
+  label: "Combined SFT-PHC (DP)"
   color: "tab:red"
-  linestyle: "-"
+  linestyle: "--"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_no_es_plus_biasshift:
+  # label: "SFT retrain + PHC BO"
+  label: "Combined SFT-PHC (BO)"
+  color: "tab:cyan"
+  linestyle: "--"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_no_es_plus_vectorscaling:
+  # label: "SFT retrain + PHC VS"
+  label: "Combined SFT-PHC (VS)"
+  color: "tab:purple"
+  linestyle: "--"
   marker: null
   linewidth: *linewidth
   markersize: *markersize

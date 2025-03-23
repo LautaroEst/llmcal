@@ -5,7 +5,14 @@ model="llama3.2-1b-instruct"
 
 # Reproducibility
 base_seed=2834
-num_seeds=7
+declare -A dataset2nseeds=(
+    ["sst2"]=9
+    ["agnews"]=9
+    ["dbpedia"]=5
+    ["20newsgroups"]=5
+    ["banking77"]=5
+)
+# num_seeds=9
 
 # Supported models
 declare -A model2checkpoint=(
@@ -27,8 +34,8 @@ if [ ! -z ${model2checkpoint[${model}-instruct]} ]; then
 fi
 
 # Datasets
-# declare -a DATASETS=(20newsgroups dbpedia sst2 agnews banking77)
-declare -a DATASETS=(sst2 agnews)
+declare -a DATASETS=(20newsgroups dbpedia sst2 agnews banking77)
+# declare -a DATASETS=(sst2 agnews)
 
 # Train sizes
 declare -a FACTORS=(8 16 32 64 128 256)

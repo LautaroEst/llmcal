@@ -17,6 +17,7 @@ for dataset in ${DATASETS[@]}; do
     fi
 
     for n_shots in ${N_SHOTS[@]}; do
+        num_seeds=${dataset2nseeds[$dataset]}
         for num_seed in $(seq 0 $((num_seeds-1))); do
             shots_list=${n_shots}shots_${num_seed}
             output_path=outputs/prompts/$model/$dataset/$shots_list.jsonl

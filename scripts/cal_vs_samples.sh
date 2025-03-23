@@ -90,6 +90,7 @@ run_cal_vs_samples() {
     for size in ${FACTORS[@]}; do
         for dataset in "${DATASETS[@]}"; do
             local test_list="test_${dataset2testsize[$dataset]}"
+            local num_seeds=${dataset2nseeds[$dataset]}
             for num_seed in $(seq 0 $(($num_seeds - 1))); do
 
                 # Run baseline
