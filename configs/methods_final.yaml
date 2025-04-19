@@ -12,7 +12,7 @@ no_adaptation:
 
 temp_scaling:
   label: "PHC TS" # Temperature Scaling
-  color: "tab:pink"
+  color: "tab:green"
   linestyle: "-."
   marker: null
   linewidth: *linewidth
@@ -26,16 +26,16 @@ dp_calibration:
   linewidth: *linewidth
   markersize: *markersize
 
-vector_scaling:
-  label: "PHC VS" # Vector Scaling
+bias_shift:
+  label: "PHC BO" # Bias Shift
   color: "tab:cyan"
   linestyle: "-."
   marker: null
   linewidth: *linewidth
   markersize: *markersize
 
-bias_shift:
-  label: "PHC BS" # Bias Shift
+vector_scaling:
+  label: "PHC VS" # Vector Scaling
   color: "tab:purple"
   linestyle: "-."
   marker: null
@@ -71,7 +71,7 @@ lora_1.0_no_es:
 
 lora_1.0_no_es_plus_tempscaling:
   # label: "SFT retrain + PHC TS"
-  label: "Combined SFT-PHC (TS)"
+  label: "SFT+PHC (TS)"
   color: "tab:green"
   linestyle: "--"
   marker: null
@@ -80,7 +80,7 @@ lora_1.0_no_es_plus_tempscaling:
 
 lora_1.0_no_es_plus_dpcal:
   # label: "SFT retrain + PHC DP"
-  label: "Combined SFT-PHC (DP)"
+  label: "SFT+PHC (DP)"
   color: "tab:red"
   linestyle: "--"
   marker: null
@@ -89,7 +89,7 @@ lora_1.0_no_es_plus_dpcal:
 
 lora_1.0_no_es_plus_biasshift:
   # label: "SFT retrain + PHC BO"
-  label: "Combined SFT-PHC (BO)"
+  label: "SFT+PHC (BO)"
   color: "tab:cyan"
   linestyle: "--"
   marker: null
@@ -98,7 +98,7 @@ lora_1.0_no_es_plus_biasshift:
 
 lora_1.0_no_es_plus_vectorscaling:
   # label: "SFT retrain + PHC VS"
-  label: "Combined SFT-PHC (VS)"
+  label: "SFT+PHC (VS)"
   color: "tab:purple"
   linestyle: "--"
   marker: null
