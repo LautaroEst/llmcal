@@ -17,9 +17,14 @@ method2style = {
     "vector_scaling": "-.",
 }
 
+model2style = {
+    "llama3.2-1b-instruct": "-",
+    "qwen2.5-7b-instruct": "--",
+}
+
 model2name = {
-    "llama3.2-1b-instruct": "LLama3.2-1B-Instruct",
-    "qwen2.5-7b-instruct": "Qwen2.5-7B-Instruct",
+    "llama3.2-1b-instruct": "LLama3.2-1B",
+    "qwen2.5-7b-instruct": "Qwen2.5-7B",
 }
 
 def main(
@@ -49,13 +54,13 @@ def main(
     all_data = []
     for i, (model, results_dir) in enumerate(zip(models, results_dirs)):
         for method in methods:
-            methods_config[method]["color"] = f"C{i}"
-            methods_config[method]["linestyle"] = method2style[method]
+            # methods_config[method]["color"] = f"C{i}"
+            methods_config[method]["linestyle"] = model2style[model]
         for ax, metric in zip(axs,metrics):
             data = pd.read_json(results_dir / f"{metric}.jsonl", orient='records', lines=True)
             processed_data[metric] = data
             data = process_data(data, datasets, sizes, methods)
-            plot_metric_vs_samples(ax, data, methods, methods_config, datasets, sizes, intervals=intervals, pos=i/10, no_adaptation="text")
+            plot_metric_vs_samples(ax, data, methods, methods_config, datasets, sizes, intervals=intervals, pos=i/10, no_adaptation="text", modelname_noa=model2name[model], fontsize_noa=16)
             data["model"] = model
             data["metric"] = metric
             all_data.append(data)
@@ -74,7 +79,7 @@ def main(
                 (all_data["dataset"] == dataset) & \
                 (all_data["metric"] == metric) & \
                 (all_data["method"].isin(set(methods) - {"no_adaptation"})),"median"].max()
-            ax[j].set_ylim(min_y*0.99, max_y*1.01)
+            ax[j].set_ylim(min_y*0.99, max_y*1.2)
             ax[j].set_yticks(np.round(ax[j].get_yticks(),3))
             ax[j].set_yticklabels(ax[j].get_yticks(), fontsize=16)
             ax[j].grid(axis="y")
@@ -86,15 +91,16 @@ def main(
     custom_handles = []
     for i, model in enumerate(models):
         custom_handles.append(
-            plt.Line2D([0], [0], color=f"C{i}", linestyle="none", marker="o", markersize=10, label=model2name[model])
+            plt.Line2D([0], [0], color="black", linestyle=model2style[model], label=model2name[model])
         ) 
     for method in methods:
         if method == "no_adaptation":
             continue
         custom_handles.append(
-            plt.Line2D([0], [0], color="black", linestyle=method2style[method], linewidth=3, label=methods_config[method]["label"])
+            plt.Line2D([0], [0], color=methods_config[method]["color"], linestyle="none", marker="o", markersize=10, label=methods_config[method]["label"])
         )
-    fig.legend(handles=custom_handles, loc='upper right', bbox_to_anchor=(1.08, .95), title_fontsize=24, fontsize=22)
+    # fig.legend(handles=custom_handles, loc='upper right', bbox_to_anchor=(1.08, .95), title_fontsize=24, fontsize=22)
+    fig.legend(handles=custom_handles, loc='lower center', bbox_to_anchor=(0.5, -0.1), fontsize=24, ncol=4)
 
     plt.savefig(output_path, bbox_inches="tight", dpi=300)
     plt.close(fig)

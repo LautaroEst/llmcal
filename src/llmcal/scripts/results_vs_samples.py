@@ -57,7 +57,7 @@ def compute_num_samples(sizes, dataset):
 
 
 
-def plot_metric_vs_samples(ax, data, all_methods, methods_config, datasets, sizes, intervals=False, pos=0, no_adaptation="plot"):
+def plot_metric_vs_samples(ax, data, all_methods, methods_config, datasets, sizes, intervals=False, pos=0, no_adaptation="plot", modelname_noa=None, fontsize_noa=18):
     datasets_data = {}
     for i, dataset in enumerate(datasets):
         
@@ -87,9 +87,13 @@ def plot_metric_vs_samples(ax, data, all_methods, methods_config, datasets, size
                     kwargs = methods_config[method]
                     ax[i].plot(num_samples, medians, **kwargs)
                 elif no_adaptation in ["text", "auto"]:
+                    if modelname_noa is not None:
+                        text = f"{methods_config['no_adaptation']['label']} ({modelname_noa})"
+                    else:
+                        text = f"{methods_config['no_adaptation']['label']}"
                     ax[i].text(.95, .95-pos, 
-                        f"{methods_config['no_adaptation']['label']} = {method_data.loc['all', 'median']:.2f}",
-                        fontsize=18, ha="right", va="top", transform=ax[i].transAxes, color=methods_config[method]["color"]
+                        f"{text} = {method_data.loc['all', 'median']:.2f}",
+                        fontsize=fontsize_noa, ha="right", va="top", transform=ax[i].transAxes, color=methods_config[method]["color"]
                     )
                 elif no_adaptation == "skip":
                     pass
@@ -148,7 +152,7 @@ def main(
             ax[i].set_ylim(min_y*0.99, max_y*1.01)
             ax[i].set_yticks(np.round(ax[i].get_yticks(),3))
             ax[i].set_yticklabels(ax[i].get_yticks(), fontsize=16)
-            ax[i].grid(axis="y")
+            # ax[i].grid(axis="y")
 
         data.to_csv(output_dir / f"{metric}.csv", index=False)
         ax[0].set_ylabel(f"{metric2name[metric]}", fontsize=22)
@@ -166,7 +170,7 @@ def main(
             if l not in labels:
                 handles.append(h)
                 labels.append(l)
-    fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(1.08, .95), title="Method", title_fontsize=24, fontsize=22)
+    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(.5, -0.1), ncols=5, title="Method", title_fontsize=28, fontsize=26)
 
     plt.savefig(output_path, bbox_inches="tight", dpi=300)
     plt.close(fig)
