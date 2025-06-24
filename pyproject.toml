@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "llmcal"
 version = "0.0.1"
 authors = [
-  { name="Lautaro Estienne", email="lestienne@fi.uba.ar" },
+  { name="Anonim", email="anonim@sumbition" },
 ]
 description = "Direction Preserving Calibration on LLMs"
 readme = "README.md"
@@ -18,5 +18,5 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/LautaroEst/llmcal"
-Issues = "https://github.com/LautaroEst/llmcal/issues"
+Homepage = "https://github.com/"
+Issues = "https://github.com/"
