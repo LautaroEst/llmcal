@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "llmcal"
 version = "0.0.1"
 authors = [
-  { name="Anonim", email="anonim@sumbition" },
+  { name="Anonim", email="anonim@sumbition.com" },
 ]
 description = "Direction Preserving Calibration on LLMs"
 readme = "README.md"

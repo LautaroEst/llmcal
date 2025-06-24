@@ -10,7 +10,6 @@ import pandas as pd
 
 import yaml
 
-from litgpt import Tokenizer
 
 def load_yaml(path):
     with open(path, "r") as f:
