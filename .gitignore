@@ -2,8 +2,16 @@
 *__pycache__*
 /.vscode/
 
-/data/
+/.cache/
 /.old/
-/outputs*/
 /logs/
+
+/data/*
+!/data/Readme.md
+/data.zip
+
+/outputs/*
+!/outputs/Readme.md
+/outputs.zip
+
 hf_token.txt
