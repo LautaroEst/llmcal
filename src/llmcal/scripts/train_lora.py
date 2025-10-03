@@ -222,6 +222,12 @@ def fit(fabric, model, optimizer, train_dataloader, val_dataloader, devices, out
         loss_fn = FullSentenceLoss()
     elif train_args["loss"] == "ans":
         loss_fn = LossOnAnswer()
+    elif train_args["loss"].startswith("ans-l2"):
+        _, lbda = train_args["loss"].split("_")
+        loss_fn = LossOnAnswerL2(lbda=float(lbda))
+    elif train_args["loss"].startswith("ans-ls"):
+        _, lbda = train_args["loss"].split("_")
+        loss_fn = LossOnAnswerLS(lbda=float(lbda))
     elif train_args["loss"] == "norm":
         loss_fn = LossNormByAnswers(len(train_dataloader.dataset[0]["answers_ids"]), train_args["K"], seed)
     else:
@@ -323,6 +329,12 @@ def validate(fabric, model, val_dataloader, train_args, seed):
         loss_fn = FullSentenceLoss()
     elif train_args["loss"] == "ans":
         loss_fn = LossOnAnswer()
+    elif train_args["loss"].startswith("ans-l2"):
+        _, lbda = train_args["loss"].split("_")
+        loss_fn = LossOnAnswerL2(lbda=float(lbda))
+    elif train_args["loss"].startswith("ans-ls"):
+        _, lbda = train_args["loss"].split("_")
+        loss_fn = LossOnAnswerLS(lbda=float(lbda))
     elif train_args["loss"] == "norm":
         loss_fn = LossNormByAnswers(len(val_dataloader.dataset[0]["answers_ids"]), train_args["K"], seed)
 
@@ -370,6 +382,39 @@ class LossOnAnswer(torch.nn.Module):
             loss = loss - gather_logprobs.sum()
             num_tokens = num_tokens + index.size(1)
         return loss, num_tokens
+
+class LossOnAnswerL2(LossOnAnswer):
+    def __init__(self, lbda=0.01):
+        super().__init__()
+        self.lbda = lbda
+
+    def forward(self, model, prompt_ids, prompt_mask, answers_ids, labels):
+        loss, num_tokens = super().forward(model, prompt_ids, prompt_mask, answers_ids, labels)
+        l2_reg = torch.tensor(0., device=loss.device)
+        for param in model.parameters():
+            if param.requires_grad:
+                l2_reg = l2_reg + torch.norm(param, 2)
+        loss = loss + self.lbda * l2_reg
+        return loss, num_tokens
+
+class LossOnAnswerLS(torch.nn.Module):
+    def __init__(self, lbda=0.01):
+        super().__init__()
+        self.lbda = lbda
+
+    def forward(self, model, prompt_ids, prompt_mask, answers_ids, labels):
+        loss = 0
+        num_tokens = 0
+        for input_ids, attention_mask, answers, label in zip(prompt_ids, prompt_mask, answers_ids, labels):
+            input_ids = input_ids[attention_mask == 1].unsqueeze(0)
+            full_input_ids = torch.cat([input_ids, answers[label.item()].unsqueeze(0)], dim=1)
+            logprobs = model(full_input_ids, None)[:,input_ids.shape[1]-1:-1,:].log_softmax(dim=2)
+            index = full_input_ids[:,input_ids.shape[1]:].unsqueeze(2)
+            loss_seq = - (1 - self.lbda) * torch.gather(logprobs, -1, index).squeeze(2) - self.lbda * logprobs.mean(dim=-1, keepdim=True) 
+            loss = loss + loss_seq.sum()
+            num_tokens = num_tokens + index.size(1)
+        return loss, num_tokens
+
 
 
 class LossNormByAnswers(torch.nn.Module):

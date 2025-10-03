@@ -4,7 +4,7 @@
 # Then, ensure you have the Hugging Face token stored in a file named hf_token.txt in the same directory as this script (it is already hidden in the .gitignore file).
 # Then, select the model you want to run by setting the variable `model` to one of the supported models in the `model2checkpoint` dictionary.
 
-# CHECKPOINTS_DIR=./checkpoints
+CHECKPOINTS_DIR=./checkpoints
 HF_TOKEN=$(cat hf_token.txt)
 model="llama3.2-1b-instruct"
 # model="qwen2.5-7b-instruct"
@@ -13,9 +13,9 @@ model="llama3.2-1b-instruct"
 base_seed=2834
 declare -A dataset2nseeds=(
     ["sst2"]=9
-    ["agnews"]=9
+    # ["agnews"]=9
     ["dbpedia"]=5
-    ["20newsgroups"]=5
+    # ["20newsgroups"]=5
     ["banking77"]=5
 )
 num_seeds=9
@@ -30,17 +30,17 @@ declare -A model2checkpoint=(
 
 #### UNCOMMENT THE FOLLOWING LINES TO DOWNLOAD THE CHECKPOINTS #####
 
-# mkdir -p $CHECKPOINTS_DIR
-# if [ ! -d $CHECKPOINTS_DIR/${model2checkpoint[$model]} ]; then
-#     litgpt download ${model2checkpoint[$model]} --checkpoint_dir $CHECKPOINTS_DIR --access_token $HF_TOKEN
-#     rm -rf $CHECKPOINTS_DIR/${model2checkpoint[$model]}/*.bin
-# fi
-# if [ ! -z ${model2checkpoint[${model}-instruct]} ]; then
-#     if [ ! -d $CHECKPOINTS_DIR/${model2checkpoint[${model}-instruct]} ]; then
-#         litgpt download ${model2checkpoint[${model}-instruct]} --checkpoint_dir $CHECKPOINTS_DIR --access_token $HF_TOKEN
-#         rm -rf $CHECKPOINTS_DIR/${model2checkpoint[${model}-instruct]}/*.bin
-#     fi
-# fi
+mkdir -p $CHECKPOINTS_DIR
+if [ ! -d $CHECKPOINTS_DIR/${model2checkpoint[$model]} ]; then
+    litgpt download ${model2checkpoint[$model]} --checkpoint_dir $CHECKPOINTS_DIR --access_token $HF_TOKEN
+    rm -rf $CHECKPOINTS_DIR/${model2checkpoint[$model]}/*.bin
+fi
+if [ ! -z ${model2checkpoint[${model}-instruct]} ]; then
+    if [ ! -d $CHECKPOINTS_DIR/${model2checkpoint[${model}-instruct]} ]; then
+        litgpt download ${model2checkpoint[${model}-instruct]} --checkpoint_dir $CHECKPOINTS_DIR --access_token $HF_TOKEN
+        rm -rf $CHECKPOINTS_DIR/${model2checkpoint[${model}-instruct]}/*.bin
+    fi
+fi
 
 #####################################################################
 
@@ -63,4 +63,4 @@ declare -A dataset2testsize=(
 max_seq_length=2048
 inference_max_seq_len=20000
 
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=0

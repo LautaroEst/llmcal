@@ -8,3 +8,5 @@ psrcal
 expected_cost
 jax
 pandas
+autograd
+tensorboard
