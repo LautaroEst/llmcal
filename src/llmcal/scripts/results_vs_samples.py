@@ -18,6 +18,9 @@ DATASETS = {
 metric2name = {
     "nce": "NCE",
     "ner": "NER",
+    "nbs": "NBS",
+    "cal_err": "Calibration error",
+    "ece": "ECE",
 }
 
         

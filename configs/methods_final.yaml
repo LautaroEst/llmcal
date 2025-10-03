@@ -10,6 +10,17 @@ no_adaptation:
   linewidth: *linewidth
   markersize: *markersize
 
+dirichlet_fixed_diag:
+  label: "Dirichlet-FD" # Dirichlet Fixed Diagonal
+  # color: "tab:green"
+  # color: "#c6dbef"
+  color: "#7bccc4"
+  # linestyle: "-."
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
 temp_scaling:
   label: "PHC-TS" # Temperature Scaling
   # color: "tab:green"

@@ -5,8 +5,8 @@
 # Then, select the model you want to run by setting the variable `model` to one of the supported models in the `model2checkpoint` dictionary.
 
 # CHECKPOINTS_DIR=./checkpoints
-# HF_TOKEN=$(cat hf_token.txt)
-# model="llama3.2-1b-instruct"
+HF_TOKEN=$(cat hf_token.txt)
+model="llama3.2-1b-instruct"
 # model="qwen2.5-7b-instruct"
 
 # Reproducibility

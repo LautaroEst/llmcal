@@ -189,7 +189,11 @@ def compute_metrics(data, metric):
     for i, row in tqdm(data.iterrows(), total=len(data)):
         logits = pd.read_csv(row["logits"], index_col=0, header=None).values.astype(float)
         labels = pd.read_csv(row["labels"], index_col=0, header=None).values.flatten().astype(int)
-        value, min_value = compute_psr_with_mincal(logits, labels, metric, "none")
+        if metric == "cal_err":
+            value, min_value = compute_psr_with_mincal(logits, labels, "nce", "trainontest")
+            value = (value - min_value) / value * 100
+        else:
+            value, min_value = compute_psr_with_mincal(logits, labels, metric, "none")
         data_with_metrics.loc[i, "result"] = value
         data_with_metrics.loc[i, "min_result"] = min_value
     data_with_metrics = data_with_metrics.drop(columns=["logits", "labels"])

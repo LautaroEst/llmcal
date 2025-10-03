@@ -1,4 +1,4 @@
-litgpt[all]==0.5.3
+litgpt[all]
 fire
 scikit-learn
 matplotlib
@@ -6,3 +6,5 @@ jupyter
 nbclassic
 psrcal
 expected_cost
+jax
+pandas

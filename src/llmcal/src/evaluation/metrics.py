@@ -2,6 +2,7 @@
 import numpy as np
 from scipy.special import softmax, log_softmax
 from .calibration import train_cal_on_test, calibrate_xval
+from expected_cost.calibration import calibration_train_on_test
 
 def compute_ner(logits, labels):
     er = (logits.argmax(axis=1) != labels).mean()
@@ -60,7 +61,7 @@ def compute_metric(logits, labels, metric):
         return compute_ner(logits, labels)
     elif metric == "nce":
         return compute_nce(logits, labels)
-    elif metric == "nbrier":
+    elif metric == "nbs":
         return compute_nbrier(logits, labels)
     elif "calloss" in metric:
         _, metric, mode = metric.split("_")
@@ -73,7 +74,8 @@ def compute_metric(logits, labels, metric):
 
 def compute_psr_with_mincal(logits, labels, psr, mode):
     if mode == "trainontest":
-        cal_logprobs = train_cal_on_test(logits, labels)
+        # cal_logprobs = train_cal_on_test(logits, labels)
+        cal_logprobs = calibration_train_on_test(log_softmax(logits, axis=1), labels, calparams={"bias": False, "scale": True})
     elif mode == "xval":
         cal_logprobs = calibrate_xval(logits, labels, seed=1234, condition_ids=None, stratified=True, nfolds=5) 
     elif mode == "none":

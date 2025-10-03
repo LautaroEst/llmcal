@@ -19,6 +19,9 @@ DATASETS = {
 metric2name = {
     "nce": "NCE",
     "ner": "NER",
+    "nbs": "NBS",
+    "cal_err": "Calibration error",
+    "ece": "ECE",
 }
 
 def read_data(results_dir: Path, metrics: List[str]):

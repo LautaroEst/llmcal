@@ -12,10 +12,11 @@ class DPCalibrator(nn.Module):
         super().__init__()
         self.n_classes = n_classes
         self.alpha = nn.Parameter(torch.tensor(1.0))
-        self.beta = nn.Parameter(torch.zeros(n_classes))
+        # self.beta = nn.Parameter(torch.zeros(n_classes))
 
     def forward(self, x):
-        return self.alpha * x + self.beta
+        # return self.alpha * x + self.beta
+        return self.alpha * x
     
     def calibrate(self, logprobs):
         self.eval()
@@ -25,27 +26,39 @@ class DPCalibrator(nn.Module):
     
     def fit(self, logprobs, labels):
         self.train()
-        optimizer = torch.optim.LBFGS(self.parameters(), lr=1e-1, max_iter=40)
 
-        priors = torch.bincount(labels, minlength=logprobs.shape[1]).float() / len(labels)
-        priors_ce = -torch.log(priors[labels]).mean().item()
+        start_over = True
+        lr = 1e-1
 
-        last_nce = float("inf")
-        while True:
+        while start_over:
 
-            def closure():
-                optimizer.zero_grad()
-                cal_logits = self(logprobs)
-                loss = F.cross_entropy(cal_logits, labels)
-                loss.backward()
-                return loss
-            
-            loss = optimizer.step(closure)
+            self.alpha.data = torch.tensor(1.0)
+            optimizer = torch.optim.LBFGS(self.parameters(), lr=lr, max_iter=40)
 
-            nce = loss.item() / priors_ce
-            if abs(last_nce - nce) < 1e-5:
-                break
-            last_nce = nce
+            priors = torch.bincount(labels, minlength=logprobs.shape[1]).float() / len(labels)
+            priors_ce = -torch.log(priors[labels]).mean().item()
+
+            last_nce = float("inf")
+            while True:
+
+                def closure():
+                    optimizer.zero_grad()
+                    cal_logits = self(logprobs)
+                    loss = F.cross_entropy(cal_logits, labels)
+                    loss.backward()
+                    return loss
+                
+                loss = optimizer.step(closure)
+
+                nce = loss.item() / priors_ce
+                if abs(last_nce - nce) < 1e-5:
+                    start_over = False
+                    break
+                elif nce > last_nce:
+                    start_over = True
+                    lr /= 2
+                    break
+                last_nce = nce
 
         return self
 
