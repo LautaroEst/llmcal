@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import torch
 from pathlib import Path
-from typing import Optional, Union, Literal
+from typing import Optional, Union, Literal, List
 import warnings
 
 from litgpt.tokenizer import Tokenizer
@@ -98,7 +98,7 @@ def main(
 
     # Load model parameters from checkpoint
     if peft is None:
-        from litgpt.model import GPT
+        from ..src.gpt_module import GPT
     elif peft == "lora":
         from litgpt.lora import GPT
     elif peft == "adapter":
@@ -130,6 +130,7 @@ def main(
     dataloader = fabric.setup_dataloaders(dataloader)
     predictions = predict(fabric, model, dataloader)
     if fabric.global_rank == 0:
+        pd.DataFrame(predictions["embedding"], index=predictions["idx"]).to_csv(output_dir / f"embeddings.csv", index=True, header=False)
         pd.DataFrame(predictions["logits"], index=predictions["idx"]).to_csv(output_dir / f"logits.csv", index=True, header=False)
         pd.DataFrame(predictions["label"], index=predictions["idx"]).to_csv(output_dir / f"labels.csv", index=True, header=False)
 
@@ -141,12 +142,12 @@ def predict_step(fabric, model, indices, prompt_ids, prompt_mask, answers_ids, l
         T = torch.sum(attention_mask)
         with fabric.init_tensor():
             input_pos = torch.arange(0, T)
-        output = model(idx=input_ids, input_pos=input_pos)
+        embedding, output = model(idx=input_ids, input_pos=input_pos)
         answers_logits = []
         for answer in answers:
             answer = answer.unsqueeze(0)
             input_pos = torch.arange(T, answer.shape[1] + T, device=answer.device, dtype=answer.dtype) 
-            ans_out = model(idx=answer, input_pos=input_pos)
+            _, ans_out = model(idx=answer, input_pos=input_pos)
             logprobs = torch.cat([output[:,-1:,:], ans_out[:,:-1,:]], dim=1).log_softmax(dim=2)
             index = answer.unsqueeze(2)
             gather_probs = torch.gather(logprobs, -1, index).squeeze(2)
@@ -154,12 +155,12 @@ def predict_step(fabric, model, indices, prompt_ids, prompt_mask, answers_ids, l
             answers_logits.append(ans_logit)
         logits.append(torch.stack(answers_logits, dim=0))
     logits = torch.stack(logits, dim=0)
-    return {"idx": indices, "logits": logits, "label": labels}
+    return {"idx": indices, "logits": logits, "label": labels, "embedding": embedding}
 
 
 @torch.no_grad()
 def predict(fabric, model, dataloader):
-    predict_outputs = {"idx": [], "logits": [], "label": []}
+    predict_outputs = {"idx": [], "logits": [], "label": [], "embedding": []}
     model.eval()
     for i, batch in enumerate(dataloader):
         if i % max(len(dataloader) // 50,1) == 0:

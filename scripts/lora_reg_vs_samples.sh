@@ -99,10 +99,11 @@ run_lora_vs_samples() {
     local model=$1
     local val_check_interval=$2
     for size in ${FACTORS[@]}; do
-        for dataset in "${DATASETS[@]}"; do
-            local test_list="test_${dataset2testsize[$dataset]}"
-            local num_seeds=${dataset2nseeds[$dataset]}
-            for num_seed in $(seq 0 $(($num_seeds - 1))); do
+        # local num_seeds=${dataset2nseeds[$dataset]}
+        local num_seeds=3
+        for num_seed in $(seq 0 $(($num_seeds - 1))); do
+            for dataset in "${DATASETS[@]}"; do
+                local test_list="test_${dataset2testsize[$dataset]}"
 
                 # Train lora-ans with L2 regularization (lambda=0.1)
                 train_list="0.0-1.0"

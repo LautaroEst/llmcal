@@ -2,3 +2,15 @@
 - implementar sample dependent ts
 - correr regularizacion en 20newsgroups y agnews
 - implementar dirichlet en otras 
+
+wget https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Linux-x86_64.sh
+conda create -n llmcal python=3.11
+conda activate llmcal
+pip install -r requirements.txt
+pip install -e .
+hf_token.txt
+pip install gdown
+gdown https://drive.google.com/uc?id=194F-Kg9Az4eJh12OzFLZPIP6qi9D9uMO
+unzip data.zip
+rm data.zip
+./scripts/prepare_data.sh

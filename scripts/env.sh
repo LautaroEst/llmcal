@@ -12,11 +12,11 @@ model="llama3.2-1b-instruct"
 # Reproducibility
 base_seed=2834
 declare -A dataset2nseeds=(
-    ["sst2"]=6
-    # ["agnews"]=9
-    ["dbpedia"]=4
-    # ["20newsgroups"]=5
-    ["banking77"]=3
+    ["sst2"]=9
+    ["agnews"]=9
+    ["dbpedia"]=5
+    ["20newsgroups"]=5
+    ["banking77"]=5
 )
 num_seeds=9
 
