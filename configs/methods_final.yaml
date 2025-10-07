@@ -98,6 +98,47 @@ lora_1.0_no_es:
   linewidth: *linewidth
   markersize: *markersize
 
+# lora_l2-0.1_1.0 lora_l2-0.01_1.0 lora_ls-0.1_1.0 lora_ls-0.01_1.0
+
+lora_l2-0.1_1.0:
+  label: "SFT L2-reg ($\\lambda=0.1$)"
+  # yellow-brown:
+  color: "#A57900"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_l2-0.01_1.0:
+  label: "SFT L2-reg ($\\lambda=0.01$)"
+  # yellow-brown (lighter):
+  color: "#FFBC00"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_ls-0.1_1.0:
+  label: "SFT Label Smoothing ($\\alpha=0.1$)"
+  # purple-green:
+  color: "#B3B300"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_ls-0.01_1.0:
+  label: "SFT Label Smoothing ($\\alpha=0.01$)"
+  # purple-green (lighter):
+  color: "#EEEE00"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+
+
+
 lora_1.0_no_es_plus_tempscaling:
   # label: "SFT retrain + PHC TS"
   label: "SFT-wo-val + PHC-TS"

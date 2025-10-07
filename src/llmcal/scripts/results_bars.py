@@ -57,10 +57,16 @@ def plot_bars(data, methods_config, output_path, datasets, metrics, methods, siz
                     method_data = data_adapted.loc[data_adapted["method"] == method]
                     method_data = method_data.loc[method_data["dataset"] == dataset]
                     method_data = method_data.loc[method_data["size"] == size]
-                    median = method_data.groupby("size")[metric].median().values[0]
+                    # import pdb; pdb.set_trace()
+                    if method_data.groupby("size")[metric].median().empty:
+                        median = np.array(0.)
+                        q1 = np.array(0.)
+                        q3 = np.array(0.)
+                    else:
+                        median = method_data.groupby("size")[metric].median().values[0]
+                        q1 = method_data.groupby("size")[metric].quantile(0.25).values[0]
+                        q3 = method_data.groupby("size")[metric].quantile(0.75).values[0]
                     medians[metric].append(median.max())
-                    q1 = method_data.groupby("size")[metric].quantile(0.25).values[0]
-                    q3 = method_data.groupby("size")[metric].quantile(0.75).values[0]
                     # alpha = 0.5 if "SFT+PHC" in methods_config[method]["label"] else 1.0
                     # alpha = 0.7 if "SFT " in methods_config[method]["label"] else 1.0
                     # if "SFT " in methods_config[method]["label"]:

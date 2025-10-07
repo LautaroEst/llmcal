@@ -1,0 +1,4 @@
+- correr features extraction
+- implementar sample dependent ts
+- correr regularizacion en 20newsgroups y agnews
+- implementar dirichlet en otras 

@@ -210,7 +210,8 @@ def extract_method(row):
         s, e = map(float,row["train_lst"].split("-"))
         p_train = e - s
         if row["method"] != "lora_ans_no_es":
-            method = f"lora_{p_train:.1f}"
+            method_prefix = row["method"].replace("_ans","")
+            method = f"{method_prefix}_{p_train:.1f}"
         else:
             method = f"lora_{p_train:.1f}_no_es"
     elif row["method_type"] in ["lora_plus_dpcal", "lora_plus_tempscaling", "lora_plus_biasshift", "lora_plus_vectorscaling", "lora_plus_dpcal_trainontest", "lora_plus_tempscaling_trainontest", "lora_plus_dpcal_naive", "lora_plus_tempscaling_naive"]:

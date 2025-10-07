@@ -12,11 +12,11 @@ model="llama3.2-1b-instruct"
 # Reproducibility
 base_seed=2834
 declare -A dataset2nseeds=(
-    ["sst2"]=9
+    ["sst2"]=6
     # ["agnews"]=9
-    ["dbpedia"]=5
+    ["dbpedia"]=4
     # ["20newsgroups"]=5
-    ["banking77"]=5
+    ["banking77"]=3
 )
 num_seeds=9
 
@@ -49,7 +49,8 @@ fi
 declare -a DATASETS=(20newsgroups dbpedia sst2 agnews banking77)
 
 # Train sizes
-declare -a FACTORS=(16 32 64 128 256)
+# declare -a FACTORS=(16 32 64 128 256)
+declare -a FACTORS=(16 256)
 
 # Test sizes
 declare -A dataset2testsize=(
