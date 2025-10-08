@@ -100,7 +100,7 @@ def main(
     if peft is None:
         from ..src.gpt_module import GPT
     elif peft == "lora":
-        from litgpt.lora import GPT
+        from ..src.gpt_lora import GPT
     elif peft == "adapter":
         from litgpt.adapter import GPT
     else:
