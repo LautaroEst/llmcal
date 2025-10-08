@@ -65,45 +65,20 @@ vector_scaling:
   linewidth: *linewidth
   markersize: *markersize
 
-lora_0.7:
-  label: "SFT-w-val" # "SFT (70% Train + 30% Val)\nw/ Early Stopping"
-  # label: "SFT (70% Train + 30% Val)\nw/ Early Stopping"
-  # color: "tab:pink"
-  # color: "#c7e9c0"
-  color: "#2ca02c"
-  linestyle: "-"
-  marker: null
-  linewidth: *linewidth
-  markersize: *markersize
-
-lora_1.0:
-  label: "SFT-retrain" # "SFT (100% Train)\nw/ Early Stopping" 
-  # label: "SFT (100% Train)\nw/ Early Stopping" 
-  # color: "tab:blue"
-  # color: "#74c476"
-  color: "#27ae60"
-  linestyle: "-"
-  marker: null
-  linewidth: *linewidth
-  markersize: *markersize
-
 lora_1.0_no_es:
-  label: "SFT-wo-val" # "SFT (100% Train)\nw/o Early Stopping" 
+  label: "SFT without regularization"
+  # label: "SFT-wo-val" # "SFT (100% Train)\nw/o Early Stopping" 
   # label: "SFT (100% Train)\nw/o Early Stopping" 
-  # color: "tab:orange"
-  # color: "#238b45"
-  color: "#82e0aa"
+  color: "#808080"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
   markersize: *markersize
-
-# lora_l2-0.1_1.0 lora_l2-0.01_1.0 lora_ls-0.1_1.0 lora_ls-0.01_1.0
 
 lora_l2-0.1_1.0:
   label: "SFT L2-reg ($\\lambda=0.1$)"
   # yellow-brown:
-  color: "#A57900"
+  color: "#CC0000"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -112,7 +87,27 @@ lora_l2-0.1_1.0:
 lora_l2-0.01_1.0:
   label: "SFT L2-reg ($\\lambda=0.01$)"
   # yellow-brown (lighter):
-  color: "#FFBC00"
+  color: "#FF6666"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_0.7:
+  label: "SFT Early Stopping on 70%"
+  # label: "SFT-w-val" # "SFT (70% Train + 30% Val)\nw/ Early Stopping"
+  # label: "SFT (70% Train + 30% Val)\nw/ Early Stopping"
+  color: "#00CC00"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0:
+  label: "SFT Early Stopping on 100%"
+  # label: "SFT-retrain" # "SFT (100% Train)\nw/ Early Stopping" 
+  # label: "SFT (100% Train)\nw/ Early Stopping" 
+  color: "#66FF66"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -121,7 +116,7 @@ lora_l2-0.01_1.0:
 lora_ls-0.1_1.0:
   label: "SFT Label Smoothing ($\\alpha=0.1$)"
   # purple-green:
-  color: "#B3B300"
+  color: "#CCCC00"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -130,21 +125,18 @@ lora_ls-0.1_1.0:
 lora_ls-0.01_1.0:
   label: "SFT Label Smoothing ($\\alpha=0.01$)"
   # purple-green (lighter):
-  color: "#EEEE00"
+  color: "#FFFF66"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
   markersize: *markersize
 
 
-
-
 lora_1.0_no_es_plus_tempscaling:
   # label: "SFT retrain + PHC TS"
   label: "SFT-wo-val + PHC-TS"
-  # color: "tab:green"
-  # color: "#fcbba1"
-  color: "#e74c3c"
+  # color: "#e74c3c"
+  color: "#990099"
   # linestyle: "--"
   linestyle: "-"
   marker: null
