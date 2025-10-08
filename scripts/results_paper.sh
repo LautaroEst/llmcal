@@ -1,9 +1,10 @@
 #!/bin/bash -ex
 
 source ./scripts/env.sh
-declare -a models=(llama3.2-1b-instruct qwen2.5-7b-instruct)
-# declare -a DATASETS=(sst2 agnews dbpedia 20newsgroups banking77)
-declare -a DATASETS=(sst2 dbpedia banking77)
+# declare -a models=(llama3.2-1b-instruct qwen2.5-7b-instruct)
+declare -a models=(llama3.2-1b-instruct )
+declare -a DATASETS=(sst2 agnews dbpedia 20newsgroups banking77)
+# declare -a DATASETS=(sst2 dbpedia banking77)
 # metrics=(nce ner nbs cal_err ece)
 metrics=(nce ner)
 overwrite=true
@@ -76,7 +77,7 @@ for model in "${models[@]}"; do
         --methods_config "./configs/methods_final.yaml" \
         --results_dir outputs/results_paper/$model \
         --output_path $samples_bars_path \
-        --methods "lora_l2-0.1_1.0 lora_l2-0.01_1.0 lora_ls-0.1_1.0 lora_ls-0.01_1.0 lora_0.7 lora_1.0 lora_1.0_no_es dirichlet_fixed_diag dp_calibration bias_shift temp_scaling no_adaptation"
+        --methods "lora_l2-0.1_1.0 lora_l2-0.01_1.0 lora_0.7 lora_1.0 lora_ls-0.1_1.0 lora_ls-0.01_1.0 lora_1.0_no_es dp_calibration bias_shift temp_scaling lora_1.0_no_es_plus_tempscaling no_adaptation"
 done
 
 samples_plots_path="outputs/results_paper/all_models/comparison.png"

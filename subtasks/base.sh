@@ -1,6 +1,34 @@
-#!/bin/bash -ex
 
-source ./scripts/env.sh
+
+CHECKPOINTS_DIR=./checkpoints
+HF_TOKEN=$(cat hf_token.txt)
+model="llama3.2-1b-instruct"
+val_check_interval=16
+
+# Reproducibility
+base_seed=2834
+
+# Supported models
+declare -A model2checkpoint=(
+    ["llama3.2-1b"]="meta-llama/Llama-3.2-1B"
+    ["llama3.2-1b-instruct"]="meta-llama/Llama-3.2-1B-Instruct"
+    ["qwen2.5-7b"]="Qwen/Qwen2.5-7B"
+    ["qwen2.5-7b-instruct"]="Qwen/Qwen2.5-7B-Instruct"
+)
+
+# Test sizes
+declare -A dataset2testsize=(
+    ["sst2"]=400
+    ["agnews"]=400
+    ["dbpedia"]=700
+    ["20newsgroups"]=800
+    ["banking77"]=1000
+)
+
+max_seq_length=2048
+inference_max_seq_len=20000
+
+export CUDA_VISIBLE_DEVICES=0
 
 # 1: model
 # 2: dataset
@@ -90,53 +118,4 @@ run_lora_reg() {
             $lora_args
     fi
 }
-
-
-# 1: model
-# 2: sizes
-# 3: val_check_interval
-run_lora_vs_samples() {
-    local model=$1
-    local val_check_interval=$2
-    for size in ${FACTORS[@]}; do
-        # local num_seeds=${dataset2nseeds[$dataset]}
-        local num_seeds=3
-        # for num_seed in $(seq 0 $(($num_seeds - 1))); do
-        for num_seed in 2 ; do
-            for dataset in "${DATASETS[@]}"; do
-                local test_list="test_${dataset2testsize[$dataset]}"
-
-                # Train lora-ans with L2 regularization (lambda=0.1)
-                train_list="0.0-1.0"
-                val_list="0.7-1.0"
-                train_dir="outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_l2-0.1/$train_list/$val_list"
-                mkdir -p $train_dir
-                run_lora_reg $model $dataset $size ans-l2_0.1 $num_seed $val_check_interval $train_dir $train_list $val_list $test_list
-
-                # Train lora-ans with label smoothing regularization (lambda=0.1)
-                train_list="0.0-1.0"
-                val_list="0.7-1.0"
-                train_dir="outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_ls-0.1/$train_list/$val_list"
-                mkdir -p $train_dir
-                run_lora_reg $model $dataset $size ans-ls_0.1 $num_seed $val_check_interval $train_dir $train_list $val_list $test_list
-
-                # Train lora-ans with L2 regularization (lambda=0.01)
-                train_list="0.0-1.0"
-                val_list="0.7-1.0"
-                train_dir="outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_l2-0.01/$train_list/$val_list"
-                mkdir -p $train_dir
-                run_lora_reg $model $dataset $size ans-l2_0.01 $num_seed $val_check_interval $train_dir $train_list $val_list $test_list
-
-                # Train lora-ans with label smoothing regularization (lambda=0.01)
-                train_list="0.0-1.0"
-                val_list="0.7-1.0"
-                train_dir="outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_ls-0.01/$train_list/$val_list"
-                mkdir -p $train_dir
-                run_lora_reg $model $dataset $size ans-ls_0.01 $num_seed $val_check_interval $train_dir $train_list $val_list $test_list
-            done
-        done
-    done
-}
-
-run_lora_vs_samples $model 16
 

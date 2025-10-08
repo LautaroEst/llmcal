@@ -1,6 +1,34 @@
-- correr features extraction
-- implementar sample dependent ts
-- correr regularizacion en 20newsgroups y agnews
+llmcal2:
+    - size 16:
+        - sst2: 9 seeds
+        - agnews: 0 seeds
+        - dbpedia: 5 seeds
+        - 20newsgroups: 0 seeds
+        - banking77: 5 seeds
+    - size 256:
+        - sst2: 3 seeds
+        - agnews: 0 seeds
+        - dbpedia: 4 seeds
+        - 20newsgroups: 0 seeds
+        - banking77: 0 seeds (running 3 seeds)
+
+llmcal3:
+    - size 16:
+        - sst2: 0 seeds
+        - agnews: 0 seeds
+        - dbpedia: 0 seeds
+        - 20newsgroups: 0 seeds
+        - banking77: 0 seeds
+    - size 256:
+        - sst2: 0 seeds
+        - agnews: 0 seeds (running 3 seeds)
+        - dbpedia: 0 seeds
+        - 20newsgroups: 0 seeds (running 3 seeds)
+        - banking77: 0 seeds
+
+
+- debuggear adats
+- correr adats en llmcal 
 - implementar dirichlet en otras 
 
 wget https://repo.anaconda.com/archive/Anaconda3-2025.06-0-Linux-x86_64.sh
