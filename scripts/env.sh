@@ -46,11 +46,12 @@ fi
 
 
 # Datasets
-declare -a DATASETS=(20newsgroups dbpedia sst2 agnews banking77)
+# declare -a DATASETS=(20newsgroups dbpedia sst2 agnews banking77)
+declare -a DATASETS=(20newsgroups agnews)
 
 # Train sizes
 # declare -a FACTORS=(16 32 64 128 256)
-declare -a FACTORS=(16 256)
+declare -a FACTORS=(256 )
 
 # Test sizes
 declare -A dataset2testsize=(
