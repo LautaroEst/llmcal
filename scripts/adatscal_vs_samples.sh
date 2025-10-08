@@ -2,34 +2,7 @@
 
 source ./scripts/env.sh
 
-
-run_test() {
-    local model=$1
-    local dataset=$2
-    local precision="bf16-true"
-
-    # Predictions directories and lists
-    local model_dir="$CHECKPOINTS_DIR/${model2checkpoint[$model]}"
-    local data_path=outputs/prompts/$model/$dataset/all.jsonl
-    local test_list="test_${dataset2testsize[$dataset]}"
-    local output_dir="outputs/no_adaptation/$model/$dataset/size=all/seed=all/test=$dataset/list=$test_list"
-    if [ ! -f $output_dir/logits.csv ]; then
-        mkdir -p $output_dir
-        python -m llmcal.scripts.run_posteriors \
-            --base_checkpoint_dir $model_dir \
-            --checkpoint_dir $model_dir \
-            --data_path $data_path \
-            --output_dir $output_dir \
-            --prediction_lists lists/$dataset/$test_list.txt \
-            --precision $precision \
-            --devices 1 \
-            --num_nodes 1 \
-            --batch_size 1 \
-            --max_seq_length $max_seq_length
-    fi
-}
-
-run_train() {
+run_adats_calibration() {
     local model=$1
     local dataset=$2
     local size=$3
@@ -61,26 +34,44 @@ run_train() {
             --batch_size 1 \
             --max_seq_length $max_seq_length
     fi
+
+    # Calibration directories
+    cal_dir="outputs/calibration/$model/$dataset/size=$size/seed=$num_seed/$method/$train_list/$train_list"
+    if [ ! -f "$cal_dir/test=$dataset/list=$test_list/logits.csv" ]; then
+        mkdir -p $cal_dir/test=$dataset/list=$test_list $cal_dir/logs
+        python -m llmcal.scripts.adats_cal \
+            --output_dir $cal_dir/test=$dataset/list=$test_list \
+            --log_dir $cal_dir/logs \
+            --checkpoint_dir $cal_dir \
+            --train_logits $prediction_dir/logits.csv \
+            --train_embeddings $prediction_dir/embeddings.csv \
+            --train_labels $prediction_dir/labels.csv \
+            --predict_logits "outputs/no_adaptation/$model/$dataset/size=all/seed=all/test=$dataset/list=$test_list/logits.csv" \
+            --predict_embeddings "outputs/no_adaptation/$model/$dataset/size=all/seed=all/test=$dataset/list=$test_list/embeddings.csv" \
+            --predict_labels "outputs/no_adaptation/$model/$dataset/size=all/seed=all/test=$dataset/list=$test_list/labels.csv" \
+            --method $method \
+            --seed $seed
+    fi
 }
 
 
 # 1: model
 # 2: sizes
 # 3: val_check_interval
-run_all() {
+run_cal_vs_samples() {
     local model=$1
-    # for size in ${FACTORS[@]}; do
-    for size in 16 256; do
-        # for dataset in "${DATASETS[@]}"; do
-        for dataset in sst2 agnews dbpedia 20newsgroups banking77; do
+    for size in ${FACTORS[@]}; do
+        for dataset in "${DATASETS[@]}"; do
             local test_list="test_${dataset2testsize[$dataset]}"
             local num_seeds=${dataset2nseeds[$dataset]}
             for num_seed in $(seq 0 $(($num_seeds - 1))); do
-                run_test $model $dataset
-                run_train $model $dataset $size $num_seed
+
+                run_adats_calibration $model $dataset $size $num_seed "z_16"
+                
             done
         done
     done
 }
 
-run_all $model
+run_cal_vs_samples $model 16
+

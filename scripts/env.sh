@@ -50,7 +50,7 @@ declare -a DATASETS=(sst2 dbpedia banking77)
 
 # Train sizes
 # declare -a FACTORS=(16 32 64 128 256)
-declare -a FACTORS=(16 256)
+declare -a FACTORS=(16 )
 
 # Test sizes
 declare -A dataset2testsize=(
