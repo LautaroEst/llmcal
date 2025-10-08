@@ -1,3 +1,4 @@
+#!/bin/bash -ex
 
 source ./subtasks/base.sh
 
