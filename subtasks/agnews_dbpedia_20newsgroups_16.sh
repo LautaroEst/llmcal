@@ -22,7 +22,7 @@ for num_seed in 0 1 2; do
         train_dir="outputs/finetune_lora/$model/$dataset/size=$size/seed=$num_seed/lora_ans_ls-0.5/$train_list/$val_list"
         test_list="test_${dataset2testsize[$dataset]}"
         mkdir -p $train_dir
-        run_lora_reg $model $dataset $size ans-ls_0.5 $num_seed $val_check_interval $train_dir $train_list $val_list $test_list
+        run_lora_reg $model $dataset $size ans-ls_0.1 $num_seed $val_check_interval $train_dir $train_list $val_list $test_list
 
         output_dir="$train_dir/test=$dataset/list=$val_list"
         model_dir="$CHECKPOINTS_DIR/${model2checkpoint[$model]}"
