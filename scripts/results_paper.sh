@@ -57,17 +57,6 @@ for model in "${models[@]}"; do
     #     --output_path $samples_table_path \
     #     --methods "no_adaptation dirichlet_fixed_diag temp_scaling vector_scaling bias_shift dp_calibration lora_0.7 lora_1.0 lora_1.0_no_es lora_1.0_no_es_plus_tempscaling lora_1.0_no_es_plus_dpcal lora_1.0_no_es_plus_biasshift lora_1.0_no_es_plus_vectorscaling"
 
-    # samples_bars_path="outputs/results_paper/$model/results_bars/$model.pdf"
-    # mkdir -p $(dirname $samples_bars_path)
-    # python -m llmcal.scripts.results_bars \
-    #     --datasets "${DATASETS[*]}" \
-    #     --metrics "${metrics[*]}" \
-    #     --sizes "${FACTORS[*]}" \
-    #     --methods_config "./configs/methods_final.yaml" \
-    #     --results_dir outputs/results_paper/$model \
-    #     --output_path $samples_bars_path \
-    #     --methods "dirichlet_fixed_diag dp_calibration bias_shift temp_scaling lora_0.7 lora_1.0 lora_1.0_no_es lora_1.0_no_es_plus_dpcal lora_1.0_no_es_plus_biasshift lora_1.0_no_es_plus_tempscaling no_adaptation"
-
     samples_bars_path="outputs/results_paper/$model/results_bars/reg_$model.pdf"
     mkdir -p $(dirname $samples_bars_path)
     python -m llmcal.scripts.results_bars \
@@ -77,7 +66,18 @@ for model in "${models[@]}"; do
         --methods_config "./configs/methods_final.yaml" \
         --results_dir outputs/results_paper/$model \
         --output_path $samples_bars_path \
-        --methods "lora_l2-0.1_1.0 lora_l2-0.01_1.0 lora_0.7 lora_1.0 lora_ls-0.1_1.0 lora_ls-0.01_1.0 lora_1.0_no_es dp_calibration bias_shift temp_scaling lora_1.0_no_es_plus_tempscaling no_adaptation"
+        --methods "lora_l2-0.1_1.0 lora_l2-0.01_1.0 lora_0.7 lora_1.0 lora_ls-0.1_1.0 lora_ls-0.5_1.0 lora_ls-0.01_1.0 lora_1.0_no_es  temp_scaling bias_shift dp_calibration dirichlet_fixed_diag no_adaptation"
+
+    samples_bars_path="outputs/results_paper/$model/results_bars/$model.pdf"
+    mkdir -p $(dirname $samples_bars_path)
+    python -m llmcal.scripts.results_bars \
+        --datasets "${DATASETS[*]}" \
+        --metrics "${metrics[*]}" \
+        --sizes "${FACTORS[*]}" \
+        --methods_config "./configs/methods_final.yaml" \
+        --results_dir outputs/results_paper/$model \
+        --output_path $samples_bars_path \
+        --methods "dp_calibration lora_1.0 lora_ls-0.1_1.0 lora_1.0_ls-0.1_plus_dpcal lora_1.0_ls-0.1_plus_biasshift lora_1.0_ls-0.1_plus_tempscaling lora_1.0_no_es_plus_dpcal lora_1.0_no_es_plus_biasshift lora_1.0_no_es_plus_tempscaling no_adaptation"
 done
 
 samples_plots_path="outputs/results_paper/all_models/comparison.png"

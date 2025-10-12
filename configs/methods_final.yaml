@@ -12,10 +12,7 @@ no_adaptation:
 
 dirichlet_fixed_diag:
   label: "Dirichlet-FD" # Dirichlet Fixed Diagonal
-  # color: "tab:green"
-  # color: "#c6dbef"
-  color: "#7bccc4"
-  # linestyle: "-."
+  color: "#000099"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -23,10 +20,7 @@ dirichlet_fixed_diag:
 
 temp_scaling:
   label: "PHC-TS" # Temperature Scaling
-  # color: "tab:green"
-  # color: "#c6dbef"
-  color: "#17becf"
-  # linestyle: "-."
+  color: "#009999"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -34,10 +28,7 @@ temp_scaling:
 
 dp_calibration:
   label: "PHC-DP" # Direction Preserving
-  # color: "tab:red"
-  # color: "#9ecae1"
-  color: "#2e86c1"
-  # linestyle: "-."
+  color: "#00FFFF"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -45,10 +36,7 @@ dp_calibration:
 
 bias_shift:
   label: "PHC-BO" # Bias Shift
-  # color: "tab:cyan"
-  # color: "#6baed6"
-  color: "#5dade2"
-  # linestyle: "-."
+  color: "#00CCCC"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -56,10 +44,7 @@ bias_shift:
 
 vector_scaling:
   label: "PHC-VS" # Vector Scaling
-  # color: "tab:purple"
-  # color: "#3182bd"
-  color: "#1f77b4"
-  # linestyle: "-."
+  color: "#99FFFF"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -86,7 +71,6 @@ lora_l2-0.1_1.0:
 
 lora_l2-0.01_1.0:
   label: "SFT L2-reg ($\\lambda=0.01$)"
-  # yellow-brown (lighter):
   color: "#FF6666"
   linestyle: "-"
   marker: null
@@ -115,8 +99,15 @@ lora_1.0:
 
 lora_ls-0.1_1.0:
   label: "SFT Label Smoothing ($\\alpha=0.1$)"
-  # purple-green:
   color: "#CCCC00"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_ls-0.5_1.0:
+  label: "SFT Label Smoothing ($\\alpha=0.5$)"
+  color: "#FFFF00"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -124,7 +115,6 @@ lora_ls-0.1_1.0:
 
 lora_ls-0.01_1.0:
   label: "SFT Label Smoothing ($\\alpha=0.01$)"
-  # purple-green (lighter):
   color: "#FFFF66"
   linestyle: "-"
   marker: null
@@ -134,10 +124,8 @@ lora_ls-0.01_1.0:
 
 lora_1.0_no_es_plus_tempscaling:
   # label: "SFT retrain + PHC TS"
-  label: "SFT-wo-val + PHC-TS"
-  # color: "#e74c3c"
-  color: "#990099"
-  # linestyle: "--"
+  label: "SFT Early Stopping on 100% + PHC-TS"
+  color: "#99004C"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -145,11 +133,8 @@ lora_1.0_no_es_plus_tempscaling:
 
 lora_1.0_no_es_plus_dpcal:
   # label: "SFT retrain + PHC DP"
-  label: "SFT-wo-val + PHC-DP"
-  # color: "tab:red"
-  # color: "#fc9272"
-  color: "#c0392b"
-  # linestyle: "--"
+  label: "SFT Early Stopping on 100% + PHC-DP"
+  color: "#FF3399"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
@@ -157,23 +142,35 @@ lora_1.0_no_es_plus_dpcal:
 
 lora_1.0_no_es_plus_biasshift:
   # label: "SFT retrain + PHC BO"
-  label: "SFT-wo-val + PHC-BO"
-  # color: "tab:cyan"
-  # color: "#fb6a4a"
-  color: "#cd6155"
-  # linestyle: "--"
+  label: "SFT Early Stopping on 100% + PHC-BO"
+  color: "#CC0066"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
   markersize: *markersize
 
-lora_1.0_no_es_plus_vectorscaling:
-  # label: "SFT retrain + PHC VS"
-  label: "SFT-wo-val + PHC-VS"
-  # color: "tab:purple"
-  # color: "#de2d26"
-  color: "#d62728"
-  # linestyle: "--"
+lora_1.0_ls-0.1_plus_tempscaling:
+  # label: "SFT retrain + PHC TS"
+  label: "SFT Label Smoothing ($\\alpha=0.1$) + PHC-TS"
+  color: "#4C0099"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_ls-0.1_plus_dpcal:
+  # label: "SFT retrain + PHC DP"
+  label: "SFT Label Smoothing ($\\alpha=0.1$) + PHC-DP"
+  color: "#6600CC"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+lora_1.0_ls-0.1_plus_biasshift:
+  # label: "SFT retrain + PHC BO"
+  label: "SFT Label Smoothing ($\\alpha=0.1$) + PHC-BO"
+  color: "#7F00FF"
   linestyle: "-"
   marker: null
   linewidth: *linewidth
