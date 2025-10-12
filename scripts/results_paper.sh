@@ -66,7 +66,7 @@ for model in "${models[@]}"; do
         --methods_config "./configs/methods_final.yaml" \
         --results_dir outputs/results_paper/$model \
         --output_path $samples_bars_path \
-        --methods "lora_l2-0.1_1.0 lora_l2-0.01_1.0 lora_0.7 lora_1.0 lora_ls-0.1_1.0 lora_ls-0.5_1.0 lora_ls-0.01_1.0 lora_1.0_no_es  temp_scaling bias_shift dp_calibration dirichlet_fixed_diag no_adaptation"
+        --methods "lora_l2-0.1_1.0 lora_l2-0.01_1.0 lora_0.7 lora_1.0 lora_ls-0.1_1.0 lora_ls-0.5_1.0 lora_ls-0.01_1.0 lora_1.0_no_es  temp_scaling bias_shift dp_calibration dirichlet_fixed_diag dirichlet_full_l2 adats_z_16 no_adaptation"
 
     samples_bars_path="outputs/results_paper/$model/results_bars/$model.pdf"
     mkdir -p $(dirname $samples_bars_path)

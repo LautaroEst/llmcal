@@ -12,6 +12,7 @@ from sklearn.metrics import log_loss
 import scipy
 import scipy.optimize
 import scipy.linalg
+import psrcal
 
 from .utils import clip, clip_jax
 
@@ -59,7 +60,8 @@ class MultinomialRegression(BaseEstimator, RegressorMixin):
 
         X_ = np.hstack((X, np.ones((len(X), 1))))
 
-        self.classes = raw_np.unique(y)
+        # self.classes = raw_np.unique(y)
+        self.classes = np.arange(X.shape[1])
 
         k = len(self.classes)
 
@@ -70,7 +72,7 @@ class MultinomialRegression(BaseEstimator, RegressorMixin):
                 self.reg_lambda = self.reg_lambda / (k * (k - 1))
                 self.reg_mu = self.reg_mu / k
 
-        target = label_binarize(y, self.classes)
+        target = label_binarize(y, classes=self.classes)
 
         if k == 2:
             target = np.hstack([1-target, target])
@@ -83,22 +85,22 @@ class MultinomialRegression(BaseEstimator, RegressorMixin):
 
         self.weights_0_ = self._get_initial_weights(self.initializer)
 
-        if k <= 36:
-            weights = _newton_update(self.weights_0_, X_, XXT, target, k,
-                                     self.method_, reg_lambda=self.reg_lambda, 
-                                     reg_mu=self.reg_mu, ref_row=self.ref_row, 
-                                     initializer=self.initializer,
-                                     reg_format=self.reg_format)
-        else:
-            res = scipy.optimize.fmin_l_bfgs_b(func=_objective, fprime=_gradient,
-                                               x0=self.weights_0_,
-                                               args=(X_, XXT, target, k,
-                                                     self.method_, self.reg_lambda, self.reg_mu, 
-                                                     self.ref_row, self.initializer, 
-                                                     self.reg_format),
-                                               maxls=128,
-                                               factr=1.0)
-            weights = res[0]
+        # if k <= 36:
+        #     weights = _newton_update(self.weights_0_, X_, XXT, target, k,
+        #                              self.method_, reg_lambda=self.reg_lambda, 
+        #                              reg_mu=self.reg_mu, ref_row=self.ref_row, 
+        #                              initializer=self.initializer,
+        #                              reg_format=self.reg_format)
+        # else:
+        res = scipy.optimize.fmin_l_bfgs_b(func=_objective, fprime=_gradient,
+                                            x0=self.weights_0_,
+                                            args=(X_, XXT, target, k,
+                                                    self.method_, self.reg_lambda, self.reg_mu, 
+                                                    self.ref_row, self.initializer, 
+                                                    self.reg_format),
+                                            maxls=40,
+                                            factr=1.0, epsilon=1e-3, maxiter=100)
+        weights = res[0]
 
         self.weights_ = _get_weights(weights, k, self.ref_row, self.method_)
 
@@ -236,7 +238,7 @@ def _newton_update(weights_0, X, XX_T, target, k, method_, maxiter=int(1024),
                    ftol=1e-12, gtol=1e-8, reg_lambda=0.0, reg_mu=None, ref_row=True, 
                    initializer=None, reg_format=None):
 
-    L_list = [raw_np.float(_objective(weights_0, X, XX_T, target, k, method_, 
+    L_list = [float(_objective(weights_0, X, XX_T, target, k, method_, 
                                       reg_lambda, reg_mu, ref_row, initializer, reg_format))]
 
     weights = weights_0.copy()
@@ -261,7 +263,7 @@ def _newton_update(weights_0, X, XX_T, target, k, method_, maxiter=int(1024),
             updates = gradient / hessian
         else:
             try:
-                inverse = scipy.linalg.pinv2(hessian)
+                inverse = scipy.linalg.pinv(hessian)
                 updates = np.matmul(inverse, gradient)
             except (raw_np.linalg.LinAlgError, ValueError) as err:
                 logging.error(err)
@@ -281,7 +283,7 @@ def _newton_update(weights_0, X, XX_T, target, k, method_, maxiter=int(1024),
             if (L - L_list[-1]) < 0:
                 break
 
-        L_list.append(raw_np.float(L))
+        L_list.append(float(L))
 
         logging.debug("{}: after {} iterations log-loss = {:.7e}, sum_grad = {:.7e}".format(
             method_, i, L, np.abs(gradient).sum()))
@@ -291,8 +293,8 @@ def _newton_update(weights_0, X, XX_T, target, k, method_, maxiter=int(1024),
             break
 
         if i >= 5:
-            if (raw_np.float(raw_np.min(raw_np.diff(L_list[-5:]))) > -ftol) & \
-                (raw_np.float(raw_np.sum(raw_np.diff(L_list[-5:])) > 0) == 0):
+            if (float(raw_np.min(raw_np.diff(L_list[-5:]))) > -ftol) & \
+                (float(raw_np.sum(raw_np.diff(L_list[-5:])) > 0) == 0):
                 weights = tmp_w.copy()
                 logging.debug('{}: Terminate as there is not enough changes on loss.'.format(
                     method_))

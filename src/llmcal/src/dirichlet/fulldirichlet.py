@@ -20,7 +20,9 @@ class FullDirichletCalibrator(BaseEstimator, RegressorMixin):
             comp_l2: (bool) If true, then complementary L2 regularization used (off-diagonal regularization)
         """
     
+        self.l2 = l2  # L2 regularization parameter
         self.calibrator_ = None
+        self.weights_init = weights_init
         self.weights_ = weights_init  # Input weights for initialisation
         self.reg_lambda = 0.0
         self.reg_mu = None
@@ -49,7 +51,7 @@ class FullDirichletCalibrator(BaseEstimator, RegressorMixin):
                                                 reg_mu=self.reg_mu_list[j],
                                                 reg_norm=self.reg_norm)
                 tmp_cal.fit(_X, y, *args, **kwargs)
-                tmp_loss = log_loss(y_val, tmp_cal.predict_proba(_X_val))
+                tmp_loss = log_loss(y_val, tmp_cal.predict_proba(_X_val), labels=np.arange(k))
                 
                 if (i + j) == 0:
                     final_cal = tmp_cal

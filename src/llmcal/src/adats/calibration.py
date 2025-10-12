@@ -22,7 +22,7 @@ def test(model, loader, device):
 
 
 class AdaptiveTemperatureScaling(ABC, torch.nn.Module):
-    def __init__(self, vae_params, device) -> None:
+    def __init__(self, vae_params, device="cpu") -> None:
         super().__init__()
         self.vae = CondVAE(**vae_params, device=device)
 
@@ -33,9 +33,7 @@ class AdaptiveTemperatureScaling(ABC, torch.nn.Module):
     def fit(self, train_features, train_logits, train_labels, device="cpu", *args, **kwargs):
         # agg features
 
-        val_dataset = TensorDataset(torch.cat(train_features, dim=0),
-                                    torch.cat(train_logits, dim=0),
-                                    torch.cat(train_labels))
+        val_dataset = TensorDataset(train_features, train_logits, train_labels)
         feat_loader = DataLoader(val_dataset, batch_size=128, drop_last=False, shuffle=True)
 
         # now train the vae

@@ -10,9 +10,25 @@ no_adaptation:
   linewidth: *linewidth
   markersize: *markersize
 
+adats_z_16:
+  label: "PHC-Ada-TS" # Adaptive Temperature Scaling
+  color: "#4C0099"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
 dirichlet_fixed_diag:
-  label: "Dirichlet-FD" # Dirichlet Fixed Diagonal
+  label: "PHC-Dirichlet-FD" # Dirichlet Fixed Diagonal
   color: "#000099"
+  linestyle: "-"
+  marker: null
+  linewidth: *linewidth
+  markersize: *markersize
+
+dirichlet_full_l2:
+  label: "PHC-Dirichlet-Full-L2" # Dirichlet Fixed Diagonal
+  color: "#0000FF"
   linestyle: "-"
   marker: null
   linewidth: *linewidth

@@ -65,7 +65,8 @@ run_cal_vs_samples() {
             for num_seed in $(seq 0 $(($num_seeds - 1))); do
 
                 run_dirichlet_calibration $model $dataset $size $num_seed "dirichlet_fixed_diag"
-                
+                run_dirichlet_calibration $model $dataset $size $num_seed "dirichlet_full_l2"
+                # run_dirichlet_calibration $model $dataset $size $num_seed "dirichlet_odir_l2"
             done
         done
     done

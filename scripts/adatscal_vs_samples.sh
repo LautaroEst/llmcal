@@ -66,7 +66,7 @@ run_cal_vs_samples() {
             local num_seeds=${dataset2nseeds[$dataset]}
             for num_seed in $(seq 0 $(($num_seeds - 1))); do
 
-                run_adats_calibration $model $dataset $size $num_seed "z_16"
+                run_adats_calibration $model $dataset $size $num_seed "adats_z_16"
                 
             done
         done

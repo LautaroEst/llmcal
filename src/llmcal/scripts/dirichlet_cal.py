@@ -11,7 +11,8 @@ import torch.nn.functional as F
 from typing import Literal
 from sklearn.base import clone
 from scipy.special import softmax
-from ..src.dirichlet import DirichletCalibrator, FixedDiagonalDirichletCalibrator
+from ..src.dirichlet import DirichletCalibrator, FixedDiagonalDirichletCalibrator, FullDirichletCalibrator
+import pickle
 
 from ..src.loggers import TBLogger, CSVLogger
 
@@ -20,6 +21,8 @@ warnings.filterwarnings("ignore", category=UserWarning, message=".*Experiment lo
 
 MAP_CALIBRATORS = {
     'dirichlet_fixed_diag': FixedDiagonalDirichletCalibrator(),
+    'dirichlet_full_l2': DirichletCalibrator(matrix_type='full', l2=0.1),
+    'dirichlet_odir_l2': FullDirichletCalibrator(reg_lambda_list=[1e3, 1e1, 1e-1, 1e-3, 1e-5, 1e-7], reg_mu_list=[1e3, 1e1, 1e-1, 1e-3, 1e-5, 1e-7], reg_norm=True)
 
 }
 
@@ -55,8 +58,8 @@ def main(
     # state = fit(model, train_logits, train_labels, log_dir, tolerance, learning_rate, max_ls)
     model.fit(train_probas, train_labels)
 
-    # torch.save(state, checkpoint_dir / 'state.ckpt')
-    # model.load_state_dict(state['best_model'])
+    with open(checkpoint_dir / 'state.ckpt', 'wb') as f:
+        pickle.dump(model, f)
 
     # Predict
     cal_logits = np.log(model.predict_proba(predict_probas))

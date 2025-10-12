@@ -35,7 +35,7 @@ def main(
     predict_logits: str = 'logits.csv',
     predict_embeddings: str = 'embeddings.csv',
     predict_labels: str = 'labels.csv',
-    method: Literal["dirichlet_fixed_diag"] = "dirichlet_fixed_diag",
+    method: Literal["adats_z_16"] = "adats_z_16",
     seed: int = 0,
 ):
     torch.set_float32_matmul_precision("high")
@@ -57,16 +57,14 @@ def main(
 
     # num_classes = train_logits.shape[1]
     # model = AffineCalibrator(method=method, num_classes=num_classes)
-    vae_params = deepcopy(MAP_CALIBRATORS[method])
+    vae_params = deepcopy(MAP_CALIBRATORS[method.split('adats_')[-1]])
     vae_params["in_dim"] = train_embeddings.shape[1]
     vae_params["num_classes"] = train_logits.shape[1]
     model = AdaptiveTemperatureScaling(vae_params=vae_params)
     # state = fit(model, train_logits, train_labels, log_dir, tolerance, learning_rate, max_ls)
     model.fit(train_embeddings, train_logits, train_labels)
-
-    # torch.save(state, checkpoint_dir / 'state.ckpt')
+    torch.save(model.state_dict(), checkpoint_dir / 'state.ckpt')
     # model.load_state_dict(state['best_model'])
-
     # Predict
     with torch.no_grad():
         cal_logits = model(predict_logits, predict_embeddings).cpu().numpy()
