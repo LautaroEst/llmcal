@@ -1,6 +1,48 @@
 #!/bin/bash -ex
 
-source ./scripts/env.sh
+CHECKPOINTS_DIR=./checkpoints
+HF_TOKEN=$(cat hf_token.txt)
+model="llama3.2-1b-instruct"
+
+# Reproducibility
+base_seed=2834
+declare -A dataset2nseeds=(
+    ["sst2"]=9
+    ["agnews"]=9
+    ["dbpedia"]=5
+    ["20newsgroups"]=5
+    ["banking77"]=5
+)
+
+# Supported models
+declare -A model2checkpoint=(
+    ["llama3.2-1b"]="meta-llama/Llama-3.2-1B"
+    ["llama3.2-1b-instruct"]="meta-llama/Llama-3.2-1B-Instruct"
+    ["qwen2.5-7b"]="Qwen/Qwen2.5-7B"
+    ["qwen2.5-7b-instruct"]="Qwen/Qwen2.5-7B-Instruct"
+)
+
+# Datasets
+declare -a DATASETS=(sst2 agnews dbpedia 20newsgroups banking77)
+
+# Train sizes
+declare -a FACTORS=(16 32 64 128 256)
+# declare -a FACTORS=(16 256)
+
+# Test sizes
+declare -A dataset2testsize=(
+    ["sst2"]=400
+    ["agnews"]=400
+    ["dbpedia"]=700
+    ["20newsgroups"]=800
+    ["banking77"]=1000
+)
+
+max_seq_length=2048
+inference_max_seq_len=20000
+
+export CUDA_VISIBLE_DEVICES=0
+
 
 # 1: model
 # 2: dataset
@@ -35,17 +77,18 @@ run_lora() {
     local patience=10
     local precision="bf16-true"
 
-    if [ $early_stopping = true ] && [ $train_list = "0.0-1.0" ]; then
-        local max_steps=$(python -c "import torch; print(torch.load('$train_dir/../../0.0-0.7/0.7-1.0/best.ckpt', weights_only=False)['step_count'],end='')")
-    else
-        local max_steps=-1
-    fi
-
     # TRAIN
     local model_dir="$CHECKPOINTS_DIR/${model2checkpoint[$model]}"
     local log_dir="$train_dir/logs"
     local output_checkpoint_dir="$train_dir/checkpoint"
     if [ ! -f $train_dir/train_args.yaml ]; then
+
+        if [ $early_stopping = true ] && [ $train_list = "0.0-1.0" ]; then
+            local max_steps=$(python -c "import torch; print(torch.load('$train_dir/../../0.0-0.7/0.7-1.0/best.ckpt', weights_only=False)['step_count'],end='')")
+        else
+            local max_steps=-1
+        fi
+
         mkdir -p $train_dir $log_dir $output_checkpoint_dir
         for file in config.json generation_config.json model_config.yaml tokenizer.json tokenizer.model tokenizer_config.json; do
             if [ -f $model_dir/$file ]; then
